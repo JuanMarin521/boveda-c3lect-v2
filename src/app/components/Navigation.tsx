@@ -225,7 +225,7 @@ export default function Navigation() {
                         className="flex items-center gap-4 p-2 rounded hover:bg-white/5 transition-colors text-left w-full group"
                       >
                         <img
-                          src={p.imgs[0]}
+                          src={import.meta.env.BASE_URL + p.imgs[0]}
                           alt={p.display}
                           className="w-10 h-10 object-cover shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
                         />

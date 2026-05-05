@@ -11,6 +11,7 @@
 // PARA CAMBIAR FOTOS:       reemplaza las rutas en "imgs"
 //
 // Imágenes en:  public/images/relojes/   y   public/images/perfumes/
+// Rutas sin barra inicial, ej: "images/relojes/foto.jpg"  (NO "/images/...")
 // ============================================================
 
 // ─── INTERFAZ ───────────────────────────────────────────────
@@ -30,7 +31,7 @@ export interface Producto {
   precio: string;       // Precio formateado, ej: "$149.000"
   disponible: boolean;  // true = disponible | false = agotado
   cat: 'reloj' | 'perfume';
-  imgs: string[];       // Rutas desde public/, ej: ["/images/relojes/..."]
+  imgs: string[];       // Rutas relativas desde public/, ej: ["images/relojes/..."]
   notas?: NotasPerfume; // Solo para perfumes
 }
 
@@ -61,9 +62,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/skeleton-kosmo-644-6-negro-1.jpg",
-      "/images/relojes/skeleton-kosmo-644-6-negro-2.jpg",
-      "/images/relojes/skeleton-kosmo-644-6-negro-3.jpg",
+      "images/relojes/skeleton-kosmo-644-6-negro-1.jpg",
+      "images/relojes/skeleton-kosmo-644-6-negro-2.jpg",
+      "images/relojes/skeleton-kosmo-644-6-negro-3.jpg",
     ],
   },
   {
@@ -75,7 +76,7 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/skeleton-kosmo-644-6-plateado-1.jpg",
+      "images/relojes/skeleton-kosmo-644-6-plateado-1.jpg",
     ],
   },
   {
@@ -87,9 +88,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8329-metalico-azul-bronce-1.jpg",
-      "/images/relojes/curren-8329-metalico-azul-bronce-2.jpg",
-      "/images/relojes/curren-8329-metalico-azul-bronce-3.jpg",
+      "images/relojes/curren-8329-metalico-azul-bronce-1.jpg",
+      "images/relojes/curren-8329-metalico-azul-bronce-2.jpg",
+      "images/relojes/curren-8329-metalico-azul-bronce-3.jpg",
     ],
   },
   {
@@ -101,9 +102,9 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8291-deportivo-cafe-1.jpg",
-      "/images/relojes/curren-8291-deportivo-cafe-2.jpg",
-      "/images/relojes/curren-8291-deportivo-cafe-3.jpg",
+      "images/relojes/curren-8291-deportivo-cafe-1.jpg",
+      "images/relojes/curren-8291-deportivo-cafe-2.jpg",
+      "images/relojes/curren-8291-deportivo-cafe-3.jpg",
     ],
   },
   {
@@ -115,9 +116,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8291-deportivo-azul-1.jpg",
-      "/images/relojes/curren-8291-deportivo-azul-2.jpg",
-      "/images/relojes/curren-8291-deportivo-azul-3.jpg",
+      "images/relojes/curren-8291-deportivo-azul-1.jpg",
+      "images/relojes/curren-8291-deportivo-azul-2.jpg",
+      "images/relojes/curren-8291-deportivo-azul-3.jpg",
     ],
   },
   {
@@ -129,9 +130,9 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8291-deportivo-azul-bronce-1.jpg",
-      "/images/relojes/curren-8291-deportivo-azul-bronce-2.jpg",
-      "/images/relojes/curren-8291-deportivo-azul-bronce-3.jpg",
+      "images/relojes/curren-8291-deportivo-azul-bronce-1.jpg",
+      "images/relojes/curren-8291-deportivo-azul-bronce-2.jpg",
+      "images/relojes/curren-8291-deportivo-azul-bronce-3.jpg",
     ],
   },
   {
@@ -143,9 +144,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8329-metalico-black-y-gold-1.jpg",
-      "/images/relojes/curren-8329-metalico-black-y-gold-2.jpg",
-      "/images/relojes/curren-8329-metalico-black-y-gold-3.jpg",
+      "images/relojes/curren-8329-metalico-black-y-gold-1.jpg",
+      "images/relojes/curren-8329-metalico-black-y-gold-2.jpg",
+      "images/relojes/curren-8329-metalico-black-y-gold-3.jpg",
     ],
   },
   {
@@ -157,9 +158,9 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8329-metalico-cafe-1.jpg",
-      "/images/relojes/curren-8329-metalico-cafe-2.jpg",
-      "/images/relojes/curren-8329-metalico-cafe-3.jpg",
+      "images/relojes/curren-8329-metalico-cafe-1.jpg",
+      "images/relojes/curren-8329-metalico-cafe-2.jpg",
+      "images/relojes/curren-8329-metalico-cafe-3.jpg",
     ],
   },
   {
@@ -171,9 +172,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8291-deportivo-negro-rojo-1.jpg",
-      "/images/relojes/curren-8291-deportivo-negro-rojo-2.jpg",
-      "/images/relojes/curren-8291-deportivo-negro-rojo-3.jpg",
+      "images/relojes/curren-8291-deportivo-negro-rojo-1.jpg",
+      "images/relojes/curren-8291-deportivo-negro-rojo-2.jpg",
+      "images/relojes/curren-8291-deportivo-negro-rojo-3.jpg",
     ],
   },
   {
@@ -185,7 +186,7 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8365-elegante-black-silver-1.jpg",
+      "images/relojes/curren-8365-elegante-black-silver-1.jpg",
     ],
   },
 
@@ -198,8 +199,8 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8365-elegante-black-gold-1.jpeg",
-      "/images/relojes/curren-8365-elegante-black-gold-2.jpeg",
+      "images/relojes/curren-8365-elegante-black-gold-1.jpeg",
+      "images/relojes/curren-8365-elegante-black-gold-2.jpeg",
     ],
   },
 
@@ -212,10 +213,10 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8411-verde-1.jpg",
-      "/images/relojes/curren-8411-verde-2.jpg",
-      "/images/relojes/curren-8411-verde-3.jpg",
-      "/images/relojes/curren-8411-verde-4.jpg",
+      "images/relojes/curren-8411-verde-1.jpg",
+      "images/relojes/curren-8411-verde-2.jpg",
+      "images/relojes/curren-8411-verde-3.jpg",
+      "images/relojes/curren-8411-verde-4.jpg",
     ],
   },
   {
@@ -227,10 +228,10 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8457-cuadrado-silver-black-1.jpg",
-      "/images/relojes/curren-8457-cuadrado-silver-black-2.jpg",
-      "/images/relojes/curren-8457-cuadrado-silver-black-3.jpg",
-      "/images/relojes/curren-8457-cuadrado-silver-black-4.jpg",
+      "images/relojes/curren-8457-cuadrado-silver-black-1.jpg",
+      "images/relojes/curren-8457-cuadrado-silver-black-2.jpg",
+      "images/relojes/curren-8457-cuadrado-silver-black-3.jpg",
+      "images/relojes/curren-8457-cuadrado-silver-black-4.jpg",
     ],
   },
   {
@@ -242,11 +243,11 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8467-negro-1.jpg",
-      "/images/relojes/curren-8467-negro-2.jpg",
-      "/images/relojes/curren-8467-negro-3.jpg",
-      "/images/relojes/curren-8467-negro-4.jpg",
-      "/images/relojes/curren-8467-negro-5.jpg",
+      "images/relojes/curren-8467-negro-1.jpg",
+      "images/relojes/curren-8467-negro-2.jpg",
+      "images/relojes/curren-8467-negro-3.jpg",
+      "images/relojes/curren-8467-negro-4.jpg",
+      "images/relojes/curren-8467-negro-5.jpg",
     ],
   },
   {
@@ -258,10 +259,10 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8488-rectangular-blue-gold-1.jpg",
-      "/images/relojes/curren-8488-rectangular-blue-gold-2.jpg",
-      "/images/relojes/curren-8488-rectangular-blue-gold-3.jpg",
-      "/images/relojes/curren-8488-rectangular-blue-gold-4.jpg",
+      "images/relojes/curren-8488-rectangular-blue-gold-1.jpg",
+      "images/relojes/curren-8488-rectangular-blue-gold-2.jpg",
+      "images/relojes/curren-8488-rectangular-blue-gold-3.jpg",
+      "images/relojes/curren-8488-rectangular-blue-gold-4.jpg",
     ],
   },
   {
@@ -273,9 +274,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8488-rectangular-negro-1.jpg",
-      "/images/relojes/curren-8488-rectangular-negro-2.jpg",
-      "/images/relojes/curren-8488-rectangular-negro-3.jpg",
+      "images/relojes/curren-8488-rectangular-negro-1.jpg",
+      "images/relojes/curren-8488-rectangular-negro-2.jpg",
+      "images/relojes/curren-8488-rectangular-negro-3.jpg",
     ],
   },
   {
@@ -287,10 +288,10 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-8225-cafe-1.jpg",
-      "/images/relojes/curren-8225-cafe-2.jpg",
-      "/images/relojes/curren-8225-cafe-3.jpg",
-      "/images/relojes/curren-8225-cafe-4.jpg",
+      "images/relojes/curren-8225-cafe-1.jpg",
+      "images/relojes/curren-8225-cafe-2.jpg",
+      "images/relojes/curren-8225-cafe-3.jpg",
+      "images/relojes/curren-8225-cafe-4.jpg",
     ],
   },
   {
@@ -302,9 +303,9 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-9015-dama-negro-cobre-1.jpg",
-      "/images/relojes/curren-9015-dama-negro-cobre-2.jpg",
-      "/images/relojes/curren-9015-dama-negro-cobre-3.jpg",
+      "images/relojes/curren-9015-dama-negro-cobre-1.jpg",
+      "images/relojes/curren-9015-dama-negro-cobre-2.jpg",
+      "images/relojes/curren-9015-dama-negro-cobre-3.jpg",
     ],
   },
   {
@@ -316,11 +317,11 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-9093-dama-dorado-1.jpg",
-      "/images/relojes/curren-9093-dama-dorado-2.jpg",
-      "/images/relojes/curren-9093-dama-dorado-3.jpg",
-      "/images/relojes/curren-9093-dama-dorado-4.jpg",
-      "/images/relojes/curren-9093-dama-dorado-5.jpg",
+      "images/relojes/curren-9093-dama-dorado-1.jpg",
+      "images/relojes/curren-9093-dama-dorado-2.jpg",
+      "images/relojes/curren-9093-dama-dorado-3.jpg",
+      "images/relojes/curren-9093-dama-dorado-4.jpg",
+      "images/relojes/curren-9093-dama-dorado-5.jpg",
     ],
   },
   {
@@ -332,9 +333,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-9094-dama-silver-1.jpg",
-      "/images/relojes/curren-9094-dama-silver-2.jpg",
-      "/images/relojes/curren-9094-dama-silver-3.jpg",
+      "images/relojes/curren-9094-dama-silver-1.jpg",
+      "images/relojes/curren-9094-dama-silver-2.jpg",
+      "images/relojes/curren-9094-dama-silver-3.jpg",
     ],
   },
   {
@@ -346,7 +347,7 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/curren-9094-dama-silver-green-1.jpg",
+      "images/relojes/curren-9094-dama-silver-green-1.jpg",
     ],
   },
   {
@@ -358,9 +359,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/naviforce-nf7105-gris-1.jpg",
-      "/images/relojes/naviforce-nf7105-gris-2.jpg",
-      "/images/relojes/naviforce-nf7105-gris-3.jpg",
+      "images/relojes/naviforce-nf7105-gris-1.jpg",
+      "images/relojes/naviforce-nf7105-gris-2.jpg",
+      "images/relojes/naviforce-nf7105-gris-3.jpg",
     ],
   },
   {
@@ -372,9 +373,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/geneva-set-dama-cuadrado-oro-1.jpg",
-      "/images/relojes/geneva-set-dama-cuadrado-oro-2.jpg",
-      "/images/relojes/geneva-set-dama-cuadrado-oro-3.jpg",
+      "images/relojes/geneva-set-dama-cuadrado-oro-1.jpg",
+      "images/relojes/geneva-set-dama-cuadrado-oro-2.jpg",
+      "images/relojes/geneva-set-dama-cuadrado-oro-3.jpg",
     ],
   },
   {
@@ -386,9 +387,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/geneva-set-dama-cuadrado-plata-1.jpg",
-      "/images/relojes/geneva-set-dama-cuadrado-plata-2.jpg",
-      "/images/relojes/geneva-set-dama-cuadrado-plata-3.jpg",
+      "images/relojes/geneva-set-dama-cuadrado-plata-1.jpg",
+      "images/relojes/geneva-set-dama-cuadrado-plata-2.jpg",
+      "images/relojes/geneva-set-dama-cuadrado-plata-3.jpg",
     ],
   },
   {
@@ -400,9 +401,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/geneva-set-dama-rectangular-plata-1.jpg",
-      "/images/relojes/geneva-set-dama-rectangular-plata-2.jpg",
-      "/images/relojes/geneva-set-dama-rectangular-plata-3.jpg",
+      "images/relojes/geneva-set-dama-rectangular-plata-1.jpg",
+      "images/relojes/geneva-set-dama-rectangular-plata-2.jpg",
+      "images/relojes/geneva-set-dama-rectangular-plata-3.jpg",
     ],
   },
   {
@@ -414,10 +415,10 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/poedagar-793-cuadrado-silver-white-1.jpg",
-      "/images/relojes/poedagar-793-cuadrado-silver-white-2.jpg",
-      "/images/relojes/poedagar-793-cuadrado-silver-white-3.jpg",
-      "/images/relojes/poedagar-793-cuadrado-silver-white-4.jpg",
+      "images/relojes/poedagar-793-cuadrado-silver-white-1.jpg",
+      "images/relojes/poedagar-793-cuadrado-silver-white-2.jpg",
+      "images/relojes/poedagar-793-cuadrado-silver-white-3.jpg",
+      "images/relojes/poedagar-793-cuadrado-silver-white-4.jpg",
     ],
   },
   {
@@ -429,8 +430,8 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/poedagar-826-silver-blue-1.jpg",
-      "/images/relojes/poedagar-826-silver-blue-2.jpg",
+      "images/relojes/poedagar-826-silver-blue-1.jpg",
+      "images/relojes/poedagar-826-silver-blue-2.jpg",
     ],
   },
   {
@@ -442,9 +443,9 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/casio-f-91wm-3-plata-1.jpg",
-      "/images/relojes/casio-f-91wm-3-plata-2.jpg",
-      "/images/relojes/casio-f-91wm-3-plata-3.jpg",
+      "images/relojes/casio-f-91wm-3-plata-1.jpg",
+      "images/relojes/casio-f-91wm-3-plata-2.jpg",
+      "images/relojes/casio-f-91wm-3-plata-3.jpg",
     ],
   },
   {
@@ -456,9 +457,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/casio-f-91wm-3a-verde-1.jpg",
-      "/images/relojes/casio-f-91wm-3a-verde-2.jpg",
-      "/images/relojes/casio-f-91wm-3a-verde-3.jpg",
+      "images/relojes/casio-f-91wm-3a-verde-1.jpg",
+      "images/relojes/casio-f-91wm-3a-verde-2.jpg",
+      "images/relojes/casio-f-91wm-3a-verde-3.jpg",
     ],
   },
   {
@@ -470,9 +471,9 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "reloj",
     imgs: [
-      "/images/relojes/casio-ltp-v007d-4e-dama-rose-gold-1.jpg",
-      "/images/relojes/casio-ltp-v007d-4e-dama-rose-gold-2.jpg",
-      "/images/relojes/casio-ltp-v007d-4e-dama-rose-gold-3.jpg",
+      "images/relojes/casio-ltp-v007d-4e-dama-rose-gold-1.jpg",
+      "images/relojes/casio-ltp-v007d-4e-dama-rose-gold-2.jpg",
+      "images/relojes/casio-ltp-v007d-4e-dama-rose-gold-3.jpg",
     ],
   },
   {
@@ -484,8 +485,8 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "reloj",
     imgs: [
-      "/images/relojes/casio-mq-24-7b-clasico-negro-1.jpg",
-      "/images/relojes/casio-mq-24-7b-clasico-negro-2.jpg",
+      "images/relojes/casio-mq-24-7b-clasico-negro-1.jpg",
+      "images/relojes/casio-mq-24-7b-clasico-negro-2.jpg",
     ],
   },
 
@@ -502,10 +503,10 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/lattafa-al-qiam-gold-1.jpg",
-      "/images/perfumes/lattafa-al-qiam-gold-2.jpg",
-      "/images/perfumes/lattafa-al-qiam-gold-3.jpg",
-      "/images/perfumes/lattafa-al-qiam-gold-4.jpg",
+      "images/perfumes/lattafa-al-qiam-gold-1.jpg",
+      "images/perfumes/lattafa-al-qiam-gold-2.jpg",
+      "images/perfumes/lattafa-al-qiam-gold-3.jpg",
+      "images/perfumes/lattafa-al-qiam-gold-4.jpg",
     ],
     notas: {
       descripcion: "Una fragancia oriental de lujo que abre con azafrán y frambuesa. El corazón revela cuero y pachulí, mientras la base funde oud, ámbar dorado y vetiver en un sillage intenso y perdurable.",
@@ -523,10 +524,10 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/afnan-9-pm-rebel-roja-1.jpg",
-      "/images/perfumes/afnan-9-pm-rebel-roja-2.jpg",
-      "/images/perfumes/afnan-9-pm-rebel-roja-3.jpg",
-      "/images/perfumes/afnan-9-pm-rebel-roja-4.jpg",
+      "images/perfumes/afnan-9-pm-rebel-roja-1.jpg",
+      "images/perfumes/afnan-9-pm-rebel-roja-2.jpg",
+      "images/perfumes/afnan-9-pm-rebel-roja-3.jpg",
+      "images/perfumes/afnan-9-pm-rebel-roja-4.jpg",
     ],
     notas: {
       descripcion: "Una fragancia frutal y audaz que irrumpe con piña jugosa, manzana verde y mandarina. El corazón se vuelve cálido con cedro y vainilla, cerrando con un sillage de caramelo, ámbar y musgo.",
@@ -544,10 +545,10 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/afnan-9-pm-negra-1.jpg",
-      "/images/perfumes/afnan-9-pm-negra-2.jpg",
-      "/images/perfumes/afnan-9-pm-negra-3.jpg",
-      "/images/perfumes/afnan-9-pm-negra-4.jpg",
+      "images/perfumes/afnan-9-pm-negra-1.jpg",
+      "images/perfumes/afnan-9-pm-negra-2.jpg",
+      "images/perfumes/afnan-9-pm-negra-3.jpg",
+      "images/perfumes/afnan-9-pm-negra-4.jpg",
     ],
     notas: {
       descripcion: "Una fragancia oriental y sensual pensada para la noche. Abre con manzana, canela y lavanda; florece en azahar y lirio del valle, y reposa en una base cálida de vainilla, tonka y ámbar.",
@@ -565,10 +566,10 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/lattafa-amethyst-1.jpg",
-      "/images/perfumes/lattafa-amethyst-2.jpg",
-      "/images/perfumes/lattafa-amethyst-3.jpg",
-      "/images/perfumes/lattafa-amethyst-4.jpg",
+      "images/perfumes/lattafa-amethyst-1.jpg",
+      "images/perfumes/lattafa-amethyst-2.jpg",
+      "images/perfumes/lattafa-amethyst-3.jpg",
+      "images/perfumes/lattafa-amethyst-4.jpg",
     ],
     notas: {
       descripcion: "Una fragancia ámbar y floral de carácter íntimo. Abre con pimienta rosa y bergamota, despliega un corazón de rosas turcas y jazmín, y concluye con oud, ámbar y vainilla.",
@@ -586,10 +587,10 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/lattafa-sublime-1.jpg",
-      "/images/perfumes/lattafa-sublime-2.jpg",
-      "/images/perfumes/lattafa-sublime-3.jpg",
-      "/images/perfumes/lattafa-sublime-4.jpg",
+      "images/perfumes/lattafa-sublime-1.jpg",
+      "images/perfumes/lattafa-sublime-2.jpg",
+      "images/perfumes/lattafa-sublime-3.jpg",
+      "images/perfumes/lattafa-sublime-4.jpg",
     ],
     notas: {
       descripcion: "Una fragancia frutal y aromática de elegancia natural. La apertura combina manzana, lichi y rosa; el corazón trae ciruela y jazmín, y la base reposa en vainilla, musgo y pachulí.",
@@ -607,8 +608,8 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/grandeur-dakota-1.jpg",
-      "/images/perfumes/grandeur-dakota-2.jpg",
+      "images/perfumes/grandeur-dakota-1.jpg",
+      "images/perfumes/grandeur-dakota-2.jpg",
     ],
     notas: {
       descripcion: "Una fragancia femenina y refinada con apertura de ruibarbo, lichi y bergamota. El corazón florece en rosa turca y peonía, cerrando con cashmeran, almizcle y vetiver.",
@@ -626,8 +627,8 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/zakat-royale-rubina-1.jpg",
-      "/images/perfumes/zakat-royale-rubina-2.jpg",
+      "images/perfumes/zakat-royale-rubina-1.jpg",
+      "images/perfumes/zakat-royale-rubina-2.jpg",
     ],
     notas: {
       descripcion: "Una fragancia oriental y especiada de carácter real. Abre con canela y bergamota, el corazón presenta dátiles y tuberosa, y la base despliega vainilla, ámbar y madera.",
@@ -645,8 +646,8 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/sahari-crystal-rose-1.jpg",
-      "/images/perfumes/sahari-crystal-rose-2.jpg",
+      "images/perfumes/sahari-crystal-rose-1.jpg",
+      "images/perfumes/sahari-crystal-rose-2.jpg",
     ],
     notas: {
       descripcion: "Una fragancia floral y fresca de espíritu libre. Combina frambuesa y azahar con el corazón de tuberosa, cerrando con almizcle blanco en un aroma suave y delicado.",
@@ -664,8 +665,8 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/sahari-ahwak-1.jpg",
-      "/images/perfumes/sahari-ahwak-2.jpg",
+      "images/perfumes/sahari-ahwak-1.jpg",
+      "images/perfumes/sahari-ahwak-2.jpg",
     ],
     notas: {
       descripcion: "Una fragancia unisex vibrante y romántica. Cítricos frescos y aloe vera abren paso a un corazón de jazmín, todo reposando en una base de almizcle blanco limpio y persistente.",
@@ -683,7 +684,7 @@ export const productos: Producto[] = [
     disponible: false,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/amaran-sunrise-madame-1.jpg",
+      "images/perfumes/amaran-sunrise-madame-1.jpg",
     ],
     notas: {
       descripcion: "Una fragancia femenina y luminosa que evoca el amanecer. Floral y cálida, con notas de rosa, jazmín y ámbar dorado que crean una estela elegante y seductora.",
@@ -701,8 +702,8 @@ export const productos: Producto[] = [
     disponible: true,
     cat: "perfume",
     imgs: [
-      "/images/perfumes/zakat-al-awwal-1.jpg",
-      "/images/perfumes/zakat-al-awwal-2.jpg",
+      "images/perfumes/zakat-al-awwal-1.jpg",
+      "images/perfumes/zakat-al-awwal-2.jpg",
     ],
     notas: {
       descripcion: "Una fragancia oriental de apertura especiada y cálida. Con notas de canela y bergamota que dan paso a un corazón de dátiles y tuberosa, terminando en una base rica de vainilla y ámbar.",

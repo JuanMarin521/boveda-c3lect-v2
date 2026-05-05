@@ -152,7 +152,7 @@ function TarjetaProducto({
         {/* Imagen principal con lazy loading y badge de estado */}
         <div className="relative aspect-[3/4] mb-6 overflow-hidden bg-neutral-100">
           <img
-            src={producto.imgs[0]}
+            src={import.meta.env.BASE_URL + producto.imgs[0]}
             alt={producto.display}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

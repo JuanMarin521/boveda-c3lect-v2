@@ -63,7 +63,7 @@ export default function ProductDetail() {
             {/* Imagen principal */}
             <div className="aspect-square mb-6 bg-neutral-100 overflow-hidden relative">
               <img
-                src={producto.imgs[imagenSeleccionada]}
+                src={import.meta.env.BASE_URL + producto.imgs[imagenSeleccionada]}
                 alt={`${producto.display} — foto ${imagenSeleccionada + 1}`}
                 className="w-full h-full object-cover transition-opacity duration-300"
                 loading="eager"
@@ -90,7 +90,7 @@ export default function ProductDetail() {
                     aria-pressed={imagenSeleccionada === index}
                   >
                     <img
-                      src={img}
+                      src={import.meta.env.BASE_URL + img}
                       alt={`${producto.display} — foto ${index + 1}`}
                       loading="lazy"
                       className="w-full h-full object-cover"
