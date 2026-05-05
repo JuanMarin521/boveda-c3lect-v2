@@ -186,7 +186,7 @@ function TarjetaProducto({
           {/* Nombre completo */}
           <h3
             className="text-xl md:text-2xl mb-3 tracking-wide group-hover:text-[#C9A84C] transition-colors"
-            style={{ fontFamily: "var(--font-serif)", fontVariantNumeric: "lining-nums" }}
+            style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
           >
             {producto.display}
           </h3>
