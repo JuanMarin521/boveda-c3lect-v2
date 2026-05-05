@@ -116,7 +116,7 @@ export default function ProductDetail() {
             {/* Nombre */}
             <h1
               className="text-4xl md:text-5xl mb-6 tracking-wide"
-              style={{ fontFamily: "var(--font-serif)" }}
+              style={{ fontFamily: "var(--font-serif)", fontVariantNumeric: "lining-nums" }}
             >
               {producto.display}
             </h1>
