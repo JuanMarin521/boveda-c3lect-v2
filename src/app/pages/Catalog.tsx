@@ -13,13 +13,15 @@ export default function Catalog() {
   const { category } = useParams<{ category?: string }>();
   const navigate = useNavigate();
 
-  const filtroActivo: "all" | "reloj" | "perfume" =
-    category === "watches" ? "reloj" :
-    category === "perfumes" ? "perfume" : "all";
+  const filtroActivo: "all" | "reloj" | "perfume" | "accesorio" =
+    category === "watches"     ? "reloj"     :
+    category === "perfumes"    ? "perfume"   :
+    category === "accesorios"  ? "accesorio" : "all";
 
-  function cambiarFiltro(filtro: "all" | "reloj" | "perfume") {
-    if (filtro === "reloj") navigate("/catalog/watches");
-    else if (filtro === "perfume") navigate("/catalog/perfumes");
+  function cambiarFiltro(filtro: "all" | "reloj" | "perfume" | "accesorio") {
+    if (filtro === "reloj")      navigate("/catalog/watches");
+    else if (filtro === "perfume")    navigate("/catalog/perfumes");
+    else if (filtro === "accesorio")  navigate("/catalog/accesorios");
     else navigate("/catalog");
   }
 
@@ -76,6 +78,11 @@ export default function Catalog() {
             activo={filtroActivo === "perfume"}
             onClick={() => cambiarFiltro("perfume")}
             label="Firmas y Elixires"
+          />
+          <BotónFiltro
+            activo={filtroActivo === "accesorio"}
+            onClick={() => cambiarFiltro("accesorio")}
+            label="Accesorios Premium"
           />
         </div>
 
@@ -180,7 +187,7 @@ function TarjetaProducto({
         <div>
           {/* Categoría pequeña */}
           <p className="text-xs uppercase tracking-widest text-black/40 mb-2">
-            {producto.cat === "reloj" ? "Relojería" : "Perfumería"}
+            {producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios Premium"}
           </p>
 
           {/* Nombre completo */}
