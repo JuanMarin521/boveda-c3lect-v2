@@ -28,7 +28,7 @@ export default function Home() {
           className="absolute inset-0"
         >
           <img
-            src={import.meta.env.BASE_URL + "images/relojes/curren-8467-negro-1.jpg"}
+            src={import.meta.env.BASE_URL + "images/homePage-C3LECT.jpg"}
             alt="Reloj C3LECT — Curren 8467 Negro"
             className="w-full h-full object-cover opacity-70"
             loading="eager"

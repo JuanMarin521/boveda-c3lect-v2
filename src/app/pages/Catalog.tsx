@@ -6,8 +6,11 @@
 // ============================================================
 
 import { Link, useParams, useNavigate } from "react-router";
+import { useState } from "react";
 import { motion } from "motion/react";
+import { ShoppingBag, Check } from "lucide-react";
 import { productos, Producto } from "../data/products";
+import { useCart } from "../context/CartContext";
 
 export default function Catalog() {
   const { category } = useParams<{ category?: string }>();
@@ -147,6 +150,17 @@ function TarjetaProducto({
   producto: Producto;
   index: number;
 }) {
+  const { addItem } = useCart();
+  const [añadido, setAñadido] = useState(false);
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem(producto);
+    setAñadido(true);
+    setTimeout(() => setAñadido(false), 1500);
+  }
+
   return (
     <motion.div
       layout
@@ -181,6 +195,16 @@ function TarjetaProducto({
               Disponible
             </div>
           )}
+
+          {/* Botón quick-add — esquina inferior derecha */}
+          <button
+            onClick={handleAddToCart}
+            aria-label={añadido ? "Añadido al carrito" : `Añadir ${producto.display} al carrito`}
+            className="absolute bottom-4 right-4 w-10 h-10 flex items-center justify-center text-white transition-all duration-300 md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0"
+            style={{ backgroundColor: añadido ? "#C9A84C" : "rgba(0,0,0,0.75)" }}
+          >
+            {añadido ? <Check size={16} /> : <ShoppingBag size={16} />}
+          </button>
         </div>
 
         {/* Información del producto */}

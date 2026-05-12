@@ -6,6 +6,7 @@ import ProductDetail from "./pages/ProductDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import SearchResults from "./pages/SearchResults";
 
 export const router = createBrowserRouter(
   [
@@ -16,6 +17,7 @@ export const router = createBrowserRouter(
         { index: true, Component: Home },
         { path: "catalog", Component: Catalog },
         { path: "catalog/:category", Component: Catalog },
+        { path: "search", Component: SearchResults },
         { path: "product/:id", Component: ProductDetail },
         { path: "about", Component: About },
         { path: "contact", Component: Contact },

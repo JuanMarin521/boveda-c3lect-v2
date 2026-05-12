@@ -6,17 +6,35 @@
 // ============================================================
 
 import { useParams, Link, useNavigate } from "react-router";
-import { motion } from "motion/react";
-import { useState } from "react";
-import { ChevronLeft, MessageCircle, ShoppingCart } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, MessageCircle, ShoppingBag, Check, ZoomIn, X } from "lucide-react";
 import { getProductoById } from "../data/products";
 import { whatsappLink } from "../config";
+import { useCart } from "../context/CartContext";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const producto = id ? getProductoById(id) : undefined;
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
+  const [zoomAbierto, setZoomAbierto] = useState(false);
+  const [añadido, setAñadido] = useState(false);
+  const { addItem } = useCart();
+
+  useEffect(() => {
+    if (!zoomAbierto) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setZoomAbierto(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [zoomAbierto]);
+
+  function handleAddToCart() {
+    if (!producto) return;
+    addItem(producto);
+    setAñadido(true);
+    setTimeout(() => setAñadido(false), 1500);
+  }
 
   if (!producto) {
     return (
@@ -61,21 +79,28 @@ export default function ProductDetail() {
             transition={{ duration: 0.5 }}
           >
             {/* Imagen principal */}
-            <div className="aspect-square mb-6 bg-neutral-100 overflow-hidden relative">
+            <button
+              onClick={() => setZoomAbierto(true)}
+              className="aspect-square mb-6 bg-neutral-100 overflow-hidden relative w-full block group cursor-zoom-in"
+              aria-label="Ampliar imagen"
+            >
               <img
                 src={import.meta.env.BASE_URL + producto.imgs[imagenSeleccionada]}
                 alt={`${producto.display} — foto ${imagenSeleccionada + 1}`}
-                className="w-full h-full object-cover transition-opacity duration-300"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="eager"
               />
-
-              {/* Badge de disponibilidad sobre la imagen */}
+              {/* Badge de disponibilidad */}
               {!producto.disponible && (
                 <div className="absolute top-4 left-4 bg-black/80 text-white text-xs uppercase tracking-widest px-3 py-1">
                   Agotado
                 </div>
               )}
-            </div>
+              {/* Hint de zoom */}
+              <div className="absolute bottom-4 right-4 w-9 h-9 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ZoomIn size={16} className="text-white" />
+              </div>
+            </button>
 
             {/* Miniaturas (si hay más de una imagen) */}
             {producto.imgs.length > 1 && (
@@ -144,6 +169,32 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {/* SECCIÓN: FICHA TÉCNICA (solo relojes) */}
+            {producto.specs && (
+              <div className="mb-10 border-t border-black/5 pt-6">
+                <h3 className="text-xs uppercase tracking-widest text-black/40 mb-5">
+                  Ficha Técnica
+                </h3>
+                <div className="space-y-0">
+                  <FilaTecnica label="Movimiento"        valor={producto.specs.movimiento} />
+                  {producto.specs.dimensiones   && <FilaTecnica label="Dimensiones"       valor={producto.specs.dimensiones} />}
+                  {producto.specs.caja          && <FilaTecnica label="Caja"               valor={producto.specs.caja} />}
+                  {producto.specs.correa        && <FilaTecnica label="Correa"             valor={producto.specs.correa} />}
+                  {producto.specs.cristal       && <FilaTecnica label="Cristal"            valor={producto.specs.cristal} />}
+                  {producto.specs.funciones     && <FilaTecnica label="Funciones"          valor={producto.specs.funciones} />}
+                  {producto.specs.bateria       && <FilaTecnica label="Batería"            valor={producto.specs.bateria} />}
+                  {producto.specs.reservaMarcha && <FilaTecnica label="Reserva de marcha" valor={producto.specs.reservaMarcha} />}
+                  {producto.specs.peso          && <FilaTecnica label="Peso"               valor={producto.specs.peso} />}
+                  <FilaTecnica label="Resistencia al agua"  valor={producto.specs.resistenciaAgua} />
+                  {producto.specs.observaciones && (
+                    <p className="mt-4 text-xs text-black/40 leading-relaxed border-t border-black/5 pt-4">
+                      {producto.specs.observaciones}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* SECCIÓN: ACCIONES DE COMPRA */}
             <div className="space-y-4 mt-auto">
 
@@ -159,34 +210,92 @@ export default function ProductDetail() {
                 {producto.disponible ? "Ordenar por WhatsApp" : "Consultar disponibilidad"}
               </a>
 
-              {/* Botón secundario: Carrito — DESHABILITADO (próximamente) */}
-              {/* PASARELA DE PAGO: cambia disabled a false y añade el handler cuando esté lista */}
-              <div className="relative group">
-                <button
-                  disabled
-                  className="w-full border-2 border-black/10 text-black/30 px-8 py-5 text-sm uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-3"
-                  aria-label="Añadir al carrito — próximamente disponible"
-                >
-                  <ShoppingCart size={18} aria-hidden="true" />
-                  Añadir al carrito
-                </button>
-                {/* Tooltip "Próximamente" */}
-                <span
-                  className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1.5 text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                  role="tooltip"
-                >
-                  Próximamente
-                </span>
-              </div>
+              {/* Botón secundario: Añadir al carrito */}
+              <button
+                onClick={handleAddToCart}
+                className="w-full border-2 px-8 py-5 text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3"
+                style={añadido
+                  ? { borderColor: "#C9A84C", color: "#C9A84C" }
+                  : { borderColor: "black", color: "black" }
+                }
+                aria-label={añadido ? "Producto añadido al carrito" : `Añadir ${producto.display} al carrito`}
+              >
+                {añadido ? <Check size={18} aria-hidden="true" /> : <ShoppingBag size={18} aria-hidden="true" />}
+                {añadido ? "¡Añadido al carrito!" : "Añadir al carrito"}
+              </button>
             </div>
-
-            {/* Nota informativa */}
-            <p className="text-xs text-black/40 mt-6 text-center">
-              Pasarela de pago en desarrollo. Actualmente aceptamos órdenes por WhatsApp.
-            </p>
           </motion.div>
         </div>
       </div>
+
+      {/* Modal de zoom */}
+      <AnimatePresence>
+        {zoomAbierto && (
+          <>
+            <motion.div
+              key="zoom-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/90 z-50"
+              onClick={() => setZoomAbierto(false)}
+              aria-hidden="true"
+            />
+            <motion.div
+              key="zoom-panel"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-6 md:p-12 pointer-events-none"
+            >
+              <div className="relative max-w-3xl w-full pointer-events-auto">
+                <img
+                  src={import.meta.env.BASE_URL + producto.imgs[imagenSeleccionada]}
+                  alt={`${producto.display} — foto ${imagenSeleccionada + 1}`}
+                  className="w-full max-h-[85vh] object-contain"
+                />
+                {/* Navegación entre fotos dentro del zoom */}
+                {producto.imgs.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                    {producto.imgs.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImagenSeleccionada(i)}
+                        className="w-2 h-2 rounded-full transition-colors"
+                        style={{ backgroundColor: i === imagenSeleccionada ? "#C9A84C" : "rgba(255,255,255,0.4)" }}
+                        aria-label={`Foto ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Botón cerrar */}
+              <button
+                onClick={() => setZoomAbierto(false)}
+                className="fixed top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors pointer-events-auto"
+                aria-label="Cerrar zoom"
+              >
+                <X size={20} />
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── COMPONENTE: FILA DE FICHA TÉCNICA ──────────────────────
+
+function FilaTecnica({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div className="flex gap-4 py-3 border-b border-black/5 last:border-0">
+      <span className="text-xs uppercase tracking-wider text-black/35 w-36 shrink-0 pt-0.5">
+        {label}
+      </span>
+      <span className="text-sm text-black/70 leading-relaxed">{valor}</span>
     </div>
   );
 }

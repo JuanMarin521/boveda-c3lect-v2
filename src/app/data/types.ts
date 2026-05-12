@@ -5,6 +5,20 @@ export interface NotasPerfume {
   notas_base: string;
 }
 
+export interface EspecificacionesReloj {
+  movimiento: string;
+  dimensiones?: string;
+  caja?: string;
+  correa?: string;
+  cristal?: string;
+  funciones?: string;
+  resistenciaAgua: string;
+  peso?: string;
+  bateria?: string;
+  reservaMarcha?: string;
+  observaciones?: string;
+}
+
 export interface Producto {
   id: string;
   nombre: string;       // Nombre del modelo, ej: "Curren 8467"
@@ -14,5 +28,6 @@ export interface Producto {
   disponible: boolean;  // true = disponible | false = agotado
   cat: 'reloj' | 'perfume' | 'accesorio';
   imgs: string[];       // Rutas relativas desde public/, ej: ["images/relojes/..."]
-  notas?: NotasPerfume; // Solo para perfumes
+  notas?: NotasPerfume;          // Solo para perfumes
+  specs?: EspecificacionesReloj; // Solo para relojes
 }

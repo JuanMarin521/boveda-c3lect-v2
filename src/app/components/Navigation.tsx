@@ -5,10 +5,11 @@
 // ============================================================
 
 import { Link, useLocation, useNavigate } from "react-router";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, ShoppingBag } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { productos } from "../data/products";
+import { useCart } from "../context/CartContext";
 
 // Altura del nav en px — ajusta si cambias py-* del contenedor
 const NAV_HEIGHT = 64;
@@ -21,6 +22,8 @@ export default function Navigation() {
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchPanelRef = useRef<HTMLDivElement>(null);
+  const { totalItems, toggleCart } = useCart();
 
   // Cierra todo al cambiar de ruta
   useEffect(() => {
@@ -33,7 +36,10 @@ export default function Navigation() {
   useEffect(() => {
     if (!isOpen && !isSearchOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const insideNav = menuRef.current?.contains(target);
+      const insideSearch = searchPanelRef.current?.contains(target);
+      if (!insideNav && !insideSearch) {
         setIsOpen(false);
         setIsSearchOpen(false);
         setQuery("");
@@ -69,20 +75,31 @@ export default function Navigation() {
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-  const resultados = query.trim().length > 0
+  const todosResultados = query.trim().length > 0
     ? productos.filter((p) => {
         const q = query.toLowerCase();
         return (
           p.display.toLowerCase().includes(q) ||
           p.nombre.toLowerCase().includes(q) ||
           p.estilo.toLowerCase().includes(q) ||
-          (p.cat === "reloj" ? "relojería" : "perfumería").includes(q)
+          (p.cat === "reloj" ? "relojería" : p.cat === "perfume" ? "perfumería" : "accesorios").includes(q)
         );
-      }).slice(0, 6)
+      })
     : [];
+
+  const resultados = todosResultados.slice(0, 6);
 
   function abrirProducto(id: string) {
     navigate(`/product/${id}`);
+    setIsSearchOpen(false);
+    setQuery("");
+  }
+
+  function irABusqueda() {
+    if (!query.trim()) return;
+    navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+    setIsSearchOpen(false);
+    setQuery("");
   }
 
   function toggleSearch() {
@@ -155,10 +172,34 @@ export default function Navigation() {
             >
               {isSearchOpen ? <X size={20} /> : <Search size={20} />}
             </button>
+            <button
+              onClick={toggleCart}
+              aria-label={`Abrir carrito${totalItems > 0 ? ` — ${totalItems} ítem${totalItems > 1 ? "s" : ""}` : ""}`}
+              className="relative p-1 text-white transition-colors hover:text-[#C9A84C]"
+            >
+              <ShoppingBag size={20} />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center tabular-nums" style={{ backgroundColor: "#C9A84C" }}>
+                  {totalItems > 9 ? "9+" : totalItems}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Lupa móvil + botón menú */}
           <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={toggleCart}
+              aria-label={`Abrir carrito${totalItems > 0 ? ` — ${totalItems} ítem${totalItems > 1 ? "s" : ""}` : ""}`}
+              className="relative p-2 text-white transition-colors"
+            >
+              <ShoppingBag size={20} />
+              {totalItems > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center tabular-nums" style={{ backgroundColor: "#C9A84C" }}>
+                  {totalItems > 9 ? "9+" : totalItems}
+                </span>
+              )}
+            </button>
             <button
               onClick={toggleSearch}
               aria-label={isSearchOpen ? "Cerrar búsqueda" : "Buscar productos"}
@@ -187,6 +228,7 @@ export default function Navigation() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
+            ref={searchPanelRef}
             className="fixed left-0 right-0 bg-black z-40 border-t border-white/10"
             style={{ top: `${NAV_HEIGHT}px` }}
           >
@@ -199,6 +241,7 @@ export default function Navigation() {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && irABusqueda()}
                   placeholder="Buscar relojes, perfumes…"
                   className="flex-1 bg-transparent text-white placeholder-white/30 text-sm tracking-wide outline-none"
                 />
@@ -247,6 +290,23 @@ export default function Navigation() {
                   </p>
                 )}
               </AnimatePresence>
+
+              {query.trim().length > 0 && (
+                <div className="mt-4 pt-3 border-t border-white/10">
+                  <button
+                    onClick={irABusqueda}
+                    className="flex items-center gap-2 text-sm text-white/60 hover:text-[#C9A84C] transition-colors tracking-wide w-full"
+                  >
+                    <Search size={14} className="shrink-0" />
+                    <span>
+                      Ver todos los resultados
+                      {todosResultados.length > 0 && (
+                        <span className="ml-1 text-white/40">({todosResultados.length})</span>
+                      )}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
