@@ -174,7 +174,7 @@ export const perfumes: Producto[] = [
     estilo: "",
     display: "Sahari Crystal Rose",
     precio: "$180.000",
-    disponible: true,
+    disponible: false,
     cat: "perfume",
     imgs: [
       "images/perfumes/sahari-crystal-rose-1.jpg",
@@ -194,7 +194,7 @@ export const perfumes: Producto[] = [
     estilo: "",
     display: "Sahari Ahwak",
     precio: "$180.000",
-    disponible: true,
+    disponible: false,
     cat: "perfume",
     imgs: [
       "images/perfumes/sahari-ahwak-1.jpg",

@@ -609,7 +609,7 @@ export const relojes: Producto[] = [
     estilo: "Negro Cobre",
     display: "Curren 9015 (Dama) — Negro Cobre",
     precio: "$129.000",
-    disponible: true,
+    disponible: false,
     cat: "reloj",
     imgs: [
       "images/relojes/curren-9015-dama-negro-cobre-1.jpg",
@@ -634,7 +634,7 @@ export const relojes: Producto[] = [
     estilo: "Dorado",
     display: "Curren 9093 (Dama) — Dorado",
     precio: "$109.000",
-    disponible: true,
+    disponible: false,
     cat: "reloj",
     imgs: [
       "images/relojes/curren-9093-dama-dorado-1.jpg",
