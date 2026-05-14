@@ -1,12 +1,12 @@
 import { motion, AnimatePresence } from "motion/react";
 import { X, Minus, Plus, ShoppingBag, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useCart, formatPrecio, parsePrecio } from "../context/CartContext";
+import { useCart, formatPrecio } from "../context/CartContext";
 import { CONFIG } from "../config";
 
 function buildWhatsAppMessage(items: ReturnType<typeof useCart>["items"], total: number): string {
   const lineas = items.map((item) => {
-    const subtotal = parsePrecio(item.producto.precio) * item.cantidad;
+    const subtotal = (item.producto.precio as number) * item.cantidad;
     return `• ${item.producto.display} × ${item.cantidad} — ${formatPrecio(subtotal)}`;
   });
 
@@ -31,7 +31,6 @@ export default function CartDrawer() {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -43,7 +42,6 @@ export default function CartDrawer() {
             aria-hidden="true"
           />
 
-          {/* Panel */}
           <motion.div
             key="drawer"
             initial={{ x: "100%" }}
@@ -55,7 +53,6 @@ export default function CartDrawer() {
             aria-label="Carrito de compras"
             aria-modal="true"
           >
-            {/* Encabezado */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-black/10">
               <div className="flex items-center gap-3">
                 <ShoppingBag size={20} />
@@ -94,7 +91,6 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            {/* Contenido */}
             {items.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
                 <ShoppingBag size={48} className="text-black/10" />
@@ -108,7 +104,6 @@ export default function CartDrawer() {
               </div>
             ) : (
               <>
-                {/* Lista de ítems */}
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
                   <AnimatePresence initial={false}>
                     {items.map((item) => (
@@ -121,7 +116,6 @@ export default function CartDrawer() {
                         transition={{ duration: 0.2 }}
                         className="flex gap-4"
                       >
-                        {/* Imagen */}
                         <div className="w-20 h-24 shrink-0 bg-neutral-100 overflow-hidden">
                           <img
                             src={import.meta.env.BASE_URL + item.producto.imgs[0]}
@@ -130,7 +124,6 @@ export default function CartDrawer() {
                           />
                         </div>
 
-                        {/* Info */}
                         <div className="flex-1 min-w-0 flex flex-col gap-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
@@ -157,10 +150,9 @@ export default function CartDrawer() {
                             </button>
                           </div>
 
-                          {/* Precio + cantidad */}
                           <div className="flex items-center justify-between mt-auto">
                             <p className="text-sm" style={{ color: "#C9A84C" }}>
-                              {formatPrecio(parsePrecio(item.producto.precio) * item.cantidad)}
+                              {formatPrecio((item.producto.precio as number) * item.cantidad)}
                             </p>
                             <div className="flex items-center gap-2 border border-black/15">
                               <button
@@ -188,7 +180,6 @@ export default function CartDrawer() {
                   </AnimatePresence>
                 </div>
 
-                {/* Footer */}
                 <div className="px-6 py-6 border-t border-black/10 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm uppercase tracking-widest text-black/50">

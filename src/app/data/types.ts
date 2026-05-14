@@ -24,7 +24,7 @@ export interface Producto {
   nombre: string;       // Nombre del modelo, ej: "Curren 8467"
   estilo: string;       // Color o variante, ej: "Negro"
   display: string;      // Nombre completo para mostrar, ej: "Curren 8467 — Negro"
-  precio: string;       // Precio formateado, ej: "$149.000"
+  precio: number;       // Precio en pesos colombianos, ej: 149000
   disponible: boolean;  // true = disponible | false = agotado
   cat: 'reloj' | 'perfume' | 'accesorio';
   imgs: string[];       // Rutas relativas desde public/, ej: ["images/relojes/..."]

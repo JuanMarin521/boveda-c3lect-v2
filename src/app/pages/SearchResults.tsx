@@ -1,23 +1,22 @@
 import { Link, useSearchParams } from "react-router";
 import { motion } from "motion/react";
-import { productos } from "../data/products";
 import type { Producto } from "../data/types";
-
-function filtrarProductos(q: string): Producto[] {
-  const term = q.toLowerCase().trim();
-  if (!term) return [];
-  return productos.filter((p) =>
-    p.display.toLowerCase().includes(term) ||
-    p.nombre.toLowerCase().includes(term) ||
-    p.estilo.toLowerCase().includes(term) ||
-    (p.cat === "reloj" ? "relojería" : p.cat === "perfume" ? "perfumería" : "accesorios").includes(term)
-  );
-}
+import { useProductos } from "../context/ProductosContext";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
-  const resultados = filtrarProductos(query);
+  const { productos, cargando } = useProductos();
+
+  const term = query.toLowerCase().trim();
+  const resultados = term
+    ? productos.filter((p) =>
+        p.display.toLowerCase().includes(term) ||
+        p.nombre.toLowerCase().includes(term) ||
+        p.estilo.toLowerCase().includes(term) ||
+        (p.cat === "reloj" ? "relojería" : p.cat === "perfume" ? "perfumería" : "accesorios").includes(term)
+      )
+    : [];
 
   return (
     <div className="min-h-screen bg-white py-12 md:py-20">
@@ -38,7 +37,9 @@ export default function SearchResults() {
             "{query}"
           </h1>
           <p className="text-black/50 text-sm tracking-wide">
-            {resultados.length === 0
+            {cargando
+              ? "Buscando..."
+              : resultados.length === 0
               ? "Sin resultados"
               : resultados.length === 1
               ? "1 resultado"
@@ -46,7 +47,7 @@ export default function SearchResults() {
           </p>
         </motion.div>
 
-        {resultados.length > 0 ? (
+        {!cargando && resultados.length > 0 && (
           <motion.div
             layout
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
@@ -55,7 +56,9 @@ export default function SearchResults() {
               <TarjetaProducto key={producto.id} producto={producto} index={index} />
             ))}
           </motion.div>
-        ) : (
+        )}
+
+        {!cargando && resultados.length === 0 && (
           <div className="py-20 text-center">
             <p className="text-black/40 mb-6">
               No encontramos productos que coincidan con tu búsqueda.
@@ -74,6 +77,12 @@ export default function SearchResults() {
 }
 
 function TarjetaProducto({ producto, index }: { producto: Producto; index: number }) {
+  const precioFormateado = new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    minimumFractionDigits: 0,
+  }).format(producto.precio as number);
+
   return (
     <motion.div
       layout
@@ -113,7 +122,7 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
           >
             {producto.display}
           </h3>
-          <p className="text-sm text-black/60 tracking-wide">{producto.precio}</p>
+          <p className="text-sm text-black/60 tracking-wide">{precioFormateado}</p>
         </div>
       </Link>
     </motion.div>
