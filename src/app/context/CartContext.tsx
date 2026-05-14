@@ -67,12 +67,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
   }
 }
 
-export function parsePrecio(precio: string): number {
-  return parseInt(precio.replace(/[$.\s]/g, ""), 10) || 0;
-}
-
 export function formatPrecio(valor: number): string {
-  return "$" + valor.toLocaleString("es-CO");
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    minimumFractionDigits: 0,
+  }).format(valor);
 }
 
 interface CartContextValue {
@@ -111,7 +111,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = state.items.reduce((acc, i) => acc + i.cantidad, 0);
   const totalPrice = state.items.reduce(
-    (acc, i) => acc + parsePrecio(i.producto.precio) * i.cantidad,
+    (acc, i) => acc + (i.producto.precio as number) * i.cantidad,
     0
   );
 

@@ -8,16 +8,16 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { Menu, X, Search, ShoppingBag } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { productos } from "../data/products";
+import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
 
-// Altura del nav en px — ajusta si cambias py-* del contenedor
 const NAV_HEIGHT = 64;
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const { productos } = useProductos();
   const location = useLocation();
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -25,14 +25,12 @@ export default function Navigation() {
   const searchPanelRef = useRef<HTMLDivElement>(null);
   const { totalItems, toggleCart } = useCart();
 
-  // Cierra todo al cambiar de ruta
   useEffect(() => {
     setIsOpen(false);
     setIsSearchOpen(false);
     setQuery("");
   }, [location.pathname]);
 
-  // Cierra el menú al hacer clic fuera
   useEffect(() => {
     if (!isOpen && !isSearchOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -49,7 +47,6 @@ export default function Navigation() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, isSearchOpen]);
 
-  // Cierra búsqueda con Escape
   useEffect(() => {
     if (!isSearchOpen) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -62,18 +59,23 @@ export default function Navigation() {
     return () => document.removeEventListener("keydown", handleKey);
   }, [isSearchOpen]);
 
-  // Foco automático al abrir búsqueda
   useEffect(() => {
     if (isSearchOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   }, [isSearchOpen]);
 
-  // Bloquea el scroll del body cuando el menú móvil está abierto
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
+
+  const precioFormateado = (precio: number) =>
+    new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+    }).format(precio);
 
   const todosResultados = query.trim().length > 0
     ? productos.filter((p) => {
@@ -112,7 +114,6 @@ export default function Navigation() {
     }
   }
 
-  // SECCIÓN: LINKS DE NAVEGACIÓN — edita aquí para añadir o quitar páginas
   const links = [
     { to: "/catalog", label: "Colecciones" },
     { to: "/about", label: "Manifiesto" },
@@ -134,7 +135,6 @@ export default function Navigation() {
           className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between"
           style={{ height: `${NAV_HEIGHT}px` }}
         >
-          {/* LOGO — Montserrat Light dorado */}
           <Link
             to="/"
             aria-label="C3LECT — inicio"
@@ -144,7 +144,6 @@ export default function Navigation() {
             C3LECT
           </Link>
 
-          {/* Navegación escritorio + lupa */}
           <div className="hidden md:flex items-center gap-12">
             {links.map((link) => (
               <Link
@@ -186,7 +185,6 @@ export default function Navigation() {
             </button>
           </div>
 
-          {/* Lupa móvil + botón menú */}
           <div className="flex md:hidden items-center gap-2">
             <button
               onClick={toggleCart}
@@ -220,7 +218,6 @@ export default function Navigation() {
         </div>
       </nav>
 
-      {/* Panel de búsqueda */}
       <AnimatePresence>
         {isSearchOpen && (
           <motion.div
@@ -233,7 +230,6 @@ export default function Navigation() {
             style={{ top: `${NAV_HEIGHT}px` }}
           >
             <div className="max-w-7xl mx-auto px-6 md:px-12 py-5">
-              {/* Input */}
               <div className="flex items-center gap-3 border-b border-white/20 pb-3">
                 <Search size={16} className="text-white/40 shrink-0" />
                 <input
@@ -252,7 +248,6 @@ export default function Navigation() {
                 )}
               </div>
 
-              {/* Resultados */}
               <AnimatePresence>
                 {resultados.length > 0 && (
                   <motion.div
@@ -277,7 +272,7 @@ export default function Navigation() {
                             {p.display}
                           </p>
                           <p className="text-white/40 text-xs uppercase tracking-widest">
-                            {p.cat === "reloj" ? "Relojería" : "Perfumería"} · {p.precio}
+                            {p.cat === "reloj" ? "Relojería" : "Perfumería"} · {precioFormateado(p.precio as number)}
                           </p>
                         </div>
                       </button>
@@ -312,7 +307,6 @@ export default function Navigation() {
         )}
       </AnimatePresence>
 
-      {/* Menú móvil desplegable */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -342,7 +336,6 @@ export default function Navigation() {
         )}
       </AnimatePresence>
 
-      {/* Espaciador — empuja el contenido debajo del nav fijo */}
       <div style={{ height: `${NAV_HEIGHT}px` }} />
     </>
   );

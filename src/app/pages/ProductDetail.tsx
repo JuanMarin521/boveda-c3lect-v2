@@ -8,15 +8,17 @@
 import { useParams, Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
-import { ChevronLeft, MessageCircle, ShoppingBag, Check, ZoomIn, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, ShoppingBag, Check, ZoomIn, X } from "lucide-react";
 import { getProductoById } from "../data/products";
+import { useProductos } from "../context/ProductosContext";
 import { whatsappLink } from "../config";
 import { useCart } from "../context/CartContext";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const producto = id ? getProductoById(id) : undefined;
+  const { productos, cargando } = useProductos();
+  const producto = getProductoById(id ?? "", productos);
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
   const [zoomAbierto, setZoomAbierto] = useState(false);
   const [añadido, setAñadido] = useState(false);
@@ -24,16 +26,36 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!zoomAbierto) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setZoomAbierto(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomAbierto(false);
+      if (e.key === "ArrowLeft")  setImagenSeleccionada((p) => Math.max(0, p - 1));
+      if (e.key === "ArrowRight") setImagenSeleccionada((p) => producto ? Math.min(producto.imgs.length - 1, p + 1) : p);
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [zoomAbierto]);
+  }, [zoomAbierto, producto]);
 
   function handleAddToCart() {
     if (!producto) return;
     addItem(producto);
     setAñadido(true);
     setTimeout(() => setAñadido(false), 1500);
+  }
+
+  const precioFormateado = producto
+    ? new Intl.NumberFormat("es-CO", {
+        style: "currency",
+        currency: "COP",
+        minimumFractionDigits: 0,
+      }).format(producto.precio as number)
+    : "";
+
+  if (cargando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-black/40 uppercase tracking-widest text-sm">Cargando...</p>
+      </div>
+    );
   }
 
   if (!producto) {
@@ -51,13 +73,11 @@ export default function ProductDetail() {
     );
   }
 
-  // Genera el link de WhatsApp con el nombre completo del producto
   const urlWhatsApp = whatsappLink(producto.display);
 
   return (
     <div className="min-h-screen bg-white">
 
-      {/* Botón volver */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-8">
         <button
           onClick={() => navigate(-1)}
@@ -72,13 +92,12 @@ export default function ProductDetail() {
       <div className="max-w-7xl mx-auto px-6 md:px-12 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-20">
 
-          {/* SECCIÓN: GALERÍA DE IMÁGENES */}
+          {/* GALERÍA */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Imagen principal */}
             <button
               onClick={() => setZoomAbierto(true)}
               className="aspect-square mb-6 bg-neutral-100 overflow-hidden relative w-full block group cursor-zoom-in"
@@ -90,19 +109,16 @@ export default function ProductDetail() {
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="eager"
               />
-              {/* Badge de disponibilidad */}
               {!producto.disponible && (
                 <div className="absolute top-4 left-4 bg-black/80 text-white text-xs uppercase tracking-widest px-3 py-1">
                   Agotado
                 </div>
               )}
-              {/* Hint de zoom */}
               <div className="absolute bottom-4 right-4 w-9 h-9 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <ZoomIn size={16} className="text-white" />
               </div>
             </button>
 
-            {/* Miniaturas (si hay más de una imagen) */}
             {producto.imgs.length > 1 && (
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
                 {producto.imgs.map((img, index) => (
@@ -126,19 +142,17 @@ export default function ProductDetail() {
             )}
           </motion.div>
 
-          {/* SECCIÓN: INFORMACIÓN DEL PRODUCTO */}
+          {/* INFO */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex flex-col"
           >
-            {/* Categoría */}
             <p className="text-xs uppercase tracking-widest text-black/40 mb-4">
               {producto.cat === "reloj" ? "Relojería · Máquinas y Joyas" : "Perfumería · Firmas y Elixires"}
             </p>
 
-            {/* Nombre */}
             <h1
               className="text-4xl md:text-5xl mb-6 tracking-wide"
               style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
@@ -146,46 +160,42 @@ export default function ProductDetail() {
               {producto.display}
             </h1>
 
-            {/* Precio */}
             <p className="text-3xl mb-8" style={{ color: "#C9A84C" }}>
-              {producto.precio}
+              {precioFormateado}
             </p>
 
-            {/* SECCIÓN: NOTAS AROMÁTICAS (solo perfumes) */}
             {producto.notas && (
               <div className="mb-10">
                 <p className="text-black/70 leading-relaxed mb-8">
                   {producto.notas.descripcion}
                 </p>
-
                 <div className="space-y-4 border-t border-black/5 pt-6">
                   <h3 className="text-xs uppercase tracking-widest text-black/40 mb-4">
                     Pirámide Olfativa
                   </h3>
-                  <NotasPerfume label="Notas de Salida" valor={producto.notas.notas_top} />
-                  <NotasPerfume label="Notas de Corazón" valor={producto.notas.notas_corazon} />
-                  <NotasPerfume label="Notas de Base" valor={producto.notas.notas_base} />
+                  <NotasPerfume label="Notas de Salida"   valor={producto.notas.notas_top} />
+                  <NotasPerfume label="Notas de Corazón"  valor={producto.notas.notas_corazon} />
+                  <NotasPerfume label="Notas de Base"     valor={producto.notas.notas_base} />
                 </div>
               </div>
             )}
 
-            {/* SECCIÓN: FICHA TÉCNICA (solo relojes) */}
             {producto.specs && (
               <div className="mb-10 border-t border-black/5 pt-6">
                 <h3 className="text-xs uppercase tracking-widest text-black/40 mb-5">
                   Ficha Técnica
                 </h3>
                 <div className="space-y-0">
-                  <FilaTecnica label="Movimiento"        valor={producto.specs.movimiento} />
-                  {producto.specs.dimensiones   && <FilaTecnica label="Dimensiones"       valor={producto.specs.dimensiones} />}
-                  {producto.specs.caja          && <FilaTecnica label="Caja"               valor={producto.specs.caja} />}
-                  {producto.specs.correa        && <FilaTecnica label="Correa"             valor={producto.specs.correa} />}
-                  {producto.specs.cristal       && <FilaTecnica label="Cristal"            valor={producto.specs.cristal} />}
-                  {producto.specs.funciones     && <FilaTecnica label="Funciones"          valor={producto.specs.funciones} />}
-                  {producto.specs.bateria       && <FilaTecnica label="Batería"            valor={producto.specs.bateria} />}
-                  {producto.specs.reservaMarcha && <FilaTecnica label="Reserva de marcha" valor={producto.specs.reservaMarcha} />}
-                  {producto.specs.peso          && <FilaTecnica label="Peso"               valor={producto.specs.peso} />}
-                  <FilaTecnica label="Resistencia al agua"  valor={producto.specs.resistenciaAgua} />
+                  <FilaTecnica label="Movimiento" valor={producto.specs.movimiento} />
+                  {producto.specs.dimensiones   && <FilaTecnica label="Dimensiones"        valor={producto.specs.dimensiones} />}
+                  {producto.specs.caja          && <FilaTecnica label="Caja"                valor={producto.specs.caja} />}
+                  {producto.specs.correa        && <FilaTecnica label="Correa"              valor={producto.specs.correa} />}
+                  {producto.specs.cristal       && <FilaTecnica label="Cristal"             valor={producto.specs.cristal} />}
+                  {producto.specs.funciones     && <FilaTecnica label="Funciones"           valor={producto.specs.funciones} />}
+                  {producto.specs.bateria       && <FilaTecnica label="Batería"             valor={producto.specs.bateria} />}
+                  {producto.specs.reservaMarcha && <FilaTecnica label="Reserva de marcha"  valor={producto.specs.reservaMarcha} />}
+                  {producto.specs.peso          && <FilaTecnica label="Peso"                valor={producto.specs.peso} />}
+                  <FilaTecnica label="Resistencia al agua" valor={producto.specs.resistenciaAgua} />
                   {producto.specs.observaciones && (
                     <p className="mt-4 text-xs text-black/40 leading-relaxed border-t border-black/5 pt-4">
                       {producto.specs.observaciones}
@@ -195,10 +205,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* SECCIÓN: ACCIONES DE COMPRA */}
             <div className="space-y-4 mt-auto">
-
-              {/* Botón principal: WhatsApp */}
               <a
                 href={urlWhatsApp}
                 target="_blank"
@@ -210,10 +217,10 @@ export default function ProductDetail() {
                 {producto.disponible ? "Ordenar por WhatsApp" : "Consultar disponibilidad"}
               </a>
 
-              {/* Botón secundario: Añadir al carrito */}
               <button
                 onClick={handleAddToCart}
-                className="w-full border-2 px-8 py-5 text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3"
+                disabled={!producto.disponible}
+                className="w-full border-2 px-8 py-5 text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={añadido
                   ? { borderColor: "#C9A84C", color: "#C9A84C" }
                   : { borderColor: "black", color: "black" }
@@ -228,7 +235,7 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Modal de zoom */}
+      {/* ZOOM */}
       <AnimatePresence>
         {zoomAbierto && (
           <>
@@ -256,7 +263,6 @@ export default function ProductDetail() {
                   alt={`${producto.display} — foto ${imagenSeleccionada + 1}`}
                   className="w-full max-h-[85vh] object-contain"
                 />
-                {/* Navegación entre fotos dentro del zoom */}
                 {producto.imgs.length > 1 && (
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                     {producto.imgs.map((_, i) => (
@@ -271,7 +277,6 @@ export default function ProductDetail() {
                   </div>
                 )}
               </div>
-              {/* Botón cerrar */}
               <button
                 onClick={() => setZoomAbierto(false)}
                 className="fixed top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors pointer-events-auto"
@@ -279,6 +284,26 @@ export default function ProductDetail() {
               >
                 <X size={20} />
               </button>
+              {producto.imgs.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setImagenSeleccionada((p) => Math.max(0, p - 1)); }}
+                    disabled={imagenSeleccionada === 0}
+                    className="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors pointer-events-auto disabled:opacity-20"
+                    aria-label="Foto anterior"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setImagenSeleccionada((p) => Math.min(producto.imgs.length - 1, p + 1)); }}
+                    disabled={imagenSeleccionada === producto.imgs.length - 1}
+                    className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors pointer-events-auto disabled:opacity-20"
+                    aria-label="Foto siguiente"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </>
+              )}
             </motion.div>
           </>
         )}
@@ -286,8 +311,6 @@ export default function ProductDetail() {
     </div>
   );
 }
-
-// ─── COMPONENTE: FILA DE FICHA TÉCNICA ──────────────────────
 
 function FilaTecnica({ label, valor }: { label: string; valor: string }) {
   return (
@@ -299,8 +322,6 @@ function FilaTecnica({ label, valor }: { label: string; valor: string }) {
     </div>
   );
 }
-
-// ─── COMPONENTE: LÍNEA DE NOTAS AROMÁTICAS ──────────────────
 
 function NotasPerfume({ label, valor }: { label: string; valor: string }) {
   return (

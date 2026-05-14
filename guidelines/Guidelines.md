@@ -1,61 +1,61 @@
-**Add your own guidelines here**
+**Agrega tus propias directrices aquí**
 <!--
 
-System Guidelines
+Directrices del sistema
 
-Use this file to provide the AI with rules and guidelines you want it to follow.
-This template outlines a few examples of things you can add. You can add your own sections and format it to suit your needs
+Usa este archivo para darle al AI reglas y directrices que quieres que siga.
+Esta plantilla incluye algunos ejemplos de lo que puedes agregar. Puedes añadir tus propias secciones y formatearlo según tus necesidades.
 
-TIP: More context isn't always better. It can confuse the LLM. Try and add the most important rules you need
+CONSEJO: Más contexto no siempre es mejor. Puede confundir al LLM. Intenta agregar solo las reglas más importantes que necesitas.
 
-# General guidelines
+# Directrices generales
 
-Any general rules you want the AI to follow.
-For example:
+Reglas generales que quieres que el AI siga.
+Por ejemplo:
 
-* Only use absolute positioning when necessary. Opt for responsive and well structured layouts that use flexbox and grid by default
-* Refactor code as you go to keep code clean
-* Keep file sizes small and put helper functions and components in their own files.
+* Solo usar posicionamiento absoluto cuando sea necesario. Preferir layouts responsivos y bien estructurados que usen flexbox y grid por defecto
+* Refactorizar el código sobre la marcha para mantenerlo limpio
+* Mantener los archivos pequeños y poner funciones auxiliares y componentes en sus propios archivos
 
 --------------
 
-# Design system guidelines
-Rules for how the AI should make generations look like your company's design system
+# Directrices del sistema de diseño
+Reglas sobre cómo el AI debe hacer que las generaciones se vean como el sistema de diseño de tu empresa
 
-Additionally, if you select a design system to use in the prompt box, you can reference
-your design system's components, tokens, variables and components.
-For example:
+Adicionalmente, si seleccionas un sistema de diseño en el cuadro de prompts, puedes referenciar
+los componentes, tokens, variables y componentes de tu sistema de diseño.
+Por ejemplo:
 
-* Use a base font-size of 14px
-* Date formats should always be in the format “Jun 10”
-* The bottom toolbar should only ever have a maximum of 4 items
-* Never use the floating action button with the bottom toolbar
-* Chips should always come in sets of 3 or more
-* Don't use a dropdown if there are 2 or fewer options
+* Usar un tamaño de fuente base de 14px
+* Los formatos de fecha deben estar siempre en el formato "10 jun"
+* La barra de herramientas inferior solo puede tener un máximo de 4 elementos
+* Nunca usar el botón de acción flotante con la barra de herramientas inferior
+* Los chips siempre deben venir en grupos de 3 o más
+* No usar un menú desplegable si hay 2 opciones o menos
 
-You can also create sub sections and add more specific details
-For example:
+También puedes crear subsecciones y agregar detalles más específicos.
+Por ejemplo:
 
 
-## Button
-The Button component is a fundamental interactive element in our design system, designed to trigger actions or navigate
-users through the application. It provides visual feedback and clear affordances to enhance user experience.
+## Botón
+El componente Botón es un elemento interactivo fundamental en nuestro sistema de diseño, diseñado para desencadenar acciones o guiar
+a los usuarios a través de la aplicación. Proporciona retroalimentación visual y señales claras para mejorar la experiencia del usuario.
 
-### Usage
-Buttons should be used for important actions that users need to take, such as form submissions, confirming choices,
-or initiating processes. They communicate interactivity and should have clear, action-oriented labels.
+### Uso
+Los botones deben usarse para acciones importantes que los usuarios necesitan realizar, como enviar formularios, confirmar elecciones
+o iniciar procesos. Comunican interactividad y deben tener etiquetas claras orientadas a la acción.
 
-### Variants
-* Primary Button
-  * Purpose : Used for the main action in a section or page
-  * Visual Style : Bold, filled with the primary brand color
-  * Usage : One primary button per section to guide users toward the most important action
-* Secondary Button
-  * Purpose : Used for alternative or supporting actions
-  * Visual Style : Outlined with the primary color, transparent background
-  * Usage : Can appear alongside a primary button for less important actions
-* Tertiary Button
-  * Purpose : Used for the least important actions
-  * Visual Style : Text-only with no border, using primary color
-  * Usage : For actions that should be available but not emphasized
+### Variantes
+* Botón primario
+  * Propósito: Usado para la acción principal en una sección o página
+  * Estilo visual: Negrita, relleno con el color principal de la marca
+  * Uso: Un botón primario por sección para guiar a los usuarios hacia la acción más importante
+* Botón secundario
+  * Propósito: Usado para acciones alternativas o de apoyo
+  * Estilo visual: Contorno con el color principal, fondo transparente
+  * Uso: Puede aparecer junto a un botón primario para acciones menos importantes
+* Botón terciario
+  * Propósito: Usado para las acciones menos importantes
+  * Estilo visual: Solo texto sin borde, usando el color principal
+  * Uso: Para acciones que deben estar disponibles pero no enfatizadas
 -->
