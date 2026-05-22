@@ -182,7 +182,7 @@ export default function ProductDetail() {
 
             {producto.specs && (
               <div className="mb-10 border-t border-black/5 pt-6">
-                <h3 className="text-xs uppercase tracking-widest text-black/40 mb-5">
+                <h3 className="text-xs uppercase tracking-widest text-black/60 mb-5">
                   Ficha Técnica
                 </h3>
                 <div className="space-y-0">
@@ -197,7 +197,7 @@ export default function ProductDetail() {
                   {producto.specs.peso          && <FilaTecnica label="Peso"                valor={producto.specs.peso} />}
                   <FilaTecnica label="Resistencia al agua" valor={producto.specs.resistenciaAgua} />
                   {producto.specs.observaciones && (
-                    <p className="mt-4 text-xs text-black/40 leading-relaxed border-t border-black/5 pt-4">
+                    <p className="mt-4 text-xs text-black/60 leading-relaxed border-t border-black/10 pt-4">
                       {producto.specs.observaciones}
                     </p>
                   )}
@@ -314,11 +314,11 @@ export default function ProductDetail() {
 
 function FilaTecnica({ label, valor }: { label: string; valor: string }) {
   return (
-    <div className="flex gap-4 py-3 border-b border-black/5 last:border-0">
-      <span className="text-xs uppercase tracking-wider text-black/35 w-36 shrink-0 pt-0.5">
+    <div className="flex gap-4 py-3 border-b border-black/10 last:border-0">
+      <span className="text-xs uppercase tracking-wider text-black/55 w-36 shrink-0 pt-0.5">
         {label}
       </span>
-      <span className="text-sm text-black/70 leading-relaxed">{valor}</span>
+      <span className="text-sm text-black/85 leading-relaxed">{valor}</span>
     </div>
   );
 }
