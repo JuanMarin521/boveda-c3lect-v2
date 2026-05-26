@@ -32,6 +32,7 @@ export default function Home() {
             alt="Reloj C3LECT — Curren 8467 Negro"
             className="w-full h-full object-cover opacity-70"
             loading="eager"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
         </motion.div>
