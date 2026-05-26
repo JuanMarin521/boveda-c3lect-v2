@@ -1,9 +1,9 @@
 // ============================================================
 // PÁGINA: INICIO — /
 //
-// IMAGEN HERO: /images/relojes/curren-8467-negro-1.jpg
-// IMAGEN COLECCIÓN RELOJES: /images/relojes/curren-8488-rectangular-blue-gold-1.jpg
-// IMAGEN COLECCIÓN PERFUMES: /images/perfumes/afnan-9-pm-rebel-roja-1.jpg
+// IMAGEN HERO: /images/homePage-C3LECT.webp
+// IMAGEN COLECCIÓN RELOJES: /images/relojes/curren-8488-rectangular-blue-gold-1.webp
+// IMAGEN COLECCIÓN PERFUMES: /images/perfumes/afnan-9-pm-rebel-roja-1.webp
 //
 // Para cambiar estas imágenes, edita las rutas "src" en cada <img> de esta página.
 // ============================================================
@@ -28,7 +28,7 @@ export default function Home() {
           className="absolute inset-0"
         >
           <img
-            src={import.meta.env.BASE_URL + "images/homePage-C3LECT.jpg"}
+            src={import.meta.env.BASE_URL + "images/homePage-C3LECT.webp"}
             alt="Reloj C3LECT — Curren 8467 Negro"
             className="w-full h-full object-cover opacity-70"
             loading="eager"
@@ -103,7 +103,7 @@ export default function Home() {
                 className="relative aspect-[3/4] overflow-hidden bg-black"
               >
                 <img
-                  src={import.meta.env.BASE_URL + "images/relojes/curren-8488-rectangular-blue-gold-1.jpg"}
+                  src={import.meta.env.BASE_URL + "images/relojes/curren-8488-rectangular-blue-gold-1.webp"}
                   alt="Colección Máquinas y Joyas — alta relojería"
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -133,7 +133,7 @@ export default function Home() {
                 className="relative aspect-[3/4] overflow-hidden bg-black"
               >
                 <img
-                  src={import.meta.env.BASE_URL + "images/perfumes/afnan-9-pm-rebel-roja-1.jpg"}
+                  src={import.meta.env.BASE_URL + "images/perfumes/afnan-9-pm-rebel-roja-1.webp"}
                   alt="Colección Firmas y Elixires — perfumería de autor"
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
