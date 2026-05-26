@@ -22,7 +22,7 @@ export default function Footer() {
 
           {/* Links de navegación */}
           <div>
-            <h4 className="text-sm uppercase tracking-widest mb-6 text-white/40">Navegación</h4>
+            <h4 className="text-sm uppercase tracking-widest mb-6 text-white/60">Navegación</h4>
             <div className="flex flex-col gap-3">
               <Link to="/catalog" className="text-sm hover:text-[#C9A84C] transition-colors">
                 Colecciones
@@ -38,7 +38,7 @@ export default function Footer() {
 
           {/* Redes sociales — enlace desde config.ts */}
           <div>
-            <h4 className="text-sm uppercase tracking-widest mb-6 text-white/40">Síguenos</h4>
+            <h4 className="text-sm uppercase tracking-widest mb-6 text-white/60">Síguenos</h4>
             <a
               href={CONFIG.instagram}
               target="_blank"
@@ -52,7 +52,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/10 text-center text-xs text-white/40">
+        <div className="mt-16 pt-8 border-t border-white/15 text-center text-xs text-white/60">
           © {new Date().getFullYear()} C3LECT. Todos los derechos reservados.
         </div>
       </div>
