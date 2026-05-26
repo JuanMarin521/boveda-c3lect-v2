@@ -1,4 +1,5 @@
 import { Outlet, ScrollRestoration } from "react-router";
+import { Suspense } from "react";
 import Navigation from "./Navigation";
 import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
@@ -13,7 +14,9 @@ export default function Root() {
           <ScrollRestoration />
           <Navigation />
           <main className="flex-1">
-            <Outlet />
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
           </main>
           <Footer />
           <CartDrawer />

@@ -1,12 +1,14 @@
 import { createBrowserRouter } from "react-router";
+import { lazy } from "react";
 import Root from "./components/Root";
 import Home from "./pages/Home";
-import Catalog from "./pages/Catalog";
-import ProductDetail from "./pages/ProductDetail";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import NotFound from "./pages/NotFound";
-import SearchResults from "./pages/SearchResults";
+
+const Catalog = lazy(() => import("./pages/Catalog"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const SearchResults = lazy(() => import("./pages/SearchResults"));
 
 export const router = createBrowserRouter(
   [
