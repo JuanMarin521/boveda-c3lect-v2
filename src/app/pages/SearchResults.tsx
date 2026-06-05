@@ -1,7 +1,10 @@
 import { Link, useSearchParams } from "react-router";
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import type { Producto } from "../data/types";
 import { useProductos } from "../context/ProductosContext";
+import { useProductFilter } from "../hooks/useProductFilter";
+import { BarraFiltros } from "../components/BarraFiltros";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -9,14 +12,37 @@ export default function SearchResults() {
   const { productos, cargando } = useProductos();
 
   const term = query.toLowerCase().trim();
-  const resultados = term
-    ? productos.filter((p) =>
-        p.display.toLowerCase().includes(term) ||
-        p.nombre.toLowerCase().includes(term) ||
-        p.estilo.toLowerCase().includes(term) ||
+  const resultadosBusqueda = term
+    ? productos.filter(p =>
+        p.display.toLowerCase().includes(term)  ||
+        p.nombre.toLowerCase().includes(term)   ||
+        p.estilo.toLowerCase().includes(term)   ||
+        (p.marca  ?? "").toLowerCase().includes(term) ||
+        (p.genero ?? "").toLowerCase().includes(term) ||
         (p.cat === "reloj" ? "relojería" : p.cat === "perfume" ? "perfumería" : "accesorios").includes(term)
       )
     : [];
+
+  const {
+    seleccionMarcas, seleccionGeneros, seleccionPrecios,
+    toggleMarca, toggleGenero, togglePrecio,
+    iniciarMarcas, iniciarGeneros, iniciarPrecios,
+    aplicarMarcas, aplicarGeneros, aplicarPrecios,
+    filtroMarcas, filtroGeneros, filtroPrecios,
+    filtroDisponible, setFiltroDisponible,
+    marcasDisponibles,
+    productosFiltrados,
+    hayFiltrosActivos,
+    cantidadFiltrosActivos,
+    limpiarFiltros,
+  } = useProductFilter(resultadosBusqueda);
+
+  // Limpiar filtros cuando cambia la búsqueda
+  useEffect(() => {
+    limpiarFiltros();
+  }, [query]);
+
+  const total = productosFiltrados.length;
 
   return (
     <div className="min-h-screen bg-white py-12 md:py-20">
@@ -25,7 +51,7 @@ export default function SearchResults() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-16"
+          className="mb-12"
         >
           <p className="text-xs uppercase tracking-widest text-black/40 mb-3">
             Búsqueda
@@ -39,36 +65,74 @@ export default function SearchResults() {
           <p className="text-black/50 text-sm tracking-wide">
             {cargando
               ? "Buscando..."
-              : resultados.length === 0
+              : total === 0
               ? "Sin resultados"
-              : resultados.length === 1
+              : total === 1
               ? "1 resultado"
-              : `${resultados.length} resultados`}
+              : `${total} resultados`}
           </p>
         </motion.div>
 
-        {!cargando && resultados.length > 0 && (
+        {/* Barra de filtros (solo cuando hay resultados de búsqueda) */}
+        {!cargando && resultadosBusqueda.length > 0 && (
+          <BarraFiltros
+            marcasDisponibles={marcasDisponibles}
+            seleccionMarcas={seleccionMarcas}
+            seleccionGeneros={seleccionGeneros}
+            seleccionPrecios={seleccionPrecios}
+            filtroMarcas={filtroMarcas}
+            filtroGeneros={filtroGeneros}
+            filtroPrecios={filtroPrecios}
+            filtroDisponible={filtroDisponible}
+            onMarca={toggleMarca}
+            onGenero={toggleGenero}
+            onPrecio={togglePrecio}
+            onIniciarMarcas={iniciarMarcas}
+            onIniciarGeneros={iniciarGeneros}
+            onIniciarPrecios={iniciarPrecios}
+            onAplicarMarcas={aplicarMarcas}
+            onAplicarGeneros={aplicarGeneros}
+            onAplicarPrecios={aplicarPrecios}
+            onDisponible={setFiltroDisponible}
+            onLimpiar={limpiarFiltros}
+            hayFiltrosActivos={hayFiltrosActivos}
+            cantidadFiltrosActivos={cantidadFiltrosActivos}
+          />
+        )}
+
+        {!cargando && productosFiltrados.length > 0 && (
           <motion.div
             layout
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
           >
-            {resultados.map((producto, index) => (
+            {productosFiltrados.map((producto, index) => (
               <TarjetaProducto key={producto.id} producto={producto} index={index} />
             ))}
           </motion.div>
         )}
 
-        {!cargando && resultados.length === 0 && (
+        {!cargando && productosFiltrados.length === 0 && (
           <div className="py-20 text-center">
             <p className="text-black/40 mb-6">
-              No encontramos productos que coincidan con tu búsqueda.
+              {hayFiltrosActivos
+                ? "No hay productos que coincidan con la búsqueda y los filtros seleccionados."
+                : "No encontramos productos que coincidan con tu búsqueda."}
             </p>
-            <Link
-              to="/catalog"
-              className="text-sm uppercase tracking-widest underline underline-offset-4 text-black/60 hover:text-black transition-colors"
-            >
-              Ver todas las colecciones
-            </Link>
+            {hayFiltrosActivos ? (
+              <button
+                onClick={limpiarFiltros}
+                className="text-sm uppercase tracking-widest underline underline-offset-4 text-black/60 hover:text-black transition-colors"
+              >
+                Limpiar filtros
+              </button>
+            ) : (
+              <Link
+                to="/catalog"
+                className="text-sm uppercase tracking-widest underline underline-offset-4 text-black/60 hover:text-black transition-colors"
+              >
+                Ver todas las colecciones
+              </Link>
+            )}
           </div>
         )}
       </div>

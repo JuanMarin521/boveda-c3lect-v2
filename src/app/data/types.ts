@@ -19,6 +19,8 @@ export interface EspecificacionesReloj {
   observaciones?: string;
 }
 
+export type GeneroProducto = 'Hombre' | 'Mujer' | 'Unisex';
+
 export interface Producto {
   id: string;
   nombre: string;       // Nombre del modelo, ej: "Curren 8467"
@@ -27,6 +29,8 @@ export interface Producto {
   precio: number;       // Precio en pesos colombianos, ej: 149000
   disponible: boolean;  // true = disponible | false = agotado
   cat: 'reloj' | 'perfume' | 'accesorio';
+  marca?: string;       // Marca del producto, ej: "Curren", "Lattafa"
+  genero?: GeneroProducto; // Género al que está orientado el producto
   imgs: string[];       // Rutas relativas desde public/, ej: ["images/relojes/..."]
   notas?: NotasPerfume;          // Solo para perfumes
   specs?: EspecificacionesReloj; // Solo para relojes

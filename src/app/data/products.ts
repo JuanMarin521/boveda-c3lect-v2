@@ -1,4 +1,4 @@
-export type { NotasPerfume, Producto } from "./types";
+export type { NotasPerfume, Producto, GeneroProducto } from "./types";
 
 import { supabase } from "../supabase";
 import type { Producto } from "./types";
@@ -19,6 +19,8 @@ export async function getProductos(): Promise<Producto[]> {
     precio: p.precio,
     disponible: p.disponible,
     cat: p.cat,
+    marca: p.marca ?? undefined,
+    genero: p.genero ?? undefined,
     imgs: p.imgs,
     specs: p.spec_movimiento ? {
       movimiento: p.spec_movimiento,

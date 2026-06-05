@@ -1,17 +1,19 @@
 // ============================================================
 // PÁGINA: CATÁLOGO — /catalog
 //
-// Muestra todos los productos con filtros por categoría.
-// El badge "Agotado" aparece automáticamente si disponible === false.
+// Filtros: categoría (URL) + marca, género, precio,
+// disponibilidad (BarraFiltros). Todos combinan con AND.
 // ============================================================
 
 import { Link, useParams, useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "motion/react";
 import { ShoppingBag, Check } from "lucide-react";
 import type { Producto } from "../data/types";
 import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
+import { useProductFilter } from "../hooks/useProductFilter";
+import { BarraFiltros } from "../components/BarraFiltros";
 
 export default function Catalog() {
   const { category } = useParams<{ category?: string }>();
@@ -23,19 +25,40 @@ export default function Catalog() {
     category === "perfumes"   ? "perfume"   :
     category === "accesorios" ? "accesorio" : "all";
 
-  function cambiarFiltro(filtro: "all" | "reloj" | "perfume" | "accesorio") {
-    if (filtro === "reloj")         navigate("/catalog/watches");
-    else if (filtro === "perfume")  navigate("/catalog/perfumes");
+  function cambiarCategoria(filtro: "all" | "reloj" | "perfume" | "accesorio") {
+    if (filtro === "reloj")          navigate("/catalog/watches");
+    else if (filtro === "perfume")   navigate("/catalog/perfumes");
     else if (filtro === "accesorio") navigate("/catalog/accesorios");
-    else navigate("/catalog");
+    else                             navigate("/catalog");
   }
 
-  const productosFiltrados = productos
-    .filter((p) => filtroActivo === "all" || p.cat === filtroActivo)
-    .sort((a, b) => {
-      if (a.disponible === b.disponible) return 0;
-      return a.disponible ? -1 : 1;
-    });
+  // Productos de la categoría activa (base para el hook de filtros)
+  const productosPorCategoria = useMemo(() =>
+    filtroActivo === "all"
+      ? productos
+      : productos.filter(p => p.cat === filtroActivo),
+    [productos, filtroActivo]
+  );
+
+  const {
+    seleccionMarcas, seleccionGeneros, seleccionPrecios,
+    toggleMarca, toggleGenero, togglePrecio,
+    iniciarMarcas, iniciarGeneros, iniciarPrecios,
+    aplicarMarcas, aplicarGeneros, aplicarPrecios,
+    filtroMarcas, filtroGeneros, filtroPrecios,
+    filtroDisponible, setFiltroDisponible,
+    resetMarcas,
+    marcasDisponibles,
+    productosFiltrados,
+    hayFiltrosActivos,
+    cantidadFiltrosActivos,
+    limpiarFiltros,
+  } = useProductFilter(productosPorCategoria);
+
+  // Al cambiar categoría, resetear marcas en selección y aplicado
+  useEffect(() => {
+    resetMarcas();
+  }, [filtroActivo]);
 
   return (
     <div className="min-h-screen bg-white py-12 md:py-20">
@@ -57,17 +80,51 @@ export default function Catalog() {
           </p>
         </motion.div>
 
+        {/* Tabs de categoría */}
         <div
-          className="flex gap-4 mb-16 overflow-x-auto pb-2"
+          className="flex gap-4 mb-8 overflow-x-auto pb-2"
           role="tablist"
           aria-label="Filtrar por categoría"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
         >
-          <BotónFiltro activo={filtroActivo === "all"}       onClick={() => cambiarFiltro("all")}       label="Todas" />
-          <BotónFiltro activo={filtroActivo === "reloj"}     onClick={() => cambiarFiltro("reloj")}     label="Máquinas y Joyas" />
-          <BotónFiltro activo={filtroActivo === "perfume"}   onClick={() => cambiarFiltro("perfume")}   label="Firmas y Elixires" />
-          <BotónFiltro activo={filtroActivo === "accesorio"} onClick={() => cambiarFiltro("accesorio")} label="Accesorios Premium" />
+          <BotónFiltro activo={filtroActivo === "all"}       onClick={() => cambiarCategoria("all")}       label="Todas" />
+          <BotónFiltro activo={filtroActivo === "reloj"}     onClick={() => cambiarCategoria("reloj")}     label="Máquinas y Joyas" />
+          <BotónFiltro activo={filtroActivo === "perfume"}   onClick={() => cambiarCategoria("perfume")}   label="Firmas y Elixires" />
+          <BotónFiltro activo={filtroActivo === "accesorio"} onClick={() => cambiarCategoria("accesorio")} label="Accesorios Premium" />
         </div>
+
+        {/* Barra de filtros premium */}
+        <BarraFiltros
+          marcasDisponibles={marcasDisponibles}
+          seleccionMarcas={seleccionMarcas}
+          seleccionGeneros={seleccionGeneros}
+          seleccionPrecios={seleccionPrecios}
+          filtroMarcas={filtroMarcas}
+          filtroGeneros={filtroGeneros}
+          filtroPrecios={filtroPrecios}
+          filtroDisponible={filtroDisponible}
+          onMarca={toggleMarca}
+          onGenero={toggleGenero}
+          onPrecio={togglePrecio}
+          onIniciarMarcas={iniciarMarcas}
+          onIniciarGeneros={iniciarGeneros}
+          onIniciarPrecios={iniciarPrecios}
+          onAplicarMarcas={aplicarMarcas}
+          onAplicarGeneros={aplicarGeneros}
+          onAplicarPrecios={aplicarPrecios}
+          onDisponible={setFiltroDisponible}
+          onLimpiar={limpiarFiltros}
+          hayFiltrosActivos={hayFiltrosActivos}
+          cantidadFiltrosActivos={cantidadFiltrosActivos}
+        />
+
+        {/* Contador de resultados con filtros activos */}
+        {hayFiltrosActivos && !cargando && (
+          <p className="text-sm text-black/40 mb-8 -mt-4">
+            {productosFiltrados.length}{" "}
+            {productosFiltrados.length === 1 ? "producto encontrado" : "productos encontrados"}
+          </p>
+        )}
 
         {cargando ? (
           <p className="text-center text-black/40 py-20">Cargando colección...</p>
@@ -83,9 +140,19 @@ export default function Catalog() {
             </motion.div>
 
             {productosFiltrados.length === 0 && (
-              <p className="text-center text-black/40 py-20">
-                No hay productos en esta categoría.
-              </p>
+              <div className="text-center py-20">
+                <p className="text-black/40 mb-6">
+                  No hay productos que coincidan con los filtros seleccionados.
+                </p>
+                {hayFiltrosActivos && (
+                  <button
+                    onClick={limpiarFiltros}
+                    className="text-sm uppercase tracking-widest underline underline-offset-4 text-black/60 hover:text-black transition-colors"
+                  >
+                    Limpiar filtros
+                  </button>
+                )}
+              </div>
             )}
           </>
         )}
@@ -94,7 +161,11 @@ export default function Catalog() {
   );
 }
 
-function BotónFiltro({ activo, onClick, label }: { activo: boolean; onClick: () => void; label: string }) {
+// ── Subcomponentes ─────────────────────────────────────────
+
+function BotónFiltro({
+  activo, onClick, label,
+}: { activo: boolean; onClick: () => void; label: string }) {
   return (
     <button
       onClick={onClick}
@@ -172,7 +243,11 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
 
         <div>
           <p className="text-xs uppercase tracking-widest text-black/40 mb-2">
-            {producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios Premium"}
+            {producto.cat === "reloj"
+              ? "Relojería"
+              : producto.cat === "perfume"
+              ? "Perfumería"
+              : "Accesorios Premium"}
           </p>
           <h3
             className="text-xl md:text-2xl mb-3 tracking-wide group-hover:text-[#C9A84C] transition-colors"
