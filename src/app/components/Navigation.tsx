@@ -183,15 +183,14 @@ export default function Navigation() {
             <button
               onClick={toggleSearch}
               aria-label={isSearchOpen ? "Cerrar búsqueda" : "Buscar productos"}
-              className="p-1 transition-colors hover:text-[#C9A84C]"
-              style={{ color: isSearchOpen ? "#C9A84C" : "#FFFFFF" }}
+              className={`p-1 transition-colors hover:text-[#C9A84C] cursor-pointer ${isSearchOpen ? "text-[#C9A84C]" : "text-white"}`}
             >
               {isSearchOpen ? <X size={20} /> : <Search size={20} />}
             </button>
             <button
               onClick={toggleCart}
               aria-label={`Abrir carrito${totalItems > 0 ? ` — ${totalItems} ítem${totalItems > 1 ? "s" : ""}` : ""}`}
-              className="relative p-1 text-white transition-colors hover:text-[#C9A84C]"
+              className="relative p-1 text-white transition-colors hover:text-[#C9A84C] cursor-pointer"
             >
               <ShoppingBag size={20} />
               {totalItems > 0 && (
