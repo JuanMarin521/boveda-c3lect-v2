@@ -152,8 +152,7 @@ export default function Navigation() {
               <Link
                 key={link.to}
                 to={link.to}
-                className="relative text-sm tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
-                style={{ color: isActive(link.to) ? "#C9A84C" : "#FFFFFF" }}
+                className={`relative text-sm tracking-wide uppercase transition-colors hover:text-[#C9A84C] cursor-pointer ${isActive(link.to) ? "text-[#C9A84C]" : "text-white"}`}
                 aria-current={isActive(link.to) ? "page" : undefined}
               >
                 {link.label}
@@ -169,8 +168,7 @@ export default function Navigation() {
             {esAdmin && (
               <Link
                 to="/admin"
-                className="relative text-sm tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
-                style={{ color: isActive('/admin') ? "#C9A84C" : "#FFFFFF" }}
+                className={`relative text-sm tracking-wide uppercase transition-colors hover:text-[#C9A84C] cursor-pointer ${isActive('/admin') ? "text-[#C9A84C]" : "text-white"}`}
               >
                 Panel
                 {isActive('/admin') && (
@@ -366,11 +364,8 @@ export default function Navigation() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="text-lg tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
-                  style={{
-                    fontFamily: "var(--font-serif)",
-                    color: isActive(link.to) ? "#C9A84C" : "#FFFFFF",
-                  }}
+                  className={`text-lg tracking-wide uppercase transition-colors hover:text-[#C9A84C] cursor-pointer ${isActive(link.to) ? "text-[#C9A84C]" : "text-white"}`}
+                  style={{ fontFamily: "var(--font-serif)" }}
                 >
                   {link.label}
                 </Link>
@@ -378,11 +373,8 @@ export default function Navigation() {
               {esAdmin && (
                 <Link
                   to="/admin"
-                  className="text-lg tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
-                  style={{
-                    fontFamily: "var(--font-serif)",
-                    color: isActive('/admin') ? "#C9A84C" : "#FFFFFF",
-                  }}
+                  className={`text-lg tracking-wide uppercase transition-colors hover:text-[#C9A84C] cursor-pointer ${isActive('/admin') ? "text-[#C9A84C]" : "text-white"}`}
+                  style={{ fontFamily: "var(--font-serif)" }}
                 >
                   Panel
                 </Link>
