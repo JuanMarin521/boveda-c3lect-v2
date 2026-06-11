@@ -26,6 +26,7 @@ export default function Navigation() {
   const searchPanelRef = useRef<HTMLDivElement>(null);
   const { totalItems, toggleCart } = useCart();
   const { user, autenticado, logout } = useAuth();
+  const esAdmin = user?.rol === 'ADMIN';
 
   useEffect(() => {
     setIsOpen(false);
@@ -165,6 +166,22 @@ export default function Navigation() {
                 )}
               </Link>
             ))}
+            {esAdmin && (
+              <Link
+                to="/admin"
+                className="relative text-sm tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
+                style={{ color: isActive('/admin') ? "#C9A84C" : "#FFFFFF" }}
+              >
+                Panel
+                {isActive('/admin') && (
+                  <motion.div
+                    layoutId="activeNav"
+                    className="absolute -bottom-1 left-0 right-0 h-px bg-[#C9A84C]"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </Link>
+            )}
             <button
               onClick={toggleSearch}
               aria-label={isSearchOpen ? "Cerrar búsqueda" : "Buscar productos"}
@@ -358,6 +375,18 @@ export default function Navigation() {
                   {link.label}
                 </Link>
               ))}
+              {esAdmin && (
+                <Link
+                  to="/admin"
+                  className="text-lg tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
+                  style={{
+                    fontFamily: "var(--font-serif)",
+                    color: isActive('/admin') ? "#C9A84C" : "#FFFFFF",
+                  }}
+                >
+                  Panel
+                </Link>
+              )}
               <div className="border-t border-white/10 pt-6">
                 {autenticado ? (
                   <>
