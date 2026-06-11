@@ -3,7 +3,7 @@ import { CONFIG } from "../config";
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0A0A0A]">
       {/* Hero */}
       <section className="py-24 md:py-32 bg-black text-white">
         <div className="max-w-4xl mx-auto px-6 md:px-12 text-center">
@@ -37,12 +37,12 @@ export default function About() {
             className="space-y-6"
           >
             <h2
-              className="text-3xl md:text-4xl tracking-wide"
+              className="text-3xl md:text-4xl tracking-wide text-white"
               style={{ fontFamily: 'var(--font-serif)' }}
             >
               La paradoja del lujo verdadero
             </h2>
-            <div className="space-y-4 text-black/70 leading-relaxed">
+            <div className="space-y-4 text-white/70 leading-relaxed">
               <p>
                 El lujo auténtico no requiere validación externa. No necesita logos ostentosos ni campañas publicitarias estridentes. Se manifiesta en la perfección técnica invisible, en la herencia de generaciones de maestros artesanos, en la decisión consciente de poseer menos pero mejor.
               </p>
@@ -60,12 +60,12 @@ export default function About() {
             className="space-y-6"
           >
             <h2
-              className="text-3xl md:text-4xl tracking-wide"
+              className="text-3xl md:text-4xl tracking-wide text-white"
               style={{ fontFamily: 'var(--font-serif)' }}
             >
               Curación, no catálogo
             </h2>
-            <div className="space-y-4 text-black/70 leading-relaxed">
+            <div className="space-y-4 text-white/70 leading-relaxed">
               <p>
                 C3LECT no es una tienda. Es una galería editorial. Cada pieza es seleccionada bajo criterios inquebrantables: excelencia técnica, diseño atemporal, herencia auténtica.
               </p>
@@ -83,12 +83,12 @@ export default function About() {
             className="space-y-6"
           >
             <h2
-              className="text-3xl md:text-4xl tracking-wide"
+              className="text-3xl md:text-4xl tracking-wide text-white"
               style={{ fontFamily: 'var(--font-serif)' }}
             >
               El arte de poseer menos
             </h2>
-            <div className="space-y-4 text-black/70 leading-relaxed">
+            <div className="space-y-4 text-white/70 leading-relaxed">
               <p>
                 En la era de la sobreproducción y el consumo compulsivo, proponemos un contra-manifiesto: la posesión deliberada. Tres relojes excepcionales. Dos fragancias que definen momentos. Objetos que no se remplazan, sino que se heredan.
               </p>
@@ -101,7 +101,7 @@ export default function About() {
       </section>
 
       {/* Signature */}
-      <section className="py-24 bg-neutral-50">
+      <section className="py-24 bg-[#1A1A1A]">
         <div className="max-w-4xl mx-auto px-6 md:px-12 text-center">
           <motion.div
             initial={{ opacity: 0 }}
@@ -109,12 +109,12 @@ export default function About() {
             viewport={{ once: true }}
           >
             <p
-              className="text-3xl md:text-4xl mb-6 tracking-[0.22em] text-black"
+              className="text-3xl md:text-4xl mb-6 tracking-[0.22em] text-white"
               style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
             >
               C3LECT
             </p>
-            <p className="text-sm text-black/40 uppercase tracking-widest">
+            <p className="text-sm text-white/40 uppercase tracking-widest">
               {CONFIG.ciudad}
             </p>
           </motion.div>

@@ -52,17 +52,17 @@ export default function ProductDetail() {
 
   if (cargando) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-black/40 uppercase tracking-widest text-sm">Cargando...</p>
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <p className="text-white/40 uppercase tracking-widest text-sm">Cargando...</p>
       </div>
     );
   }
 
   if (!producto) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl mb-4" style={{ fontFamily: "var(--font-serif)" }}>
+          <h2 className="text-2xl mb-4 text-white" style={{ fontFamily: "var(--font-serif)" }}>
             Producto no encontrado
           </h2>
           <Link to="/catalog" className="text-[#C9A84C] hover:underline">
@@ -76,12 +76,12 @@ export default function ProductDetail() {
   const urlWhatsApp = whatsappLink(producto.display);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0A0A0A]">
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-8">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-sm uppercase tracking-widest hover:text-[#C9A84C] transition-colors"
+          className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-white hover:text-[#C9A84C] transition-colors"
           aria-label="Volver a la página anterior"
         >
           <ChevronLeft size={18} />
@@ -100,7 +100,7 @@ export default function ProductDetail() {
           >
             <button
               onClick={() => setZoomAbierto(true)}
-              className="aspect-square mb-6 bg-neutral-100 overflow-hidden relative w-full block group cursor-zoom-in"
+              className="aspect-square mb-6 bg-[#1A1A1A] overflow-hidden relative w-full block group cursor-zoom-in"
               aria-label="Ampliar imagen"
             >
               <img
@@ -125,7 +125,7 @@ export default function ProductDetail() {
                   <button
                     key={index}
                     onClick={() => setImagenSeleccionada(index)}
-                    className="aspect-square bg-neutral-100 overflow-hidden transition-opacity"
+                    className="aspect-square bg-[#1A1A1A] overflow-hidden transition-opacity"
                     style={{ opacity: imagenSeleccionada === index ? 1 : 0.45 }}
                     aria-label={`Ver foto ${index + 1}`}
                     aria-pressed={imagenSeleccionada === index}
@@ -149,12 +149,12 @@ export default function ProductDetail() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex flex-col"
           >
-            <p className="text-xs uppercase tracking-widest text-black/40 mb-4">
+            <p className="text-xs uppercase tracking-widest text-white/40 mb-4">
               {producto.cat === "reloj" ? "Relojería · Máquinas y Joyas" : "Perfumería · Firmas y Elixires"}
             </p>
 
             <h1
-              className="text-4xl md:text-5xl mb-6 tracking-wide"
+              className="text-4xl md:text-5xl mb-6 tracking-wide text-white"
               style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
             >
               {producto.display}
@@ -166,11 +166,11 @@ export default function ProductDetail() {
 
             {producto.notas && (
               <div className="mb-10">
-                <p className="text-black/70 leading-relaxed mb-8">
+                <p className="text-white/70 leading-relaxed mb-8">
                   {producto.notas.descripcion}
                 </p>
-                <div className="space-y-4 border-t border-black/5 pt-6">
-                  <h3 className="text-xs uppercase tracking-widest text-black/40 mb-4">
+                <div className="space-y-4 border-t border-white/5 pt-6">
+                  <h3 className="text-xs uppercase tracking-widest text-white/40 mb-4">
                     Pirámide Olfativa
                   </h3>
                   <NotasPerfume label="Notas de Salida"   valor={producto.notas.notas_top} />
@@ -181,8 +181,8 @@ export default function ProductDetail() {
             )}
 
             {producto.specs && (
-              <div className="mb-10 border-t border-black/5 pt-6">
-                <h3 className="text-xs uppercase tracking-widest text-black/60 mb-5">
+              <div className="mb-10 border-t border-white/5 pt-6">
+                <h3 className="text-xs uppercase tracking-widest text-white/60 mb-5">
                   Ficha Técnica
                 </h3>
                 <div className="space-y-0">
@@ -197,7 +197,7 @@ export default function ProductDetail() {
                   {producto.specs.peso          && <FilaTecnica label="Peso"                valor={producto.specs.peso} />}
                   <FilaTecnica label="Resistencia al agua" valor={producto.specs.resistenciaAgua} />
                   {producto.specs.observaciones && (
-                    <p className="mt-4 text-xs text-black/60 leading-relaxed border-t border-black/10 pt-4">
+                    <p className="mt-4 text-xs text-white/60 leading-relaxed border-t border-white/10 pt-4">
                       {producto.specs.observaciones}
                     </p>
                   )}
@@ -223,7 +223,7 @@ export default function ProductDetail() {
                 className="w-full border-2 px-8 py-5 text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={añadido
                   ? { borderColor: "#C9A84C", color: "#C9A84C" }
-                  : { borderColor: "black", color: "black" }
+                  : { borderColor: "white", color: "white" }
                 }
                 aria-label={añadido ? "Producto añadido al carrito" : `Añadir ${producto.display} al carrito`}
               >
@@ -314,11 +314,11 @@ export default function ProductDetail() {
 
 function FilaTecnica({ label, valor }: { label: string; valor: string }) {
   return (
-    <div className="flex gap-4 py-3 border-b border-black/10 last:border-0">
-      <span className="text-xs uppercase tracking-wider text-black/55 w-36 shrink-0 pt-0.5">
+    <div className="flex gap-4 py-3 border-b border-white/10 last:border-0">
+      <span className="text-xs uppercase tracking-wider text-white/50 w-36 shrink-0 pt-0.5">
         {label}
       </span>
-      <span className="text-sm text-black/85 leading-relaxed">{valor}</span>
+      <span className="text-sm text-white/80 leading-relaxed">{valor}</span>
     </div>
   );
 }
@@ -326,8 +326,8 @@ function FilaTecnica({ label, valor }: { label: string; valor: string }) {
 function NotasPerfume({ label, valor }: { label: string; valor: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs uppercase tracking-wider text-black/40">{label}</span>
-      <span className="text-sm text-black/70">{valor}</span>
+      <span className="text-xs uppercase tracking-wider text-white/40">{label}</span>
+      <span className="text-sm text-white/70">{valor}</span>
     </div>
   );
 }

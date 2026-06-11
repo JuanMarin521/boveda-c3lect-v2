@@ -54,29 +54,29 @@ export default function Register() {
   }
 
   const inputClasses =
-    'w-full border border-black/15 rounded px-4 py-3 text-sm outline-none focus:border-[#C9A84C] transition-colors';
-  const labelClasses = 'block text-xs tracking-widest uppercase text-black/50 mb-1.5';
+    'w-full border border-white/10 rounded px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#C9A84C] transition-colors bg-[#1A1A1A]';
+  const labelClasses = 'block text-sm tracking-widest uppercase text-white/70 mb-1.5';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-6">
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-10 text-center">
           <Link
             to="/"
-            className="text-2xl tracking-[0.22em]"
+            className="text-3xl tracking-[0.22em]"
             style={{ fontFamily: 'var(--font-sans)', fontWeight: 300, color: '#C9A84C' }}
           >
             C3LECT
           </Link>
-          <p className="mt-2 text-xs tracking-widest uppercase text-black/40">
+          <p className="mt-2 text-sm tracking-widest uppercase text-white/50">
             Crear cuenta
           </p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-6 px-4 py-3 border border-red-200 bg-red-50 text-red-700 text-sm rounded">
+          <div className="mb-6 px-4 py-3 border border-red-500/30 bg-red-500/10 text-red-400 text-sm rounded">
             {error}
           </div>
         )}
@@ -128,15 +128,15 @@ export default function Register() {
                       key={n}
                       className="h-1 flex-1 rounded-full transition-colors duration-300"
                       style={{
-                        backgroundColor: fuerza.nivel >= n ? fuerza.color : '#e5e7eb',
+                        backgroundColor: fuerza.nivel >= n ? fuerza.color : '#2a2a2a',
                       }}
                     />
                   ))}
                 </div>
-                <p className="text-xs" style={{ color: fuerza.color }}>
+                <p className="text-sm" style={{ color: fuerza.color }}>
                   {fuerza.label}
                   {fuerza.nivel < 2 && (
-                    <span className="text-black/30 ml-1">— añade mayúsculas, números o símbolos</span>
+                    <span className="text-white/30 ml-1">— añade mayúsculas, números o símbolos</span>
                   )}
                 </p>
               </div>
@@ -146,14 +146,14 @@ export default function Register() {
           <button
             type="submit"
             disabled={enviando}
-            className="w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity disabled:opacity-50 cursor-pointer"
+            className="w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
             style={{ backgroundColor: '#C9A84C' }}
           >
             {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
           </button>
         </form>
 
-        <p className="mt-8 text-center text-sm text-black/40">
+        <p className="mt-8 text-center text-sm text-white/50">
           ¿Ya tienes cuenta?{' '}
           <Link to="/login" className="text-[#C9A84C] hover:underline">
             Iniciar sesión

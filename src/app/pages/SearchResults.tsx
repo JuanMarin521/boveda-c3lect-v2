@@ -45,7 +45,7 @@ export default function SearchResults() {
   const total = productosFiltrados.length;
 
   return (
-    <div className="min-h-screen bg-white py-12 md:py-20">
+    <div className="min-h-screen bg-[#0A0A0A] py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
 
         <motion.div
@@ -53,16 +53,16 @@ export default function SearchResults() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-12"
         >
-          <p className="text-xs uppercase tracking-widest text-black/40 mb-3">
+          <p className="text-xs uppercase tracking-widest text-white/40 mb-3">
             Búsqueda
           </p>
           <h1
-            className="text-4xl md:text-6xl mb-4 tracking-wide"
+            className="text-4xl md:text-6xl mb-4 tracking-wide text-white"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             "{query}"
           </h1>
-          <p className="text-black/50 text-sm tracking-wide">
+          <p className="text-white/50 text-sm tracking-wide">
             {cargando
               ? "Buscando..."
               : total === 0
@@ -113,7 +113,7 @@ export default function SearchResults() {
 
         {!cargando && productosFiltrados.length === 0 && (
           <div className="py-20 text-center">
-            <p className="text-black/40 mb-6">
+            <p className="text-white/40 mb-6">
               {hayFiltrosActivos
                 ? "No hay productos que coincidan con la búsqueda y los filtros seleccionados."
                 : "No encontramos productos que coincidan con tu búsqueda."}
@@ -121,14 +121,14 @@ export default function SearchResults() {
             {hayFiltrosActivos ? (
               <button
                 onClick={limpiarFiltros}
-                className="text-sm uppercase tracking-widest underline underline-offset-4 text-black/60 hover:text-black transition-colors"
+                className="text-sm uppercase tracking-widest underline underline-offset-4 text-white/60 hover:text-white transition-colors"
               >
                 Limpiar filtros
               </button>
             ) : (
               <Link
                 to="/catalog"
-                className="text-sm uppercase tracking-widest underline underline-offset-4 text-black/60 hover:text-black transition-colors"
+                className="text-sm uppercase tracking-widest underline underline-offset-4 text-white/60 hover:text-white transition-colors"
               >
                 Ver todas las colecciones
               </Link>
@@ -155,7 +155,7 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
       transition={{ delay: index * 0.04 }}
     >
       <Link to={`/product/${producto.id}`} className="group block">
-        <div className="relative aspect-[3/4] mb-6 overflow-hidden bg-neutral-100">
+        <div className="relative aspect-[3/4] mb-6 overflow-hidden bg-[#1A1A1A]">
           <img
             src={import.meta.env.BASE_URL + producto.imgs[0]}
             alt={producto.display}
@@ -177,16 +177,16 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
           )}
         </div>
         <div>
-          <p className="text-xs uppercase tracking-widest text-black/40 mb-2">
+          <p className="text-xs uppercase tracking-widest text-white/40 mb-2">
             {producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios Premium"}
           </p>
           <h3
-            className="text-xl md:text-2xl mb-3 tracking-wide group-hover:text-[#C9A84C] transition-colors"
+            className="text-xl md:text-2xl mb-3 tracking-wide text-white group-hover:text-[#C9A84C] transition-colors"
             style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
           >
             {producto.display}
           </h3>
-          <p className="text-sm text-black/60 tracking-wide">{precioFormateado}</p>
+          <p className="text-sm text-white/60 tracking-wide">{precioFormateado}</p>
         </div>
       </Link>
     </motion.div>

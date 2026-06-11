@@ -21,30 +21,30 @@ export default function ResetPassword() {
   }
 
   const inputClasses =
-    'w-full border border-black/15 rounded px-4 py-3 text-sm outline-none focus:border-[#C9A84C] transition-colors';
-  const labelClasses = 'block text-xs tracking-widest uppercase text-black/50 mb-1.5';
+    'w-full border border-white/10 rounded px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#C9A84C] transition-colors bg-[#1A1A1A]';
+  const labelClasses = 'block text-sm tracking-widest uppercase text-white/70 mb-1.5';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-6">
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-10 text-center">
           <Link
             to="/"
-            className="text-2xl tracking-[0.22em]"
+            className="text-3xl tracking-[0.22em]"
             style={{ fontFamily: 'var(--font-sans)', fontWeight: 300, color: '#C9A84C' }}
           >
             C3LECT
           </Link>
-          <p className="mt-2 text-xs tracking-widest uppercase text-black/40">
+          <p className="mt-2 text-sm tracking-widest uppercase text-white/50">
             Recuperar contraseña
           </p>
         </div>
 
         {enviado ? (
           <div className="text-center space-y-6">
-            <p className="text-sm text-black/60 leading-relaxed">
-              Si <strong className="text-black/70">{email}</strong> está registrado,
+            <p className="text-base text-white/60 leading-relaxed">
+              Si <strong className="text-white/70">{email}</strong> está registrado,
               recibirás un enlace de recuperación en tu correo.
             </p>
             <Link
@@ -56,7 +56,7 @@ export default function ResetPassword() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <p className="text-sm text-black/50 leading-relaxed">
+            <p className="text-base text-white/50 leading-relaxed">
               Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
             </p>
             <div>
@@ -74,7 +74,7 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={enviando}
-              className="w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
               style={{ backgroundColor: '#C9A84C' }}
             >
               {enviando ? 'Enviando…' : 'Enviar enlace'}
@@ -82,7 +82,7 @@ export default function ResetPassword() {
             <div className="text-center">
               <Link
                 to="/login"
-                className="text-sm text-black/40 hover:text-[#C9A84C] transition-colors"
+                className="text-sm text-white/50 hover:text-[#C9A84C] transition-colors"
               >
                 Volver al inicio de sesión
               </Link>

@@ -48,16 +48,16 @@ export default function CartDrawer() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 flex flex-col shadow-2xl"
+            className="fixed top-0 right-0 h-full w-full max-w-md bg-[#0A0A0A] z-50 flex flex-col shadow-2xl"
             role="dialog"
             aria-label="Carrito de compras"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between px-6 py-5 border-b border-black/10">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
               <div className="flex items-center gap-3">
-                <ShoppingBag size={20} />
+                <ShoppingBag size={20} className="text-white" />
                 <h2
-                  className="text-lg tracking-widest uppercase"
+                  className="text-lg tracking-widest uppercase text-white"
                   style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
                 >
                   Carrito
@@ -75,7 +75,7 @@ export default function CartDrawer() {
                 {items.length > 0 && (
                   <button
                     onClick={clearCart}
-                    className="text-xs uppercase tracking-widest text-black/30 hover:text-black transition-colors"
+                    className="text-xs uppercase tracking-widest text-white/30 hover:text-white transition-colors"
                     aria-label="Vaciar carrito"
                   >
                     Vaciar
@@ -83,7 +83,7 @@ export default function CartDrawer() {
                 )}
                 <button
                   onClick={closeCart}
-                  className="p-2 text-black/40 hover:text-black transition-colors"
+                  className="p-2 text-white/40 hover:text-white transition-colors"
                   aria-label="Cerrar carrito"
                 >
                   <X size={20} />
@@ -93,11 +93,11 @@ export default function CartDrawer() {
 
             {items.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-                <ShoppingBag size={48} className="text-black/10" />
-                <p className="text-black/40 tracking-wide">Tu carrito está vacío</p>
+                <ShoppingBag size={48} className="text-white/40" />
+                <p className="text-white/70 tracking-wide">Tu carrito está vacío</p>
                 <button
                   onClick={() => { closeCart(); navigate("/catalog"); }}
-                  className="mt-2 text-sm uppercase tracking-widest underline underline-offset-4 text-black/50 hover:text-black transition-colors"
+                  className="mt-2 text-sm uppercase tracking-widest underline underline-offset-4 text-white/50 hover:text-white transition-colors"
                 >
                   Explorar colecciones
                 </button>
@@ -116,7 +116,7 @@ export default function CartDrawer() {
                         transition={{ duration: 0.2 }}
                         className="flex gap-4"
                       >
-                        <div className="w-20 h-24 shrink-0 bg-neutral-100 overflow-hidden">
+                        <div className="w-20 h-24 shrink-0 bg-[#1A1A1A] overflow-hidden">
                           <img
                             src={import.meta.env.BASE_URL + item.producto.imgs[0]}
                             alt={item.producto.display}
@@ -127,7 +127,7 @@ export default function CartDrawer() {
                         <div className="flex-1 min-w-0 flex flex-col gap-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-xs uppercase tracking-widest text-black/40 mb-0.5">
+                              <p className="text-xs uppercase tracking-widest text-white/40 mb-0.5">
                                 {item.producto.cat === "reloj"
                                   ? "Relojería"
                                   : item.producto.cat === "perfume"
@@ -135,7 +135,7 @@ export default function CartDrawer() {
                                   : "Accesorios"}
                               </p>
                               <p
-                                className="text-sm tracking-wide truncate"
+                                className="text-sm tracking-wide truncate text-white"
                                 style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
                               >
                                 {item.producto.display}
@@ -143,7 +143,7 @@ export default function CartDrawer() {
                             </div>
                             <button
                               onClick={() => removeItem(item.producto.id)}
-                              className="shrink-0 p-1 text-black/20 hover:text-black transition-colors"
+                              className="shrink-0 p-1 text-white/20 hover:text-white transition-colors"
                               aria-label={`Eliminar ${item.producto.display}`}
                             >
                               <X size={14} />
@@ -154,20 +154,20 @@ export default function CartDrawer() {
                             <p className="text-sm" style={{ color: "#C9A84C" }}>
                               {formatPrecio((item.producto.precio as number) * item.cantidad)}
                             </p>
-                            <div className="flex items-center gap-2 border border-black/15">
+                            <div className="flex items-center gap-2 border border-white/15">
                               <button
                                 onClick={() => updateQty(item.producto.id, item.cantidad - 1)}
-                                className="px-2.5 py-1.5 text-black/50 hover:text-black transition-colors"
+                                className="px-2.5 py-1.5 text-white/50 hover:text-white transition-colors"
                                 aria-label="Reducir cantidad"
                               >
                                 <Minus size={12} />
                               </button>
-                              <span className="text-sm w-5 text-center tabular-nums">
+                              <span className="text-sm w-5 text-center tabular-nums text-white">
                                 {item.cantidad}
                               </span>
                               <button
                                 onClick={() => updateQty(item.producto.id, item.cantidad + 1)}
-                                className="px-2.5 py-1.5 text-black/50 hover:text-black transition-colors"
+                                className="px-2.5 py-1.5 text-white/50 hover:text-white transition-colors"
                                 aria-label="Aumentar cantidad"
                               >
                                 <Plus size={12} />
@@ -180,16 +180,16 @@ export default function CartDrawer() {
                   </AnimatePresence>
                 </div>
 
-                <div className="px-6 py-6 border-t border-black/10 space-y-4">
+                <div className="px-6 py-6 border-t border-white/10 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm uppercase tracking-widest text-black/50">
+                    <span className="text-sm uppercase tracking-widest text-white/50">
                       Total estimado
                     </span>
                     <span className="text-xl" style={{ color: "#C9A84C" }}>
                       {formatPrecio(totalPrice)}
                     </span>
                   </div>
-                  <p className="text-xs text-black/30 leading-relaxed">
+                  <p className="text-sm text-white/30 leading-relaxed">
                     La disponibilidad y precio final se confirma por WhatsApp.
                   </p>
                   <a

@@ -65,7 +65,7 @@ export function BarraFiltros({
   return (
     <div className="relative mb-10">
       <div
-        className="flex items-stretch border-y border-black/10 overflow-x-auto"
+        className="flex items-stretch border-y border-white/10 overflow-x-auto"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
       >
         {/* Marca */}
@@ -130,8 +130,8 @@ export function BarraFiltros({
         {/* Disponibilidad — toggle directo, sin dropdown */}
         <button
           onClick={() => onDisponible(!filtroDisponible)}
-          className="flex items-center gap-2.5 px-6 py-4 text-xs uppercase tracking-widest border-r border-black/10 transition-colors whitespace-nowrap"
-          style={{ color: filtroDisponible ? "#C9A84C" : "#000" }}
+          className="flex items-center gap-2.5 px-6 py-4 text-xs uppercase tracking-widest border-r border-white/10 transition-colors whitespace-nowrap"
+          style={{ color: filtroDisponible ? "#C9A84C" : "#FFF" }}
         >
           Solo disponibles
           {filtroDisponible && (
@@ -143,7 +143,7 @@ export function BarraFiltros({
         {hayFiltrosActivos && (
           <button
             onClick={onLimpiar}
-            className="ml-auto flex-shrink-0 flex items-center gap-2 px-6 text-xs uppercase tracking-widest text-black/40 hover:text-black transition-colors border-l border-black/10"
+            className="ml-auto flex-shrink-0 flex items-center gap-2 px-6 text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors border-l border-white/10"
           >
             <X size={12} />
             Limpiar
@@ -212,8 +212,8 @@ function FiltroBtn({
       <button
         ref={btnRef}
         onClick={onClick}
-        className="flex items-center gap-2.5 px-6 py-4 text-xs uppercase tracking-widest border-r border-black/10 transition-colors whitespace-nowrap h-full"
-        style={{ color: activo ? "#C9A84C" : "#000" }}
+        className="flex items-center gap-2.5 px-6 py-4 text-xs uppercase tracking-widest border-r border-white/10 transition-colors whitespace-nowrap h-full"
+        style={{ color: activo ? "#C9A84C" : "#FFF" }}
       >
         {label}
         {activo && <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C]" />}
@@ -243,12 +243,12 @@ function FiltroBtn({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
-                className="bg-white border border-black/10 shadow-2xl min-w-[220px]"
+                className="bg-[#1A1A1A] border border-white/10 shadow-2xl min-w-[220px]"
               >
                 <div className="py-2">
                   {children}
                 </div>
-                <div className="border-t border-black/10 p-2">
+                <div className="border-t border-white/10 p-2">
                   <button
                     onClick={onAplicar}
                     className="w-full py-2.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-90"
@@ -277,12 +277,12 @@ function OpcionFiltro({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full px-5 py-3 text-left hover:bg-neutral-50 transition-colors"
+      className="flex items-center gap-3 w-full px-5 py-3 text-left hover:bg-white/5 transition-colors"
     >
       <span
         className="w-4 h-4 border flex-shrink-0 flex items-center justify-center"
         style={{
-          borderColor:     activo ? "#C9A84C" : "rgba(0,0,0,0.25)",
+          borderColor:     activo ? "#C9A84C" : "rgba(255,255,255,0.25)",
           backgroundColor: activo ? "#C9A84C" : "transparent",
         }}
       >
@@ -290,7 +290,7 @@ function OpcionFiltro({
       </span>
       <span
         className="text-xs uppercase tracking-wider"
-        style={{ color: activo ? "#C9A84C" : "#000" }}
+        style={{ color: activo ? "#C9A84C" : "#FFF" }}
       >
         {label}
       </span>

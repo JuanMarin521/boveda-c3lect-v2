@@ -69,31 +69,31 @@ export default function Login() {
   }
 
   const inputClasses =
-    'w-full border border-black/15 rounded px-4 py-3 text-sm outline-none focus:border-[#C9A84C] transition-colors';
-  const labelClasses = 'block text-xs tracking-widest uppercase text-black/50 mb-1.5';
+    'w-full border border-white/10 rounded px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#C9A84C] transition-colors bg-[#1A1A1A]';
+  const labelClasses = 'block text-sm tracking-widest uppercase text-white/70 mb-1.5';
   const btnPrimary =
-    'w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity disabled:opacity-50 cursor-pointer';
+    'w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-6">
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-10 text-center">
           <Link
             to="/"
-            className="text-2xl tracking-[0.22em]"
+            className="text-3xl tracking-[0.22em]"
             style={{ fontFamily: 'var(--font-sans)', fontWeight: 300, color: '#C9A84C' }}
           >
             C3LECT
           </Link>
-          <p className="mt-2 text-xs tracking-widest uppercase text-black/40">
+          <p className="mt-2 text-sm tracking-widest uppercase text-white/50">
             {modo === 'password' ? 'Iniciar sesión' : 'Código de acceso'}
           </p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-6 px-4 py-3 border border-red-200 bg-red-50 text-red-700 text-sm rounded">
+          <div className="mb-6 px-4 py-3 border border-red-500/30 bg-red-500/10 text-red-400 text-sm rounded">
             {error}
           </div>
         )}
@@ -128,7 +128,7 @@ export default function Login() {
             <div className="flex justify-end">
               <Link
                 to="/reset-password"
-                className="text-xs text-black/40 hover:text-[#C9A84C] transition-colors"
+                className="text-sm text-white/50 hover:text-[#C9A84C] transition-colors"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
@@ -147,7 +147,7 @@ export default function Login() {
         {/* Formulario OTP — solicitar */}
         {modo === 'otp-request' && (
           <form onSubmit={handleRequestOtp} className="space-y-5">
-            <p className="text-sm text-black/50">
+            <p className="text-sm text-white/50">
               Te enviaremos un código de 6 dígitos al correo para entrar sin contraseña.
             </p>
             <div>
@@ -176,8 +176,8 @@ export default function Login() {
         {/* Formulario OTP — verificar */}
         {modo === 'otp-verify' && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
-            <p className="text-sm text-black/50">
-              Se envió un código a <strong className="text-black/70">{email}</strong>. Ingrésalo abajo.
+            <p className="text-sm text-white/50">
+              Se envió un código a <strong className="text-white/70">{email}</strong>. Ingrésalo abajo.
             </p>
             <div>
               <label className={labelClasses}>Código OTP</label>
@@ -204,25 +204,25 @@ export default function Login() {
         )}
 
         {/* Toggle OTP / contraseña */}
-        <div className="mt-8 pt-6 border-t border-black/8">
+        <div className="mt-8 pt-6 border-t border-white/10">
           {modo === 'password' ? (
             <button
               onClick={() => cambiarModo('otp-request')}
-              className="w-full text-center text-sm text-black/40 hover:text-[#C9A84C] transition-colors cursor-pointer"
+              className="w-full text-center text-sm text-white/50 hover:text-[#C9A84C] transition-colors cursor-pointer"
             >
               Entrar con código OTP
             </button>
           ) : (
             <button
               onClick={() => cambiarModo('password')}
-              className="w-full text-center text-sm text-black/40 hover:text-[#C9A84C] transition-colors cursor-pointer"
+              className="w-full text-center text-sm text-white/50 hover:text-[#C9A84C] transition-colors cursor-pointer"
             >
               Volver al inicio de sesión
             </button>
           )}
         </div>
 
-        <p className="mt-6 text-center text-sm text-black/40">
+        <p className="mt-6 text-center text-sm text-white/50">
           ¿No tienes cuenta?{' '}
           <Link to="/register" className="text-[#C9A84C] hover:underline">
             Crear cuenta

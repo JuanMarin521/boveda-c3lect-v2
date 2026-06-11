@@ -79,14 +79,14 @@ export default function Home() {
       </section>
 
       {/* ── PREVIEW DE COLECCIONES ───────────────────────────── */}
-      <section className="py-24 md:py-32 bg-white">
+      <section className="py-24 md:py-32 bg-[#0A0A0A]">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
 
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl mb-20 text-center tracking-wide"
+            className="text-4xl md:text-5xl mb-20 text-center tracking-wide text-white"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             Nuestras Colecciones
