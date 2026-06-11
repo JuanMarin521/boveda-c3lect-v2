@@ -9,6 +9,9 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const SearchResults = lazy(() => import("./pages/SearchResults"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 export const router = createBrowserRouter(
   [
@@ -23,6 +26,9 @@ export const router = createBrowserRouter(
         { path: "product/:id", Component: ProductDetail },
         { path: "about", Component: About },
         { path: "contact", Component: Contact },
+        { path: "login", Component: Login },
+        { path: "register", Component: Register },
+        { path: "reset-password", Component: ResetPassword },
         { path: "*", Component: NotFound },
       ],
     },

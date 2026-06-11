@@ -5,11 +5,12 @@
 // ============================================================
 
 import { Link, useLocation, useNavigate } from "react-router";
-import { Menu, X, Search, ShoppingBag } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, User, LogOut } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_HEIGHT = 64;
 
@@ -24,6 +25,7 @@ export default function Navigation() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchPanelRef = useRef<HTMLDivElement>(null);
   const { totalItems, toggleCart } = useCart();
+  const { user, autenticado, logout } = useAuth();
 
   useEffect(() => {
     setIsOpen(false);
@@ -183,6 +185,31 @@ export default function Navigation() {
                 </span>
               )}
             </button>
+            {autenticado ? (
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-sm tracking-wide"
+                  style={{ color: "#C9A84C" }}
+                >
+                  {user?.nombre?.split(" ")[0]}
+                </span>
+                <button
+                  onClick={logout}
+                  aria-label="Cerrar sesión"
+                  className="p-1 text-white/50 transition-colors hover:text-[#C9A84C]"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                aria-label="Iniciar sesión"
+                className="p-1 text-white transition-colors hover:text-[#C9A84C]"
+              >
+                <User size={20} />
+              </Link>
+            )}
           </div>
 
           <div className="flex md:hidden items-center gap-2">
@@ -331,6 +358,28 @@ export default function Navigation() {
                   {link.label}
                 </Link>
               ))}
+              <div className="border-t border-white/10 pt-6">
+                {autenticado ? (
+                  <>
+                    <p className="text-sm text-white/40 mb-3">{user?.nombre}</p>
+                    <button
+                      onClick={logout}
+                      className="text-lg tracking-wide uppercase text-white/50 hover:text-[#C9A84C] transition-colors text-left"
+                      style={{ fontFamily: "var(--font-serif)" }}
+                    >
+                      Cerrar sesión
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="text-lg tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
+                    style={{ fontFamily: "var(--font-serif)", color: "#FFFFFF" }}
+                  >
+                    Acceder
+                  </Link>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
