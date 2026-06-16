@@ -51,8 +51,9 @@ export default function AdminInventario() {
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Inventario Maestro</h1>
           <p className="text-sm text-white/40">
-            Capital total: <span className="text-[#C9A84C]">{COP(totalCapital)}</span>
+            <span className="text-[#C9A84C]">{filtrados.length}</span> modelos
             {' · '}{totalUnidades} unidades
+            {' · '}Capital: <span className="text-[#C9A84C]">{COP(totalCapital)}</span>
           </p>
           {seedMsg && <p className="text-xs text-green-400 mt-1">{seedMsg}</p>}
         </div>
