@@ -2,9 +2,10 @@ import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useState } from 'react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, ClipboardList,
-  ArrowLeft, Menu, X, TrendingUp, ShoppingCart, Wallet, Archive, Tag,
+  ArrowLeft, LogOut, Menu, X, TrendingUp, ShoppingCart, Wallet, Archive, Tag,
 } from 'lucide-react';
 import AdminRoute from '../components/AdminRoute';
+import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/admin',          label: 'Dashboard',         icon: LayoutDashboard, end: true },
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
 
 function Sidebar({ onClose }: { onClose?: () => void }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   return (
     <div className="flex flex-col h-full" style={{ background: '#111111' }}>
@@ -54,13 +56,20 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      <div className="px-3 pb-6 border-t pt-4" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+      <div className="px-3 pb-6 border-t pt-4 flex flex-col gap-1" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/40 hover:text-white/80 transition-colors w-full rounded hover:bg-white/5"
         >
           <ArrowLeft size={16} />
           Volver a la tienda
+        </button>
+        <button
+          onClick={() => { logout(); navigate('/'); }}
+          className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/40 hover:text-red-400 transition-colors w-full rounded hover:bg-white/5 cursor-pointer"
+        >
+          <LogOut size={16} />
+          Cerrar sesión
         </button>
       </div>
     </div>
