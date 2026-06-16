@@ -42,7 +42,7 @@ interface Order {
 }
 
 interface Summary {
-  totalVentas: number;
+  totalVendido: number;
   ventasMes: number;
   ventasMesAnterior: number;
   pedidosActivos: number;
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
 
       {/* Fila 1 — Financiero */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Vendido" value={COP(summary.totalVentas)} icon={DollarSign} />
+        <StatCard label="Total Vendido" value={COP(summary.totalVendido)} icon={DollarSign} />
         <StatCard label="Ganancia Neta" value={COP(summary.gananciaNeta)} icon={TrendingUp} />
         <StatCard
           label="Pendiente de Cobro"
