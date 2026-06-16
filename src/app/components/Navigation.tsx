@@ -210,7 +210,7 @@ export default function Navigation() {
                 <button
                   onClick={logout}
                   aria-label="Cerrar sesión"
-                  className="p-1 text-white/50 transition-colors hover:text-[#C9A84C]"
+                  className="p-1 text-white/50 transition-colors hover:text-[#C9A84C] cursor-pointer"
                 >
                   <LogOut size={18} />
                 </button>
@@ -384,7 +384,7 @@ export default function Navigation() {
                     <p className="text-sm text-white/40 mb-3">{user?.nombre}</p>
                     <button
                       onClick={logout}
-                      className="text-lg tracking-wide uppercase text-white/50 hover:text-[#C9A84C] transition-colors text-left"
+                      className="text-lg tracking-wide uppercase text-white/50 hover:text-[#C9A84C] transition-colors text-left cursor-pointer"
                       style={{ fontFamily: "var(--font-serif)" }}
                     >
                       Cerrar sesión
