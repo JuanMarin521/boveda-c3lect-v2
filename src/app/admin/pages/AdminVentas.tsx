@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Download, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Download, Pencil, Plus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
@@ -16,8 +16,8 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
   'Uso Personal': { label: 'Uso Personal',  color: '#6B7280' },
 };
 
-const ESTADOS  = ['Pagado', 'Abonado', 'Pendiente', 'Uso Personal'];
-const FUENTES  = ['WhatsApp', 'Presencial', 'Referido', 'Instagram'];
+const ESTADOS = ['Pagado', 'Abonado', 'Pendiente', 'Uso Personal'];
+const FUENTES = ['WhatsApp', 'Presencial', 'Referido', 'Instagram'];
 
 interface Venta {
   id: string; fecha: string; cliente: string; celular: string | null;
@@ -26,6 +26,7 @@ interface Venta {
   fuente: string | null; estado: string;
 }
 interface Paginado { data: Venta[]; total: number; page: number; limit: number; pages: number }
+interface Financial { totalVendido: number; pendienteCobro: number; gananciaNetaVentas: number }
 
 const EMPTY_FORM = {
   fecha: new Date().toISOString().split('T')[0],
@@ -35,7 +36,7 @@ const EMPTY_FORM = {
 };
 
 function exportCSV(data: Venta[]) {
-  const headers = ['Fecha','Cliente','Celular','Modelo','Estilo','Precio Venta','Costo','Envío','Abono','Saldo','Ganancia','Fuente','Estado'];
+  const headers = ['Fecha','Cliente','Celular','Modelo','Estilo','Precio Venta','Costo','Envío','Abono','Saldo Pendiente','Ganancia','Fuente','Estado'];
   const rows = data.map((v) => [
     fmtFecha(v.fecha), v.cliente, v.celular ?? '', v.modelo, v.estilo ?? '',
     v.precioVenta, v.costoProducto, v.costoEnvio, v.abono, v.saldoPendiente,
@@ -50,19 +51,23 @@ function exportCSV(data: Venta[]) {
 }
 
 export default function AdminVentas() {
-  const [data, setData]     = useState<Venta[]>([]);
-  const [meta, setMeta]     = useState({ total: 0, page: 1, pages: 1 });
-  const [page, setPage]     = useState(1);
+  const [data, setData]         = useState<Venta[]>([]);
+  const [meta, setMeta]         = useState({ total: 0, page: 1, pages: 1 });
+  const [page, setPage]         = useState(1);
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroFuente, setFiltroFuente] = useState('');
-  const [desde, setDesde]   = useState('');
-  const [hasta, setHasta]   = useState('');
+  const [desde, setDesde]       = useState('');
+  const [hasta, setHasta]       = useState('');
   const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]     = useState(EMPTY_FORM);
+  const [form, setForm]         = useState(EMPTY_FORM);
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [formError, setFormError] = useState('');
+  const [financial, setFinancial] = useState<Financial | null>(null);
+  const [editId, setEditId]     = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ abono: string; estado: string }>({ abono: '', estado: '' });
+  const [editError, setEditError] = useState('');
 
   const cargar = useCallback((p: number) => {
     setCargando(true);
@@ -76,7 +81,12 @@ export default function AdminVentas() {
       .finally(() => setCargando(false));
   }, [filtroEstado, filtroFuente, desde, hasta]);
 
+  const cargarFinancial = useCallback(() => {
+    api.get<Financial>('/metrics/financial').then(({ data }) => setFinancial(data)).catch(() => {});
+  }, []);
+
   useEffect(() => { setPage(1); cargar(1); }, [filtroEstado, filtroFuente, desde, hasta, cargar]);
+  useEffect(() => { cargarFinancial(); }, [cargarFinancial]);
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
 
@@ -109,8 +119,42 @@ export default function AdminVentas() {
       setShowForm(false);
       setForm(EMPTY_FORM);
       cargar(1);
+      cargarFinancial();
     } catch (err: any) {
       setFormError(err?.response?.data?.message ?? 'Error al guardar la venta');
+    } finally { setGuardando(false); }
+  };
+
+  const handleEdit = (v: Venta) => {
+    setEditId(v.id);
+    setEditError('');
+    setEditForm({ abono: String(v.abono), estado: v.estado });
+  };
+
+  const handleAbonoChange = (abono: string, precioVenta: number) => {
+    const n = Number(abono);
+    let estado = editForm.estado;
+    if (precioVenta > 0) {
+      if (n >= precioVenta)    estado = 'Pagado';
+      else if (n > 0)          estado = 'Abonado';
+      else                     estado = 'Pendiente';
+    }
+    setEditForm(f => ({ ...f, abono, estado }));
+  };
+
+  const handleEditSave = async (v: Venta) => {
+    setGuardando(true);
+    setEditError('');
+    try {
+      await api.put(`/ventas/${v.id}`, {
+        abono: Number(editForm.abono),
+        estado: editForm.estado,
+      });
+      setEditId(null);
+      cargar(page);
+      cargarFinancial();
+    } catch (err: any) {
+      setEditError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
   };
 
@@ -119,7 +163,8 @@ export default function AdminVentas() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      {/* Encabezado */}
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Ventas Históricas</h1>
           <p className="text-sm text-white/40">{meta.total} registros</p>
@@ -138,6 +183,26 @@ export default function AdminVentas() {
           </button>
         </div>
       </div>
+
+      {/* Resumen financiero */}
+      {financial && (
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Total Vendido</p>
+            <p className="text-lg font-semibold text-white">{COP(financial.totalVendido)}</p>
+          </div>
+          <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Pendiente de Cobro</p>
+            <p className="text-lg font-semibold text-yellow-400">{COP(financial.pendienteCobro)}</p>
+          </div>
+          <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Ganancia Neta en Ventas</p>
+            <p className={`text-lg font-semibold ${financial.gananciaNetaVentas >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {COP(financial.gananciaNetaVentas)}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Formulario nueva venta */}
       {showForm && (
@@ -205,16 +270,19 @@ export default function AdminVentas() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                {['Fecha','Cliente','Celular','Modelo','Estilo','Precio','Costo','Envío','Abono','Saldo','Ganancia','Fuente','Estado'].map(h => (
+                {['Fecha','Cliente','Celular','Modelo','Estilo','Precio','Costo','Envío','Abono','Saldo Pendiente','Ganancia','Fuente','Estado',''].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
               {data.map(v => {
-                const cfg = ESTADO_CONFIG[v.estado] ?? { label: v.estado, color: '#6B7280' };
+                const cfg       = ESTADO_CONFIG[v.estado] ?? { label: v.estado, color: '#6B7280' };
+                const isEditing = editId === v.id;
+                const editCfg   = ESTADO_CONFIG[editForm.estado] ?? { label: editForm.estado, color: '#6B7280' };
+                const previewSaldo = Math.max(0, v.precioVenta - Number(editForm.abono));
                 return (
-                  <tr key={v.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={v.id} className={`transition-colors ${isEditing ? 'bg-[#C9A84C]/5' : 'hover:bg-white/5'}`}>
                     <td className="px-4 py-3 text-white/70 whitespace-nowrap">{fmtFecha(v.fecha)}</td>
                     <td className="px-4 py-3 text-white whitespace-nowrap">{v.cliente}</td>
                     <td className="px-4 py-3 text-white/50">{v.celular ?? '—'}</td>
@@ -223,13 +291,55 @@ export default function AdminVentas() {
                     <td className="px-4 py-3 text-white whitespace-nowrap">{COP(v.precioVenta)}</td>
                     <td className="px-4 py-3 text-white/60 whitespace-nowrap">{COP(v.costoProducto)}</td>
                     <td className="px-4 py-3 text-white/60 whitespace-nowrap">{COP(v.costoEnvio)}</td>
-                    <td className="px-4 py-3 text-white/60 whitespace-nowrap">{COP(v.abono)}</td>
-                    <td className="px-4 py-3 text-white/60 whitespace-nowrap">{COP(v.saldoPendiente)}</td>
-                    <td className="px-4 py-3 text-white/80 whitespace-nowrap">{v.gananciaNeta != null ? COP(v.gananciaNeta) : '—'}</td>
-                    <td className="px-4 py-3 text-white/50">{v.fuente ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: cfg.color + '20', color: cfg.color }}>{cfg.label}</span>
-                    </td>
+                    {isEditing ? (
+                      <>
+                        <td className="px-2 py-2">
+                          <input
+                            type="number" min="0"
+                            value={editForm.abono}
+                            onChange={e => handleAbonoChange(e.target.value, v.precioVenta)}
+                            className="bg-black border border-white/20 rounded px-2 py-1 text-sm text-white w-28"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-white/60 whitespace-nowrap">{COP(previewSaldo)}</td>
+                        <td className="px-4 py-3 text-white/30 whitespace-nowrap">—</td>
+                        <td className="px-4 py-3 text-white/50">{v.fuente ?? '—'}</td>
+                        <td className="px-2 py-2">
+                          <select
+                            value={editForm.estado}
+                            onChange={e => setEditForm(f => ({ ...f, estado: e.target.value }))}
+                            className="bg-black border rounded px-2 py-1 text-xs cursor-pointer focus:outline-none"
+                            style={{ borderColor: editCfg.color + '60', color: editCfg.color }}
+                          >
+                            {ESTADOS.map(s => <option key={s} value={s} style={{ color: '#fff' }}>{s}</option>)}
+                          </select>
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex gap-1">
+                              <button onClick={() => handleEditSave(v)} disabled={guardando} className="p-1.5 rounded hover:bg-green-500/20 text-green-400"><Check size={14} /></button>
+                              <button onClick={() => { setEditId(null); setEditError(''); }} className="p-1.5 rounded hover:bg-white/10 text-white/40"><X size={14} /></button>
+                            </div>
+                            {editError && <p className="text-xs text-red-400 whitespace-nowrap">{editError}</p>}
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 text-white/60 whitespace-nowrap">{COP(v.abono)}</td>
+                        <td className="px-4 py-3 text-white/60 whitespace-nowrap">{COP(v.saldoPendiente)}</td>
+                        <td className="px-4 py-3 text-white/80 whitespace-nowrap">{v.gananciaNeta != null ? COP(v.gananciaNeta) : '—'}</td>
+                        <td className="px-4 py-3 text-white/50">{v.fuente ?? '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: cfg.color + '20', color: cfg.color }}>{cfg.label}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => handleEdit(v)} className="p-1.5 rounded hover:bg-white/10 text-white/40 hover:text-white">
+                            <Pencil size={14} />
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 );
               })}
