@@ -125,9 +125,9 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
         <div><label className="text-xs text-white/40 mb-1 block">Precio Venta *</label>
           <input type="number" required min="0" placeholder="250000" value={f.precioVenta}
             onChange={e => setF(p => recalcEstado({ ...p, precioVenta: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Costo Producto *</label>
-          <input type="number" required min="0" placeholder="180000" value={f.costoProducto}
-            onChange={e => setF(p => ({ ...p, costoProducto: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Costo Producto</label>
+          <input type="number" readOnly tabIndex={-1} value={f.costoProducto} placeholder="Auto"
+            className={inp + ' opacity-50 cursor-not-allowed'} /></div>
         <div><label className="text-xs text-white/40 mb-1 block">Costo Envío</label>
           <input type="number" min="0" placeholder="0" value={f.costoEnvio}
             onChange={e => setF(p => ({ ...p, costoEnvio: e.target.value }))} className={inp} /></div>
