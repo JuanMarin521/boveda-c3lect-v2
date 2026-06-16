@@ -74,6 +74,14 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
     }));
   }
 
+  // Opciones para el selector de modelo:
+  // - Si hay inventario con stock → muestra solo productos disponibles (nueva venta)
+  // - Si hay precios pero no inventario → muestra todos los productos (editar venta)
+  const modeloOpciones: { value: string; label: string }[] =
+    disponibles.length > 0
+      ? disponibles.map(i => ({ value: i.modelo, label: `${i.modelo} — ${i.stock} ud${i.stock !== 1 ? 's' : ''}` }))
+      : (precios ?? []).map(p => ({ value: p.modelo, label: p.modelo }));
+
   return (
     <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
       <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
@@ -93,11 +101,11 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
         <div className="md:col-span-2">
           <label className="text-xs text-white/40 mb-1 block">Modelo *</label>
-          {disponibles.length > 0 ? (
+          {modeloOpciones.length > 0 ? (
             <select required value={f.modelo} onChange={e => onModeloChange(e.target.value)} className={sel}>
               <option value="">Seleccionar producto…</option>
-              {disponibles.map(i => (
-                <option key={i.modelo} value={i.modelo}>{i.modelo} — {i.stock} ud{i.stock !== 1 ? 's' : ''}</option>
+              {modeloOpciones.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
           ) : (
@@ -329,6 +337,7 @@ export default function AdminVentas() {
           onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}
           onCancel={() => { setEditId(null); setEditError(''); }}
           error={editError} saving={guardando} submitLabel="Guardar cambios"
+          precios={precios}
         />
       )}
 
