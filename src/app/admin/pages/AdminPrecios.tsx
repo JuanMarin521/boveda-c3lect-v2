@@ -32,11 +32,11 @@ export default function AdminPrecios() {
     setSeeding(true);
     setSeedMsg('');
     try {
-      const { data } = await api.post<{ seeded: number }>('/inventario/seed');
-      setSeedMsg(`${data.seeded} productos importados desde compras históricas.`);
+      const { data } = await api.post<{ seeded: number }>('/precios/seed');
+      setSeedMsg(`${data.seeded} productos actualizados con precios del Excel.`);
       cargar();
     } catch {
-      setSeedMsg('Error al importar.');
+      setSeedMsg('Error al importar precios.');
     } finally {
       setSeeding(false);
     }
@@ -81,8 +81,11 @@ export default function AdminPrecios() {
     });
   };
 
+  const [editError, setEditError] = useState('');
+
   const handleEditSave = async (id: string) => {
     setGuardando(true);
+    setEditError('');
     try {
       await api.put(`/precios/${id}`, {
         costoUnitario: editForm.costoUnitario ? Number(editForm.costoUnitario) : undefined,
@@ -92,6 +95,8 @@ export default function AdminPrecios() {
       });
       setEditId(null);
       cargar();
+    } catch (err: any) {
+      setEditError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
   };
 
@@ -183,9 +188,12 @@ export default function AdminPrecios() {
                         <td className="px-4 py-2"><input type="number" value={editForm.precioCierre} onChange={e => setEditForm(f => ({...f, precioCierre: e.target.value}))} className="bg-black border border-white/20 rounded px-2 py-1 text-sm text-white w-28" /></td>
                         <td className="px-4 py-3 text-white/60 whitespace-nowrap">{editGanancia != null ? COP(editGanancia) : '—'}</td>
                         <td className="px-4 py-2">
-                          <div className="flex gap-1">
-                            <button onClick={() => handleEditSave(p.id)} disabled={guardando} className="p-1.5 rounded hover:bg-green-500/20 text-green-400"><Check size={14} /></button>
-                            <button onClick={() => setEditId(null)} className="p-1.5 rounded hover:bg-white/10 text-white/40"><X size={14} /></button>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex gap-1">
+                              <button onClick={() => handleEditSave(p.id)} disabled={guardando} className="p-1.5 rounded hover:bg-green-500/20 text-green-400"><Check size={14} /></button>
+                              <button onClick={() => { setEditId(null); setEditError(''); }} className="p-1.5 rounded hover:bg-white/10 text-white/40"><X size={14} /></button>
+                            </div>
+                            {editError && <p className="text-xs text-red-400 whitespace-nowrap">{editError}</p>}
                           </div>
                         </td>
                       </>
