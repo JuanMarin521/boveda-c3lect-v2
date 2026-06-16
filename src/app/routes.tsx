@@ -23,6 +23,8 @@ const AdminPedidoDetalle = lazy(() => import("./admin/pages/AdminPedidoDetalle")
 const AdminClientes = lazy(() => import("./admin/pages/AdminClientes"));
 const AdminClienteDetalle = lazy(() => import("./admin/pages/AdminClienteDetalle"));
 const AdminAuditoria = lazy(() => import("./admin/pages/AdminAuditoria"));
+const AdminVentas = lazy(() => import("./admin/pages/AdminVentas"));
+const AdminCompras = lazy(() => import("./admin/pages/AdminCompras"));
 
 export const router = createBrowserRouter(
   [
@@ -59,6 +61,8 @@ export const router = createBrowserRouter(
             { path: "clientes", Component: AdminClientes },
             { path: "clientes/:id", Component: AdminClienteDetalle },
             { path: "auditoria", Component: AdminAuditoria },
+            { path: "ventas", Component: AdminVentas },
+            { path: "compras", Component: AdminCompras },
           ],
         },
       ],

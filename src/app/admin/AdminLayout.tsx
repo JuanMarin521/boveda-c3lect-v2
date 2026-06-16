@@ -2,16 +2,18 @@ import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useState } from 'react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users,
-  ClipboardList, ArrowLeft, Menu, X,
+  ClipboardList, ArrowLeft, Menu, X, TrendingUp, ShoppingCart,
 } from 'lucide-react';
 import AdminRoute from '../components/AdminRoute';
 
 const NAV_ITEMS = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/productos', label: 'Productos', icon: Package, end: false },
-  { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag, end: false },
-  { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
-  { to: '/admin/auditoria', label: 'Auditoría', icon: ClipboardList, end: false },
+  { to: '/admin',          label: 'Dashboard',          icon: LayoutDashboard, end: true },
+  { to: '/admin/productos',label: 'Productos',           icon: Package,         end: false },
+  { to: '/admin/pedidos',  label: 'Pedidos',             icon: ShoppingBag,     end: false },
+  { to: '/admin/clientes', label: 'Clientes',            icon: Users,           end: false },
+  { to: '/admin/ventas',   label: 'Ventas Históricas', icon: TrendingUp,  end: false },
+  { to: '/admin/compras',  label: 'Compras',             icon: ShoppingCart,    end: false },
+  { to: '/admin/auditoria',label: 'Auditoría',      icon: ClipboardList,   end: false },
 ];
 
 function Sidebar({ onClose }: { onClose?: () => void }) {
@@ -33,7 +35,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
         {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
