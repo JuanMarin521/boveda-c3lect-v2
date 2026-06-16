@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../lib/api';
 
 const COP = (n: number) =>
@@ -29,8 +29,6 @@ export default function AdminProductos() {
   const [categoria, setCategoria] = useState('');
   const [disponible, setDisponible] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState('');
 
   const LIMIT = 20;
   const totalPages = Math.ceil(total / LIMIT);
@@ -66,19 +64,6 @@ export default function AdminProductos() {
     fetchProductos();
   }
 
-  async function sincronizar() {
-    setSyncing(true);
-    setSyncMsg('');
-    try {
-      const { data } = await api.post<{ creados: number; modelos: string[] }>('/products/sync');
-      setSyncMsg(data.creados > 0 ? `${data.creados} producto${data.creados !== 1 ? 's' : ''} agregado${data.creados !== 1 ? 's' : ''}.` : 'Sin productos nuevos para agregar.');
-      if (data.creados > 0) fetchProductos();
-    } catch {
-      setSyncMsg('Error al sincronizar.');
-    } finally {
-      setSyncing(false);
-    }
-  }
 
   return (
     <div>
@@ -86,27 +71,15 @@ export default function AdminProductos() {
         <div>
           <h1 className="text-2xl font-semibold text-white">Productos</h1>
           <p className="text-sm text-white/40 mt-0.5">{total} productos en total</p>
-          {syncMsg && <p className="text-xs text-green-400 mt-1">{syncMsg}</p>}
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={sincronizar}
-            disabled={syncing}
-            className="flex items-center gap-2 px-3 py-2 rounded text-sm"
-            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
-          >
-            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-            {syncing ? 'Sincronizando…' : 'Sincronizar inventario'}
-          </button>
-          <Link
-            to="/admin/productos/nuevo"
-            className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium text-black"
-            style={{ background: '#C9A84C' }}
-          >
-            <Plus size={16} />
-            Nuevo producto
-          </Link>
-        </div>
+        <Link
+          to="/admin/productos/nuevo"
+          className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium text-black"
+          style={{ background: '#C9A84C' }}
+        >
+          <Plus size={16} />
+          Nuevo producto
+        </Link>
       </div>
 
       {/* Filtros */}
