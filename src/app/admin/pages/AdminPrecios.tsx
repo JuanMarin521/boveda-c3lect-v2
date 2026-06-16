@@ -106,17 +106,15 @@ export default function AdminPrecios() {
           {seedMsg && <p className="text-xs text-green-400 mt-1">{seedMsg}</p>}
         </div>
         <div className="flex gap-2">
-          {items.length === 0 && (
-            <button
-              onClick={handleSeed}
-              disabled={seeding}
-              className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
-              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
-            >
-              <RefreshCw size={15} className={seeding ? 'animate-spin' : ''} />
-              {seeding ? 'Importando…' : 'Poblar desde compras'}
-            </button>
-          )}
+          <button
+            onClick={handleSeed}
+            disabled={seeding}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
+            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+          >
+            <RefreshCw size={15} className={seeding ? 'animate-spin' : ''} />
+            {seeding ? 'Recalculando…' : 'Recalcular precios'}
+          </button>
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
           style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.3)' }}>
