@@ -77,6 +77,7 @@ export default function AdminCompras() {
   const [meta, setMeta]         = useState({ total: 0, page: 1, pages: 1 });
   const [page, setPage]         = useState(1);
   const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [busqueda, setBusqueda] = useState('');
   const [desde, setDesde]       = useState('');
   const [hasta, setHasta]       = useState('');
   const [cargando, setCargando] = useState(true);
@@ -93,18 +94,19 @@ export default function AdminCompras() {
     setCargando(true);
     const params: Record<string, string> = { page: String(p), limit: '20' };
     if (filtroCategoria) params.categoria = filtroCategoria;
+    if (busqueda) params.modelo = busqueda;
     if (desde) params.desde = desde;
     if (hasta) params.hasta = hasta;
     api.get<Paginado>('/metrics/purchases', { params })
       .then(({ data: res }) => { setData(res.data); setMeta({ total: res.total, page: res.page, pages: res.pages }); })
       .finally(() => setCargando(false));
-  }, [filtroCategoria, desde, hasta]);
+  }, [filtroCategoria, busqueda, desde, hasta]);
 
   const cargarResumen = useCallback(() => {
     api.get<Resumen>('/metrics/financial').then(({ data }) => setResumen(data)).catch(() => {});
   }, []);
 
-  useEffect(() => { setPage(1); cargar(1); }, [filtroCategoria, desde, hasta, cargar]);
+  useEffect(() => { setPage(1); cargar(1); }, [filtroCategoria, busqueda, desde, hasta, cargar]);
   useEffect(() => { cargarResumen(); }, [cargarResumen]);
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
@@ -222,14 +224,15 @@ export default function AdminCompras() {
       )}
 
       <div className="flex flex-wrap gap-3 mb-5">
+        <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar modelo…" className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none focus:border-[#C9A84C]/60 min-w-[180px]" />
         <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none cursor-pointer">
           <option value="">Todas las categorías</option>
           {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" />
         <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" />
-        {(filtroCategoria || desde || hasta) && (
-          <button onClick={() => { setFiltroCategoria(''); setDesde(''); setHasta(''); }} className="text-xs text-white/40 hover:text-white/70 px-2">Limpiar</button>
+        {(filtroCategoria || busqueda || desde || hasta) && (
+          <button onClick={() => { setFiltroCategoria(''); setBusqueda(''); setDesde(''); setHasta(''); }} className="text-xs text-white/40 hover:text-white/70 px-2">Limpiar</button>
         )}
       </div>
 
