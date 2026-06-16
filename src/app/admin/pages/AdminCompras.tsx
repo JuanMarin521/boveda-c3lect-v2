@@ -7,7 +7,6 @@ import { api } from '../../lib/api';
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
-// Sin desfase de zona horaria
 const fmtFecha = (s: string) => {
   const [y, m, d] = s.split('T')[0].split('-').map(Number);
   return format(new Date(y, m - 1, d), 'd MMM yyyy', { locale: es });
@@ -28,6 +27,51 @@ const EMPTY_FORM = {
 };
 type FormState = typeof EMPTY_FORM;
 
+const inp = 'bg-[#0A0A0A] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/60 w-full';
+const sel = inp + ' cursor-pointer';
+
+function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel }: {
+  title: string; f: FormState; setF: (fn: (p: FormState) => FormState) => void;
+  costoPreview: number; onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
+  error: string; saving: boolean; submitLabel: string;
+}) {
+  return (
+    <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
+      <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label>
+          <input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
+        <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
+          <input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Cantidad *</label>
+          <input type="number" required min="1" value={f.cantidad} onChange={e => setF(p => ({ ...p, cantidad: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Categoría *</label>
+          <select required value={f.categoria} onChange={e => setF(p => ({ ...p, categoria: e.target.value }))} className={sel}>
+            {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div><label className="text-xs text-white/40 mb-1 block">Costo Unitario *</label>
+          <input type="number" required min="0" placeholder="80000" value={f.costoUnitario} onChange={e => setF(p => ({ ...p, costoUnitario: e.target.value }))} className={inp} /></div>
+        <div className="flex flex-col justify-end">
+          <label className="text-xs text-white/40 mb-1 block">Costo Total (auto)</label>
+          <div className="px-3 py-2 rounded text-sm font-medium text-[#C9A84C]" style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)' }}>
+            {COP(costoPreview)}
+          </div>
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-white/50 hover:text-white">Cancelar</button>
+        <button type="submit" disabled={saving} className="px-5 py-2 rounded text-sm font-medium" style={{ background: '#C9A84C', color: '#000' }}>
+          {saving ? 'Guardando…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function AdminCompras() {
   const [data, setData]         = useState<Compra[]>([]);
   const [meta, setMeta]         = useState({ total: 0, page: 1, pages: 1 });
@@ -41,7 +85,6 @@ export default function AdminCompras() {
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState('');
   const [resumen, setResumen]   = useState<Resumen | null>(null);
-  // Edición
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
@@ -66,7 +109,7 @@ export default function AdminCompras() {
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
 
-  const costoTotalPreview = Number(form.cantidad || 0) * Number(form.costoUnitario || 0);
+  const costoTotalPreview     = Number(form.cantidad || 0) * Number(form.costoUnitario || 0);
   const editCostoTotalPreview = Number(editForm.cantidad || 0) * Number(editForm.costoUnitario || 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,56 +165,10 @@ export default function AdminCompras() {
     } finally { setGuardando(false); }
   };
 
-  const inp = "bg-[#0A0A0A] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/60 w-full";
-  const sel = inp + " cursor-pointer";
-
-  const CompraForm = ({
-    title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel,
-  }: {
-    title: string; f: FormState; setF: (fn: (p: FormState) => FormState) => void;
-    costoPreview: number; onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
-    error: string; saving: boolean; submitLabel: string;
-  }) => (
-    <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
-      <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-        <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label>
-          <input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
-        <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
-          <input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Cantidad *</label>
-          <input type="number" required min="1" value={f.cantidad} onChange={e => setF(p => ({ ...p, cantidad: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Categoría *</label>
-          <select required value={f.categoria} onChange={e => setF(p => ({ ...p, categoria: e.target.value }))} className={sel}>
-            {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div><label className="text-xs text-white/40 mb-1 block">Costo Unitario *</label>
-          <input type="number" required min="0" placeholder="80000" value={f.costoUnitario} onChange={e => setF(p => ({ ...p, costoUnitario: e.target.value }))} className={inp} /></div>
-        <div className="flex flex-col justify-end">
-          <label className="text-xs text-white/40 mb-1 block">Costo Total (auto)</label>
-          <div className="px-3 py-2 rounded text-sm font-medium text-[#C9A84C]" style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)' }}>
-            {COP(costoPreview)}
-          </div>
-        </div>
-      </div>
-      {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-white/50 hover:text-white">Cancelar</button>
-        <button type="submit" disabled={saving} className="px-5 py-2 rounded text-sm font-medium" style={{ background: '#C9A84C', color: '#000' }}>
-          {saving ? 'Guardando…' : submitLabel}
-        </button>
-      </div>
-    </form>
-  );
-
   const cat = resumen?.comprasPorCategoria ?? {};
 
   return (
     <div>
-      {/* Encabezado */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Compras de Inventario</h1>
@@ -185,7 +182,6 @@ export default function AdminCompras() {
         </button>
       </div>
 
-      {/* Resumen por categoría */}
       {resumen && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -207,35 +203,24 @@ export default function AdminCompras() {
         </div>
       )}
 
-      {/* Formulario nueva compra */}
       {showForm && (
         <CompraForm
           title="Registrar nueva compra"
-          f={form} setF={setForm}
-          costoPreview={costoTotalPreview}
-          onSubmit={handleSubmit}
-          onCancel={() => setShowForm(false)}
-          error={formError}
-          saving={guardando}
-          submitLabel="Guardar compra"
+          f={form} setF={setForm} costoPreview={costoTotalPreview}
+          onSubmit={handleSubmit} onCancel={() => setShowForm(false)}
+          error={formError} saving={guardando} submitLabel="Guardar compra"
         />
       )}
 
-      {/* Formulario editar compra */}
       {editId && (
         <CompraForm
           title="Editar compra"
-          f={editForm} setF={setEditForm}
-          costoPreview={editCostoTotalPreview}
-          onSubmit={handleEditSave}
-          onCancel={() => { setEditId(null); setEditError(''); }}
-          error={editError}
-          saving={guardando}
-          submitLabel="Guardar cambios"
+          f={editForm} setF={setEditForm} costoPreview={editCostoTotalPreview}
+          onSubmit={handleEditSave} onCancel={() => { setEditId(null); setEditError(''); }}
+          error={editError} saving={guardando} submitLabel="Guardar cambios"
         />
       )}
 
-      {/* Filtros */}
       <div className="flex flex-wrap gap-3 mb-5">
         <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none cursor-pointer">
           <option value="">Todas las categorías</option>

@@ -7,7 +7,6 @@ import { api } from '../../lib/api';
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
-// Parsea la fecha desde el string ISO sin desfase de zona horaria
 const fmtFecha = (s: string) => {
   const [y, m, d] = s.split('T')[0].split('-').map(Number);
   return format(new Date(y, m - 1, d), 'd MMM yyyy', { locale: es });
@@ -38,8 +37,81 @@ const EMPTY_FORM = {
   precioVenta: '', costoProducto: '', costoEnvio: '0',
   abono: '', fuente: '', estado: 'Pagado',
 };
-
 type FormState = typeof EMPTY_FORM;
+
+// Estilos definidos a nivel de módulo para que VentaForm no los pierda en cada render
+const inp = 'bg-[#0A0A0A] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/60 w-full';
+const sel = inp + ' cursor-pointer';
+
+function recalcEstado(f: FormState): FormState {
+  const pv = Number(f.precioVenta);
+  const ab = Number(f.abono);
+  if (pv > 0) {
+    if (ab >= pv) return { ...f, estado: 'Pagado' };
+    if (ab > 0)   return { ...f, estado: 'Abonado' };
+    return { ...f, estado: 'Pendiente' };
+  }
+  return f;
+}
+
+// Componente a nivel de módulo — no se recrea en cada render del padre
+function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLabel }: {
+  title: string; f: FormState; setF: (fn: (prev: FormState) => FormState) => void;
+  onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
+  error: string; saving: boolean; submitLabel: string;
+}) {
+  return (
+    <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
+      <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label>
+          <input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Cliente *</label>
+          <input type="text" required placeholder="Nombre" value={f.cliente} onChange={e => setF(p => ({ ...p, cliente: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Celular</label>
+          <input type="text" placeholder="300..." value={f.celular} onChange={e => setF(p => ({ ...p, celular: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Estado *</label>
+          <select required value={f.estado} onChange={e => setF(p => ({ ...p, estado: e.target.value }))} className={sel}>
+            {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
+          <input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Estilo</label>
+          <input type="text" placeholder="Automático..." value={f.estilo} onChange={e => setF(p => ({ ...p, estilo: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Fuente</label>
+          <select value={f.fuente} onChange={e => setF(p => ({ ...p, fuente: e.target.value }))} className={sel}>
+            <option value="">—</option>
+            {FUENTES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div><label className="text-xs text-white/40 mb-1 block">Precio Venta *</label>
+          <input type="number" required min="0" placeholder="250000" value={f.precioVenta}
+            onChange={e => setF(p => recalcEstado({ ...p, precioVenta: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Costo Producto *</label>
+          <input type="number" required min="0" placeholder="180000" value={f.costoProducto}
+            onChange={e => setF(p => ({ ...p, costoProducto: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Costo Envío</label>
+          <input type="number" min="0" placeholder="0" value={f.costoEnvio}
+            onChange={e => setF(p => ({ ...p, costoEnvio: e.target.value }))} className={inp} /></div>
+        <div><label className="text-xs text-white/40 mb-1 block">Abono/Pago *</label>
+          <input type="number" required min="0" placeholder="250000" value={f.abono}
+            onChange={e => setF(p => recalcEstado({ ...p, abono: e.target.value }))} className={inp} /></div>
+      </div>
+      {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-white/50 hover:text-white">Cancelar</button>
+        <button type="submit" disabled={saving} className="px-5 py-2 rounded text-sm font-medium" style={{ background: '#C9A84C', color: '#000' }}>
+          {saving ? 'Guardando…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 function exportCSV(data: Venta[]) {
   const headers = ['Fecha','Cliente','Celular','Modelo','Estilo','Precio Venta','Costo','Envío','Abono','Saldo Pendiente','Ganancia','Fuente','Estado'];
@@ -71,7 +143,6 @@ export default function AdminVentas() {
   const [exportando, setExportando] = useState(false);
   const [formError, setFormError] = useState('');
   const [financial, setFinancial] = useState<Financial | null>(null);
-  // Edición
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
@@ -149,18 +220,6 @@ export default function AdminVentas() {
     });
   };
 
-  // Recalcula estado automáticamente al cambiar abono o precioVenta
-  const recalcEstado = (f: FormState): FormState => {
-    const pv = Number(f.precioVenta);
-    const ab = Number(f.abono);
-    if (pv > 0) {
-      if (ab >= pv)   return { ...f, estado: 'Pagado' };
-      if (ab > 0)     return { ...f, estado: 'Abonado' };
-      return { ...f, estado: 'Pendiente' };
-    }
-    return f;
-  };
-
   const handleEditSave = async () => {
     setGuardando(true);
     setEditError('');
@@ -186,61 +245,8 @@ export default function AdminVentas() {
     } finally { setGuardando(false); }
   };
 
-  const inp = "bg-[#0A0A0A] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/60 w-full";
-  const sel = inp + " cursor-pointer";
-
-  const VentaForm = ({
-    title, f, setF, onSubmit, onCancel, error, saving, submitLabel,
-  }: {
-    title: string; f: FormState; setF: (fn: (prev: FormState) => FormState) => void;
-    onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
-    error: string; saving: boolean; submitLabel: string;
-  }) => (
-    <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
-      <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-        <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label><input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Cliente *</label><input type="text" required placeholder="Nombre" value={f.cliente} onChange={e => setF(p => ({ ...p, cliente: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Celular</label><input type="text" placeholder="300..." value={f.celular} onChange={e => setF(p => ({ ...p, celular: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Estado *</label>
-          <select required value={f.estado} onChange={e => setF(p => ({ ...p, estado: e.target.value }))} className={sel}>
-            {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-        <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label><input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Estilo</label><input type="text" placeholder="Automático..." value={f.estilo} onChange={e => setF(p => ({ ...p, estilo: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Fuente</label>
-          <select value={f.fuente} onChange={e => setF(p => ({ ...p, fuente: e.target.value }))} className={sel}>
-            <option value="">—</option>
-            {FUENTES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div><label className="text-xs text-white/40 mb-1 block">Precio Venta *</label>
-          <input type="number" required min="0" placeholder="250000" value={f.precioVenta}
-            onChange={e => setF(p => recalcEstado({ ...p, precioVenta: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Costo Producto *</label><input type="number" required min="0" placeholder="180000" value={f.costoProducto} onChange={e => setF(p => ({ ...p, costoProducto: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Costo Envío</label><input type="number" min="0" placeholder="0" value={f.costoEnvio} onChange={e => setF(p => ({ ...p, costoEnvio: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Abono/Pago *</label>
-          <input type="number" required min="0" placeholder="250000" value={f.abono}
-            onChange={e => setF(p => recalcEstado({ ...p, abono: e.target.value }))} className={inp} /></div>
-      </div>
-      {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-white/50 hover:text-white">Cancelar</button>
-        <button type="submit" disabled={saving} className="px-5 py-2 rounded text-sm font-medium" style={{ background: '#C9A84C', color: '#000' }}>
-          {saving ? 'Guardando…' : submitLabel}
-        </button>
-      </div>
-    </form>
-  );
-
   return (
     <div>
-      {/* Encabezado */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Ventas Históricas</h1>
@@ -261,7 +267,6 @@ export default function AdminVentas() {
         </div>
       </div>
 
-      {/* Resumen financiero (2 tarjetas) */}
       {financial && (
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -275,33 +280,26 @@ export default function AdminVentas() {
         </div>
       )}
 
-      {/* Formulario nueva venta */}
       {showForm && (
         <VentaForm
           title="Registrar nueva venta"
           f={form} setF={setForm}
           onSubmit={handleSubmit}
           onCancel={() => setShowForm(false)}
-          error={formError}
-          saving={guardando}
-          submitLabel="Guardar venta"
+          error={formError} saving={guardando} submitLabel="Guardar venta"
         />
       )}
 
-      {/* Formulario editar venta */}
       {editId && (
         <VentaForm
           title="Editar venta"
           f={editForm} setF={setEditForm}
           onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}
           onCancel={() => { setEditId(null); setEditError(''); }}
-          error={editError}
-          saving={guardando}
-          submitLabel="Guardar cambios"
+          error={editError} saving={guardando} submitLabel="Guardar cambios"
         />
       )}
 
-      {/* Filtros */}
       <div className="flex flex-wrap gap-3 mb-5">
         <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none cursor-pointer">
           <option value="">Todos los estados</option>
