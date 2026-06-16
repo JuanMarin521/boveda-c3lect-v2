@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Check, X } from 'lucide-react';
+import { Plus, Pencil, Check, X, RefreshCw } from 'lucide-react';
 import { api } from '../../lib/api';
 
 const COP = (n: number) =>
@@ -25,6 +25,22 @@ export default function AdminPrecios() {
   const [formError, setFormError] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
+
+  const handleSeed = async () => {
+    setSeeding(true);
+    setSeedMsg('');
+    try {
+      const { data } = await api.post<{ seeded: number }>('/inventario/seed');
+      setSeedMsg(`${data.seeded} productos importados desde compras históricas.`);
+      cargar();
+    } catch {
+      setSeedMsg('Error al importar.');
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const cargar = () => {
     setCargando(true);
@@ -87,13 +103,27 @@ export default function AdminPrecios() {
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Cálculo de Precios</h1>
           <p className="text-sm text-white/40">{items.length} productos</p>
+          {seedMsg && <p className="text-xs text-green-400 mt-1">{seedMsg}</p>}
         </div>
+        <div className="flex gap-2">
+          {items.length === 0 && (
+            <button
+              onClick={handleSeed}
+              disabled={seeding}
+              className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+            >
+              <RefreshCw size={15} className={seeding ? 'animate-spin' : ''} />
+              {seeding ? 'Importando…' : 'Poblar desde compras'}
+            </button>
+          )}
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
           style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.3)' }}>
           {showForm ? <X size={15} /> : <Plus size={15} />}
           {showForm ? 'Cancelar' : 'Nuevo producto'}
         </button>
+        </div>
       </div>
 
       {showForm && (

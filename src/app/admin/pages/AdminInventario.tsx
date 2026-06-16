@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { api } from '../../lib/api';
 
 const COP = (n: number) =>
@@ -13,10 +14,29 @@ export default function AdminInventario() {
   const [items, setItems]   = useState<Item[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtro, setFiltro] = useState('');
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
 
-  useEffect(() => {
+  const cargar = () => {
+    setCargando(true);
     api.get<Item[]>('/inventario').then(({ data }) => setItems(data)).finally(() => setCargando(false));
-  }, []);
+  };
+
+  useEffect(() => { cargar(); }, []);
+
+  const handleSeed = async () => {
+    setSeeding(true);
+    setSeedMsg('');
+    try {
+      const { data } = await api.post<{ seeded: number }>('/inventario/seed');
+      setSeedMsg(`${data.seeded} modelos importados desde compras históricas.`);
+      cargar();
+    } catch {
+      setSeedMsg('Error al poblar el inventario.');
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const filtrados = filtro
     ? items.filter(i => i.categoria === filtro)
@@ -27,12 +47,26 @@ export default function AdminInventario() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white mb-1">Inventario Maestro</h1>
-        <p className="text-sm text-white/40">
-          Capital total: <span className="text-[#C9A84C]">{COP(totalCapital)}</span>
-          {' · '}{totalUnidades} unidades
-        </p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-white mb-1">Inventario Maestro</h1>
+          <p className="text-sm text-white/40">
+            Capital total: <span className="text-[#C9A84C]">{COP(totalCapital)}</span>
+            {' · '}{totalUnidades} unidades
+          </p>
+          {seedMsg && <p className="text-xs text-green-400 mt-1">{seedMsg}</p>}
+        </div>
+        {items.length === 0 && (
+          <button
+            onClick={handleSeed}
+            disabled={seeding}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
+            style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.3)' }}
+          >
+            <RefreshCw size={15} className={seeding ? 'animate-spin' : ''} />
+            {seeding ? 'Importando…' : 'Poblar desde compras'}
+          </button>
+        )}
       </div>
 
       <div className="flex gap-3 mb-5">
