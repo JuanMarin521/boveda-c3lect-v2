@@ -65,7 +65,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
           Volver a la tienda
         </button>
         <button
-          onClick={() => { logout(); navigate('/'); }}
+          onClick={async () => { await logout(); navigate('/'); }}
           className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/40 hover:text-red-400 transition-colors w-full rounded hover:bg-white/5 cursor-pointer"
         >
           <LogOut size={16} />
