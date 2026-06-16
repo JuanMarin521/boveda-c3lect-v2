@@ -171,7 +171,7 @@ export default function AdminDashboard() {
       {/* Fila 1 — Financiero */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Vendido" value={COP(summary.totalVendido)} icon={DollarSign} />
-        <StatCard label="Ganancia Neta" value={COP(summary.gananciaNeta)} icon={TrendingUp} />
+        <StatCard label="Ganancia Neta de Ventas" value={COP(summary.gananciaNeta)} icon={TrendingUp} />
         <StatCard
           label="Pendiente de Cobro"
           value={COP(summary.pendienteCobro)}
