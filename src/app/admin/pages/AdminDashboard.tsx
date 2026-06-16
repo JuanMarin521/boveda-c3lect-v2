@@ -35,6 +35,11 @@ interface HistoricalSale {
   precioVenta: number; estado: string;
 }
 
+interface PendienteVenta {
+  id: string; fecha: string; cliente: string; modelo: string;
+  abono: number; saldoPendiente: number; estado: string;
+}
+
 interface Order {
   id: string; orderNumber: string; status: string; total: number;
   shippingInfo: { nombreCompleto: string } | null;
@@ -107,9 +112,15 @@ function Badge({ estado }: { estado: string }) {
 
 const DONUT_COLORS = { reloj: '#C9A84C', perfume: '#FFFFFF', accesorio: '#555555' };
 
+const fmtFechaSafe = (s: string) => {
+  const [y, m, d] = s.split('T')[0].split('-').map(Number);
+  return format(new Date(y, m - 1, d), 'd MMM yyyy', { locale: es });
+};
+
 export default function AdminDashboard() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [financial, setFinancial] = useState<Financial | null>(null);
+  const [pendientes, setPendientes] = useState<PendienteVenta[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
@@ -117,10 +128,14 @@ export default function AdminDashboard() {
     Promise.all([
       api.get<Summary>('/metrics/summary'),
       api.get<Financial>('/metrics/financial'),
+      api.get<{ data: PendienteVenta[] }>('/metrics/sales', {
+        params: { estado: 'Pendiente,Abonado', limit: '200', page: '1' },
+      }),
     ])
-      .then(([s, f]) => {
+      .then(([s, f, p]) => {
         setSummary(s.data);
         setFinancial(f.data);
+        setPendientes(p.data.data);
       })
       .catch((err) => {
         console.error('[Dashboard] Error cargando métricas:', err?.response?.status, err?.response?.data ?? err?.message);
@@ -154,7 +169,6 @@ export default function AdminDashboard() {
   ].filter((d) => d.value > 0);
 
   const totalDonut = donutData.reduce((s, d) => s + d.value, 0);
-  const topMax = summary.topProductos[0]?.cantidad ?? 1;
 
   const variacion =
     summary.ventasMesAnterior > 0
@@ -208,8 +222,8 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Fila 3 — Gráfica + Top productos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Fila 3 — Gráfica + Clientes Pendientes */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Gráfica dona */}
         <div className="rounded-lg border p-5" style={{ background: '#161616', borderColor: 'rgba(255,255,255,0.08)' }}>
           <h2 className="text-sm font-medium text-white mb-4">Ventas por Categoría</h2>
@@ -219,16 +233,7 @@ export default function AdminDashboard() {
             <>
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
-                  <Pie
-                    data={donutData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                    stroke="none"
-                  >
+                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" stroke="none">
                     {donutData.map((entry) => (
                       <Cell key={entry.key} fill={DONUT_COLORS[entry.key as keyof typeof DONUT_COLORS]} />
                     ))}
@@ -246,10 +251,7 @@ export default function AdminDashboard() {
                   return (
                     <div key={d.key} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: DONUT_COLORS[d.key as keyof typeof DONUT_COLORS] }}
-                        />
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: DONUT_COLORS[d.key as keyof typeof DONUT_COLORS] }} />
                         <span className="text-white/70">{d.name}</span>
                       </div>
                       <div className="flex items-center gap-3 text-right">
@@ -264,36 +266,44 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Top 5 productos */}
-        <div className="rounded-lg border p-5" style={{ background: '#161616', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h2 className="text-sm font-medium text-white mb-4">Top 5 Productos</h2>
-          {summary.topProductos.length === 0 ? (
-            <p className="text-sm text-white/30 text-center py-10">Sin datos</p>
+        {/* Clientes Pendientes por Pagar */}
+        <div className="lg:col-span-2 rounded-lg border overflow-hidden" style={{ background: '#161616', borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+            <h2 className="text-sm font-medium text-white">Clientes Pendientes por Pagar</h2>
+            <Link to="/admin/ventas" className="text-xs text-[#C9A84C] hover:underline">Ver todas</Link>
+          </div>
+          {pendientes.length === 0 ? (
+            <p className="px-5 py-8 text-sm text-white/30 text-center">Sin pendientes</p>
           ) : (
-            <div className="space-y-4">
-              {summary.topProductos.map((p, i) => {
-                const pct = topMax > 0 ? (p.cantidad / topMax) * 100 : 0;
-                return (
-                  <div key={p.modelo}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs text-white/30 font-mono w-4 shrink-0">{i + 1}</span>
-                        <span className="text-sm text-white truncate">{p.modelo}</span>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0 ml-2">
-                        <span className="text-xs text-white/40">{p.cantidad} uds</span>
-                        <span className="text-sm text-white font-medium">{COP(p.total)}</span>
-                      </div>
-                    </div>
-                    <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      <div
-                        className="h-1.5 rounded-full transition-all"
-                        style={{ width: `${pct}%`, background: '#C9A84C' }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                    {['Fecha', 'Cliente', 'Modelo', 'Estado', 'Abono', 'Pago Pendiente'].map((h, i) => (
+                      <th key={h} className={`px-4 py-2.5 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap ${i >= 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  {pendientes.map((v) => (
+                    <tr key={v.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-4 py-2.5 text-white/60 whitespace-nowrap">{fmtFechaSafe(v.fecha)}</td>
+                      <td className="px-4 py-2.5 text-white whitespace-nowrap">{v.cliente}</td>
+                      <td className="px-4 py-2.5 text-white/70 max-w-[160px] truncate">{v.modelo}</td>
+                      <td className="px-4 py-2.5"><Badge estado={v.estado} /></td>
+                      <td className="px-4 py-2.5 text-white/60 text-right whitespace-nowrap">{COP(v.abono)}</td>
+                      <td className="px-4 py-2.5 text-white font-medium text-right whitespace-nowrap">{COP(v.saldoPendiente)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <td colSpan={4} className="px-4 py-2.5 text-xs text-white/40 uppercase tracking-wider">Total general</td>
+                    <td className="px-4 py-2.5 text-white/60 text-right font-semibold whitespace-nowrap">{COP(pendientes.reduce((s, v) => s + v.abono, 0))}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold whitespace-nowrap" style={{ color: '#C9A84C' }}>{COP(pendientes.reduce((s, v) => s + v.saldoPendiente, 0))}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           )}
         </div>
