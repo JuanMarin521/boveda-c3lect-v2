@@ -122,7 +122,10 @@ export default function AdminDashboard() {
         setSummary(s.data);
         setFinancial(f.data);
       })
-      .catch(() => setError('No se pudo cargar el dashboard.'))
+      .catch((err) => {
+        console.error('[Dashboard] Error cargando métricas:', err?.response?.status, err?.response?.data ?? err?.message);
+        setError(`Error ${err?.response?.status ?? 'de red'}: No se pudo cargar el dashboard.`);
+      })
       .finally(() => setCargando(false));
   }, []);
 
