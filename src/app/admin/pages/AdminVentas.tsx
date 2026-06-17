@@ -32,6 +32,7 @@ interface Paginado { data: Venta[]; total: number; page: number; limit: number; 
 interface Financial { totalPrecioVentas: number; pendienteCobro: number }
 interface InvItem { modelo: string; stock: number; }
 interface PrecioItem { modelo: string; costoTotal: number; }
+interface ProductoItem { nombre: string; estilo: string; }
 
 const EMPTY_FORM = {
   fecha: new Date().toISOString().split('T')[0],
@@ -57,19 +58,21 @@ function recalcEstado(f: FormState): FormState {
 }
 
 // Componente a nivel de módulo — no se recrea en cada render del padre
-function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLabel, inventario, precios }: {
+function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLabel, inventario, precios, productos }: {
   title: string; f: FormState; setF: (fn: (prev: FormState) => FormState) => void;
   onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
   error: string; saving: boolean; submitLabel: string;
-  inventario?: InvItem[]; precios?: PrecioItem[];
+  inventario?: InvItem[]; precios?: PrecioItem[]; productos?: ProductoItem[];
 }) {
   const disponibles = inventario?.filter(i => i.stock > 0) ?? [];
 
   function onModeloChange(modelo: string) {
     const precio = precios?.find(p => p.modelo === modelo);
+    const estilos = [...new Set((productos ?? []).filter(p => p.nombre === modelo).map(p => p.estilo))];
     setF(p => ({
       ...p,
       modelo,
+      estilo: estilos.length === 1 ? estilos[0] : '',
       costoProducto: precio ? String(precio.costoTotal) : p.costoProducto,
     }));
   }
@@ -81,6 +84,9 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
     disponibles.length > 0
       ? disponibles.map(i => ({ value: i.modelo, label: `${i.modelo} — ${i.stock} ud${i.stock !== 1 ? 's' : ''}` }))
       : (precios ?? []).map(p => ({ value: p.modelo, label: p.modelo }));
+
+  let estilosDisponibles = [...new Set((productos ?? []).filter(p => p.nombre === f.modelo).map(p => p.estilo))];
+  if (f.estilo && !estilosDisponibles.includes(f.estilo)) estilosDisponibles = [f.estilo, ...estilosDisponibles];
 
   return (
     <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
@@ -113,7 +119,15 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
           )}
         </div>
         <div><label className="text-xs text-white/40 mb-1 block">Estilo</label>
-          <input type="text" placeholder="Automático..." value={f.estilo} onChange={e => setF(p => ({ ...p, estilo: e.target.value }))} className={inp} /></div>
+          {estilosDisponibles.length > 0 ? (
+            <select value={f.estilo} onChange={e => setF(p => ({ ...p, estilo: e.target.value }))} className={sel}>
+              <option value="">Seleccionar…</option>
+              {estilosDisponibles.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+          ) : (
+            <input type="text" placeholder="Automático..." value={f.estilo} onChange={e => setF(p => ({ ...p, estilo: e.target.value }))} className={inp} />
+          )}
+        </div>
         <div><label className="text-xs text-white/40 mb-1 block">Fuente</label>
           <select value={f.fuente} onChange={e => setF(p => ({ ...p, fuente: e.target.value }))} className={sel}>
             <option value="">—</option>
@@ -181,6 +195,7 @@ export default function AdminVentas() {
   const [editError, setEditError] = useState('');
   const [inventario, setInventario] = useState<InvItem[]>([]);
   const [precios, setPrecios]       = useState<PrecioItem[]>([]);
+  const [productos, setProductos]   = useState<ProductoItem[]>([]);
 
   const cargar = useCallback((p: number) => {
     setCargando(true);
@@ -203,6 +218,7 @@ export default function AdminVentas() {
   useEffect(() => {
     api.get<InvItem[]>('/inventario').then(({ data }) => setInventario(data)).catch(() => {});
     api.get<PrecioItem[]>('/precios').then(({ data }) => setPrecios(data)).catch(() => {});
+    api.get<ProductoItem[]>('/products').then(({ data }) => setProductos(data)).catch(() => {});
   }, []);
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
@@ -326,7 +342,7 @@ export default function AdminVentas() {
           onSubmit={handleSubmit}
           onCancel={() => setShowForm(false)}
           error={formError} saving={guardando} submitLabel="Guardar venta"
-          inventario={inventario} precios={precios}
+          inventario={inventario} precios={precios} productos={productos}
         />
       )}
 
@@ -337,7 +353,7 @@ export default function AdminVentas() {
           onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}
           onCancel={() => { setEditId(null); setEditError(''); }}
           error={editError} saving={guardando} submitLabel="Guardar cambios"
-          precios={precios}
+          precios={precios} productos={productos}
         />
       )}
 

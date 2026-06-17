@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
 
+const NUEVO_MODELO = '__nuevo__';
+
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
@@ -30,11 +32,22 @@ type FormState = typeof EMPTY_FORM;
 const inp = 'bg-[#0A0A0A] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/60 w-full';
 const sel = inp + ' cursor-pointer';
 
-function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel }: {
+function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel, nombresProducto }: {
   title: string; f: FormState; setF: (fn: (p: FormState) => FormState) => void;
   costoPreview: number; onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
-  error: string; saving: boolean; submitLabel: string;
+  error: string; saving: boolean; submitLabel: string; nombresProducto: string[];
 }) {
+  const [modoNuevo, setModoNuevo] = useState(() => f.modelo !== '' && !nombresProducto.includes(f.modelo));
+
+  function handleSelectChange(value: string) {
+    if (value === NUEVO_MODELO) {
+      setModoNuevo(true);
+      setF(p => ({ ...p, modelo: '' }));
+    } else {
+      setF(p => ({ ...p, modelo: value }));
+    }
+  }
+
   return (
     <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
       <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
@@ -42,7 +55,23 @@ function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, s
         <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label>
           <input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
         <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
-          <input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} /></div>
+          {modoNuevo ? (
+            <div className="flex gap-2">
+              <input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} />
+              {nombresProducto.length > 0 && (
+                <button type="button" onClick={() => { setModoNuevo(false); setF(p => ({ ...p, modelo: '' })); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
+                  Elegir existente
+                </button>
+              )}
+            </div>
+          ) : (
+            <select required value={f.modelo} onChange={e => handleSelectChange(e.target.value)} className={sel}>
+              <option value="">Seleccionar producto…</option>
+              {nombresProducto.map(n => <option key={n} value={n}>{n}</option>)}
+              <option value={NUEVO_MODELO}>+ Nuevo modelo (no listado)</option>
+            </select>
+          )}
+        </div>
         <div><label className="text-xs text-white/40 mb-1 block">Cantidad *</label>
           <input type="number" required min="1" value={f.cantidad} onChange={e => setF(p => ({ ...p, cantidad: e.target.value }))} className={inp} /></div>
         <div><label className="text-xs text-white/40 mb-1 block">Categoría *</label>
@@ -85,6 +114,7 @@ export default function AdminCompras() {
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState('');
   const [resumen, setResumen]   = useState<Resumen | null>(null);
+  const [nombresProducto, setNombresProducto] = useState<string[]>([]);
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
@@ -106,6 +136,11 @@ export default function AdminCompras() {
 
   useEffect(() => { setPage(1); cargar(1); }, [filtroCategoria, desde, hasta, cargar]);
   useEffect(() => { cargarResumen(); }, [cargarResumen]);
+  useEffect(() => {
+    api.get<{ nombre: string }[]>('/products').then(({ data }) => {
+      setNombresProducto([...new Set(data.map(p => p.nombre))].sort());
+    }).catch(() => {});
+  }, []);
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
 
@@ -209,6 +244,7 @@ export default function AdminCompras() {
           f={form} setF={setForm} costoPreview={costoTotalPreview}
           onSubmit={handleSubmit} onCancel={() => setShowForm(false)}
           error={formError} saving={guardando} submitLabel="Guardar compra"
+          nombresProducto={nombresProducto}
         />
       )}
 
@@ -218,6 +254,7 @@ export default function AdminCompras() {
           f={editForm} setF={setEditForm} costoPreview={editCostoTotalPreview}
           onSubmit={handleEditSave} onCancel={() => { setEditId(null); setEditError(''); }}
           error={editError} saving={guardando} submitLabel="Guardar cambios"
+          nombresProducto={nombresProducto}
         />
       )}
 

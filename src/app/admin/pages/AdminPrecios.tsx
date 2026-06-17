@@ -19,6 +19,7 @@ const EMPTY_FORM = {
 
 export default function AdminPrecios() {
   const [items, setItems]   = useState<Precio[]>([]);
+  const [nombresProducto, setNombresProducto] = useState<string[]>([]);
   const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]     = useState(EMPTY_FORM);
@@ -50,6 +51,11 @@ export default function AdminPrecios() {
 
   useEffect(() => { cargar(); }, []);
   useRefetchOnFocus(cargar);
+  useEffect(() => {
+    api.get<{ nombre: string }[]>('/products').then(({ data }) => {
+      setNombresProducto([...new Set(data.map(p => p.nombre))].sort());
+    }).catch(() => {});
+  }, []);
 
   const costoTotalPreview = Number(form.costoUnitario || 0) + Number(form.costoAdicional || 0);
 
@@ -135,7 +141,16 @@ export default function AdminPrecios() {
         <form onSubmit={handleSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
           <h2 className="text-sm font-medium text-[#C9A84C] mb-4">Agregar producto a tabla de precios</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-            <div className="md:col-span-3"><label className="text-xs text-white/40 mb-1 block">Modelo *</label><input type="text" required placeholder="Naviforce NF 7105..." value={form.modelo} onChange={e => setForm(f => ({...f, modelo: e.target.value}))} className={inp} /></div>
+            <div className="md:col-span-3"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
+              {nombresProducto.length > 0 ? (
+                <select required value={form.modelo} onChange={e => setForm(f => ({...f, modelo: e.target.value}))} className={inp + ' cursor-pointer'}>
+                  <option value="">Seleccionar producto…</option>
+                  {nombresProducto.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              ) : (
+                <input type="text" required placeholder="Naviforce NF 7105..." value={form.modelo} onChange={e => setForm(f => ({...f, modelo: e.target.value}))} className={inp} />
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
             <div><label className="text-xs text-white/40 mb-1 block">Costo Unitario *</label><input type="number" required min="0" placeholder="80000" value={form.costoUnitario} onChange={e => setForm(f => ({...f, costoUnitario: e.target.value}))} className={inp} /></div>
