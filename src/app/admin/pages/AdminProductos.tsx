@@ -89,7 +89,7 @@ export default function AdminProductos() {
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-3 mb-5">
+      <div className="flex flex-wrap gap-3 mb-5">
         <select
           value={categoria}
           onChange={(e) => { setCategoria(e.target.value); setPage(1); }}

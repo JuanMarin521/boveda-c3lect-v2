@@ -263,8 +263,14 @@ export default function AdminCompras() {
           <option value="">Todas las categorías</option>
           {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" />
-        <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" />
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs text-white/40 whitespace-nowrap">Desde</label>
+          <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" style={{ colorScheme: 'dark' }} />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs text-white/40 whitespace-nowrap">Hasta</label>
+          <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" style={{ colorScheme: 'dark' }} />
+        </div>
         {(filtroCategoria || desde || hasta) && (
           <button onClick={() => { setFiltroCategoria(''); setDesde(''); setHasta(''); }} className="text-xs text-white/40 hover:text-white/70 px-2">Limpiar</button>
         )}

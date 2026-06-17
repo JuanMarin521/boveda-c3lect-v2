@@ -91,7 +91,7 @@ function StatCard({
           <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">pendiente</span>
         )}
       </div>
-      <p className="text-2xl font-semibold text-white mb-1">{value}</p>
+      <p className="text-xl sm:text-2xl font-semibold text-white mb-1 break-words">{value}</p>
       <p className="text-xs text-white/40 uppercase tracking-wider">{label}</p>
       {sub && <p className="text-xs text-white/25 mt-1">{sub}</p>}
     </div>
@@ -391,7 +391,7 @@ export default function AdminDashboard() {
           ].map(({ label, value }) => (
             <div key={label} className="border-l-2 border-[#C9A84C]/30 pl-3">
               <p className="text-xs text-white/40 uppercase tracking-wider mb-1">{label}</p>
-              <p className="text-base font-semibold text-white">{value}</p>
+              <p className="text-base font-semibold text-white break-words">{value}</p>
             </div>
           ))}
         </div>

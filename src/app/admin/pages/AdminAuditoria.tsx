@@ -71,22 +71,27 @@ export default function AdminAuditoria() {
             <option key={a} value={a}>{a ? ACCION_CONFIG[a]?.label : 'Todas las acciones'}</option>
           ))}
         </select>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => { setFechaDesde(e.target.value); setPage(1); }}
-            className="text-sm rounded px-3 py-2 border outline-none"
-            style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', colorScheme: 'dark' }}
-          />
-          <span className="text-white/30 text-xs">—</span>
-          <input
-            type="date"
-            value={fechaHasta}
-            onChange={(e) => { setFechaHasta(e.target.value); setPage(1); }}
-            className="text-sm rounded px-3 py-2 border outline-none"
-            style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', colorScheme: 'dark' }}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-white/40 whitespace-nowrap">Desde</label>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => { setFechaDesde(e.target.value); setPage(1); }}
+              className="text-sm rounded px-3 py-2 border outline-none"
+              style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', colorScheme: 'dark' }}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-white/40 whitespace-nowrap">Hasta</label>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => { setFechaHasta(e.target.value); setPage(1); }}
+              className="text-sm rounded px-3 py-2 border outline-none"
+              style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', colorScheme: 'dark' }}
+            />
+          </div>
         </div>
       </div>
 
