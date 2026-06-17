@@ -21,6 +21,8 @@ interface Producto {
 
 const CATEGORIAS = ['', 'reloj', 'perfume', 'accesorio'];
 
+const esIncompleto = (p: Producto) => p.precio === 0 || p.estilo === '' || p.imgs.length === 0;
+
 export default function AdminProductos() {
   const navigate = useNavigate();
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -29,6 +31,7 @@ export default function AdminProductos() {
   const [cargando, setCargando] = useState(true);
   const [categoria, setCategoria] = useState('');
   const [disponible, setDisponible] = useState('');
+  const [incompletos, setIncompletos] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const LIMIT = 20;
@@ -39,6 +42,7 @@ export default function AdminProductos() {
     const params: Record<string, string> = { page: String(page), limit: String(LIMIT) };
     if (categoria) params.categoria = categoria;
     if (disponible !== '') params.soloDisponibles = disponible;
+    if (incompletos) params.incompletos = 'true';
     api.get<Producto[]>('/products', { params })
       .then(({ data }) => {
         setProductos(Array.isArray(data) ? data : (data as { data: Producto[] }).data ?? []);
@@ -52,7 +56,7 @@ export default function AdminProductos() {
       .finally(() => setCargando(false));
   }
 
-  useEffect(() => { fetchProductos(); }, [page, categoria, disponible]);
+  useEffect(() => { fetchProductos(); }, [page, categoria, disponible, incompletos]);
   useRefetchOnFocus(fetchProductos);
 
   async function toggleDisponible(id: string, current: boolean) {
@@ -106,6 +110,17 @@ export default function AdminProductos() {
           <option value="">Todos</option>
           <option value="true">Disponibles</option>
         </select>
+        <button
+          onClick={() => { setIncompletos((v) => !v); setPage(1); }}
+          className="text-sm rounded px-3 py-2 border transition-colors"
+          style={
+            incompletos
+              ? { background: 'rgba(234,179,8,0.15)', borderColor: 'rgba(234,179,8,0.4)', color: '#EAB308' }
+              : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
+          }
+        >
+          Pendientes por completar
+        </button>
       </div>
 
       {/* Tabla */}
@@ -163,6 +178,14 @@ export default function AdminProductos() {
                       >
                         {p.disponible ? 'Disponible' : 'No disponible'}
                       </span>
+                      {esIncompleto(p) && (
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full ml-1.5"
+                          style={{ background: 'rgba(234,179,8,0.15)', color: '#EAB308' }}
+                        >
+                          Pendiente
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
