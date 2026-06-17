@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
@@ -52,6 +53,7 @@ export default function AdminProductos() {
   }
 
   useEffect(() => { fetchProductos(); }, [page, categoria, disponible]);
+  useRefetchOnFocus(fetchProductos);
 
   async function toggleDisponible(id: string, current: boolean) {
     await api.patch(`/products/${id}`, { disponible: !current });

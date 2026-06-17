@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
@@ -8,21 +9,50 @@ const COP = (n: number) =>
 interface Item {
   id: string; modelo: string; stock: number; costoUnitario: number;
   categoria: string; capitalItem: number;
+  productos: { id: string; nombre: string; disponible: boolean }[];
 }
+interface Producto { id: string; nombre: string; cat: string; inventarioId: string | null }
 
 export default function AdminInventario() {
   const [items, setItems]   = useState<Item[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtro, setFiltro] = useState('');
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState('');
+  const [linkingId, setLinkingId] = useState<string | null>(null);
 
   const cargar = () => {
     setCargando(true);
     api.get<Item[]>('/inventario').then(({ data }) => setItems(data)).finally(() => setCargando(false));
   };
+  const cargarProductos = () => {
+    api.get<Producto[]>('/products').then(({ data }) => setProductos(data)).catch(() => {});
+  };
 
   useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargarProductos(); }, []);
+  useRefetchOnFocus(() => { cargar(); cargarProductos(); });
+
+  const setProductosVinculados = async (itemId: string, productIds: string[]) => {
+    setLinkingId(itemId);
+    try {
+      await api.patch(`/inventario/${itemId}/link`, { productIds });
+      cargar();
+      cargarProductos();
+    } finally {
+      setLinkingId(null);
+    }
+  };
+
+  const handleAgregar = (item: Item, productId: string) => {
+    if (!productId) return;
+    setProductosVinculados(item.id, [...item.productos.map(p => p.id), productId]);
+  };
+
+  const handleQuitar = (item: Item, productId: string) => {
+    setProductosVinculados(item.id, item.productos.filter(p => p.id !== productId).map(p => p.id));
+  };
 
   const handleSeed = async () => {
     setSeeding(true);
@@ -94,7 +124,7 @@ export default function AdminInventario() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                {['Modelo','Categoría','Stock','Costo Unitario','Capital'].map(h => (
+                {['Modelo','Categoría','Stock','Costo Unitario','Capital','Producto vinculado'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -113,6 +143,37 @@ export default function AdminInventario() {
                   </td>
                   <td className="px-4 py-3 text-white/70 whitespace-nowrap">{COP(item.costoUnitario)}</td>
                   <td className="px-4 py-3 text-white font-medium whitespace-nowrap">{COP(item.capitalItem)}</td>
+                  <td className="px-4 py-3 min-w-[220px]">
+                    <div className="flex flex-wrap gap-1 mb-1.5">
+                      {item.productos.length === 0 ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#F87171' }}>
+                          Sin vincular
+                        </span>
+                      ) : item.productos.map(p => (
+                        <span key={p.id} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(255,255,255,0.06)', color: p.disponible ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)' }}>
+                          {p.nombre}
+                          <button onClick={() => handleQuitar(item, p.id)} disabled={linkingId === item.id} className="hover:text-red-400">
+                            <X size={11} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <select
+                      value=""
+                      disabled={linkingId === item.id}
+                      onChange={e => handleAgregar(item, e.target.value)}
+                      className="bg-[#0A0A0A] border border-white/10 rounded px-2 py-1 text-xs text-white/60 focus:outline-none focus:border-[#C9A84C]/60 cursor-pointer max-w-[200px]"
+                    >
+                      <option value="">+ vincular variante…</option>
+                      {productos
+                        .filter(p => p.inventarioId === null || p.inventarioId === item.id)
+                        .filter(p => !item.productos.some(linked => linked.id === p.id))
+                        .map(p => (
+                          <option key={p.id} value={p.id}>{p.nombre}</option>
+                        ))}
+                    </select>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -122,6 +183,7 @@ export default function AdminInventario() {
                 <td className="px-4 py-3 text-white font-medium">{totalUnidades} uds</td>
                 <td />
                 <td className="px-4 py-3 text-[#C9A84C] font-semibold whitespace-nowrap">{COP(totalCapital)}</td>
+                <td />
               </tr>
             </tfoot>
           </table>

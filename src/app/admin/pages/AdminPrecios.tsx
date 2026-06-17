@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Check, X, RefreshCw } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
@@ -48,6 +49,7 @@ export default function AdminPrecios() {
   };
 
   useEffect(() => { cargar(); }, []);
+  useRefetchOnFocus(cargar);
 
   const costoTotalPreview = Number(form.costoUnitario || 0) + Number(form.costoAdicional || 0);
 
