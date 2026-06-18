@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Check, Download, Pencil, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Download, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
@@ -193,6 +193,7 @@ export default function AdminVentas() {
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
+  const [eliminando, setEliminando] = useState<string | null>(null);
   const [inventario, setInventario] = useState<InvItem[]>([]);
   const [precios, setPrecios]       = useState<PrecioItem[]>([]);
   const [productos, setProductos]   = useState<ProductoItem[]>([]);
@@ -298,6 +299,16 @@ export default function AdminVentas() {
     } catch (err: any) {
       setEditError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Eliminar esta venta? Se revertirá el descuento de inventario.')) return;
+    setEliminando(id);
+    try {
+      await api.delete(`/ventas/${id}`);
+      cargar(page);
+      cargarFinancial();
+    } finally { setEliminando(null); }
   };
 
   return (
@@ -418,9 +429,15 @@ export default function AdminVentas() {
                       {isEditing ? (
                         <Check size={14} className="text-[#C9A84C]" />
                       ) : (
-                        <button onClick={() => handleEdit(v)} className="p-1.5 rounded hover:bg-white/10 text-white/40 hover:text-white">
-                          <Pencil size={14} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => handleEdit(v)} className="p-1.5 rounded hover:bg-white/10 text-white/40 hover:text-white">
+                            <Pencil size={14} />
+                          </button>
+                          <button onClick={() => handleDelete(v.id)} disabled={eliminando === v.id}
+                            className="p-1.5 rounded hover:bg-red-500/20 text-white/40 hover:text-red-400 disabled:opacity-40">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

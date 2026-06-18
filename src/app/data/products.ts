@@ -11,7 +11,9 @@ export async function getProductos(): Promise<Producto[]> {
 
   if (error) throw error;
 
-  return data.map((p: any) => ({
+  return data
+    .filter((p: any) => p.precio > 0 && !!p.estilo && Array.isArray(p.imgs) && p.imgs.length > 0)
+    .map((p: any) => ({
     id: p.id,
     nombre: p.nombre,
     estilo: p.estilo,
