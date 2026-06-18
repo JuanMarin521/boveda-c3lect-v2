@@ -1,13 +1,23 @@
 export type { NotasPerfume, Producto, GeneroProducto } from "./types";
 
 import { supabase } from "../supabase";
+import { api } from "../lib/api";
 import type { Producto } from "./types";
 
+async function getStockPorModelo(): Promise<Map<string, number>> {
+  try {
+    const { data } = await api.get<{ modelo: string; stock: number }[]>("/inventario/stock");
+    return new Map(data.map((i) => [i.modelo.toLowerCase(), i.stock]));
+  } catch {
+    return new Map();
+  }
+}
+
 export async function getProductos(): Promise<Producto[]> {
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .order("cat", { ascending: false });
+  const [{ data, error }, stockPorModelo] = await Promise.all([
+    supabase.from("productos").select("*").order("cat", { ascending: false }),
+    getStockPorModelo(),
+  ]);
 
   if (error) throw error;
 
@@ -20,6 +30,7 @@ export async function getProductos(): Promise<Producto[]> {
     display: p.display,
     precio: p.precio,
     disponible: p.disponible,
+    stock: stockPorModelo.get(String(p.nombre).toLowerCase()),
     cat: p.cat,
     marca: p.marca ?? undefined,
     genero: p.genero ?? undefined,

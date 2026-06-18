@@ -22,7 +22,7 @@ export default function ProductDetail() {
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
   const [zoomAbierto, setZoomAbierto] = useState(false);
   const [añadido, setAñadido] = useState(false);
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
 
   useEffect(() => {
     if (!zoomAbierto) return;
@@ -74,6 +74,8 @@ export default function ProductDetail() {
   }
 
   const urlWhatsApp = whatsappLink(producto.display);
+  const cantidadEnCarrito = items.find((i) => i.producto.id === producto.id)?.cantidad ?? 0;
+  const stockAgotadoEnCarrito = producto.stock != null && cantidadEnCarrito >= producto.stock;
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
@@ -219,7 +221,7 @@ export default function ProductDetail() {
 
               <button
                 onClick={handleAddToCart}
-                disabled={!producto.disponible}
+                disabled={!producto.disponible || stockAgotadoEnCarrito}
                 className="w-full border-2 px-8 py-5 text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={añadido
                   ? { borderColor: "#C9A84C", color: "#C9A84C" }
@@ -228,7 +230,7 @@ export default function ProductDetail() {
                 aria-label={añadido ? "Producto añadido al carrito" : `Añadir ${producto.display} al carrito`}
               >
                 {añadido ? <Check size={18} aria-hidden="true" /> : <ShoppingBag size={18} aria-hidden="true" />}
-                {añadido ? "¡Añadido al carrito!" : "Añadir al carrito"}
+                {añadido ? "¡Añadido al carrito!" : stockAgotadoEnCarrito ? "Stock máximo en el carrito" : "Añadir al carrito"}
               </button>
             </div>
           </motion.div>

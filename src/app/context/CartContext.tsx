@@ -23,22 +23,24 @@ type CartAction =
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD": {
+      const max = action.producto.stock;
       const existing = state.items.find((i) => i.producto.id === action.producto.id);
       if (existing) {
+        const cantidad = max != null ? Math.min(existing.cantidad + 1, max) : existing.cantidad + 1;
         return {
           ...state,
           isOpen: true,
           items: state.items.map((i) =>
-            i.producto.id === action.producto.id
-              ? { ...i, cantidad: i.cantidad + 1 }
-              : i
+            i.producto.id === action.producto.id ? { ...i, cantidad } : i
           ),
         };
       }
+      const cantidadInicial = max != null ? Math.min(1, max) : 1;
+      if (cantidadInicial < 1) return { ...state, isOpen: true };
       return {
         ...state,
         isOpen: true,
-        items: [...state.items, { producto: action.producto, cantidad: 1 }],
+        items: [...state.items, { producto: action.producto, cantidad: cantidadInicial }],
       };
     }
     case "REMOVE":
@@ -49,9 +51,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
       return {
         ...state,
-        items: state.items.map((i) =>
-          i.producto.id === action.id ? { ...i, cantidad: action.cantidad } : i
-        ),
+        items: state.items.map((i) => {
+          if (i.producto.id !== action.id) return i;
+          const max = i.producto.stock;
+          const cantidad = max != null ? Math.min(action.cantidad, max) : action.cantidad;
+          return { ...i, cantidad };
+        }),
       };
     }
     case "CLEAR":

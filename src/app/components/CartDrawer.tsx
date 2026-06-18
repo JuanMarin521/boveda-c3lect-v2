@@ -167,13 +167,17 @@ export default function CartDrawer() {
                               </span>
                               <button
                                 onClick={() => updateQty(item.producto.id, item.cantidad + 1)}
-                                className="px-2.5 py-1.5 text-white/50 hover:text-white transition-colors"
+                                disabled={item.producto.stock != null && item.cantidad >= item.producto.stock}
+                                className="px-2.5 py-1.5 text-white/50 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white/50"
                                 aria-label="Aumentar cantidad"
                               >
                                 <Plus size={12} />
                               </button>
                             </div>
                           </div>
+                          {item.producto.stock != null && item.cantidad >= item.producto.stock && (
+                            <p className="text-xs text-white/30 text-right">Stock máximo disponible</p>
+                          )}
                         </div>
                       </motion.div>
                     ))}
