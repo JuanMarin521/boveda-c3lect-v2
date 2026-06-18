@@ -20,7 +20,7 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 const ESTADOS = ['Pagado', 'Abonado', 'Pendiente', 'Uso Personal'];
-const FUENTES = ['WhatsApp', 'Presencial', 'Referido', 'Instagram'];
+const FUENTES = ['WhatsApp', 'Presencial', 'Referido', 'Instagram', 'Uso Personal'];
 
 interface Venta {
   id: string; fecha: string; cliente: string; celular: string | null;
