@@ -13,6 +13,8 @@ const SearchResults = lazy(() => import("./pages/SearchResults"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const CheckoutResult = lazy(() => import("./pages/CheckoutResult"));
 
 const AdminLayout = lazy(() => import("./admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./admin/pages/AdminDashboard"));
@@ -45,6 +47,10 @@ export const router = createBrowserRouter(
         { path: "login", Component: Login },
         { path: "register", Component: Register },
         { path: "reset-password", Component: ResetPassword },
+        { path: "checkout", Component: Checkout },
+        { path: "checkout/success", Component: CheckoutResult },
+        { path: "checkout/failure", Component: CheckoutResult },
+        { path: "checkout/pending", Component: CheckoutResult },
         { path: "*", Component: NotFound },
       ],
     },

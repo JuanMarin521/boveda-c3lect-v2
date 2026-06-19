@@ -193,19 +193,23 @@ export default function CartDrawer() {
                       {formatPrecio(totalPrice)}
                     </span>
                   </div>
-                  <p className="text-sm text-white/30 leading-relaxed">
-                    La disponibilidad y precio final se confirma por WhatsApp.
-                  </p>
+                  <button
+                    onClick={() => { closeCart(); navigate("/checkout"); }}
+                    className="w-full text-white px-6 py-4 text-sm uppercase tracking-widest hover:opacity-90 transition-all duration-300"
+                    style={{ backgroundColor: "#C9A84C" }}
+                  >
+                    Continuar al pago
+                  </button>
                   <a
                     href={buildWhatsAppMessage(items, totalPrice)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={closeCart}
-                    className="w-full bg-black text-white px-6 py-4 text-sm uppercase tracking-widest hover:bg-[#C9A84C] transition-all duration-300 flex items-center justify-center gap-3"
-                    aria-label="Finalizar pedido por WhatsApp"
+                    className="w-full text-white/40 hover:text-white px-6 py-2 text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                    aria-label="Preguntar por WhatsApp"
                   >
-                    <MessageCircle size={18} />
-                    Finalizar por WhatsApp
+                    <MessageCircle size={14} />
+                    O pregúntanos por WhatsApp
                   </a>
                 </div>
               </>
