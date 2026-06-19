@@ -104,7 +104,7 @@ export default function Home() {
                 className="relative aspect-[3/4] overflow-hidden bg-black"
               >
                 <img
-                  src={import.meta.env.BASE_URL + "images/relojes/curren-8488-rectangular-blue-gold-1.webp"}
+                  src={import.meta.env.BASE_URL + "images/relojes/skeleton-kosmo-644-6-negro-1.webp"}
                   alt="Colección Máquinas y Joyas — alta relojería"
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
