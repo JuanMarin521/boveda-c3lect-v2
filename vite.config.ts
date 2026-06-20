@@ -34,23 +34,4 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
-
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          const matches = [...id.matchAll(/node_modules\/(@[^/]+\/[^/]+|[^/]+)/g)]
-          if (matches.length === 0) return
-          const pkg = matches[matches.length - 1][1]
-          if (pkg.includes('react-router')) return 'vendor-router'
-          if (pkg === 'react' || pkg === 'react-dom' || pkg === 'scheduler') return 'vendor-react'
-          if (pkg.startsWith('@supabase')) return 'vendor-supabase'
-          if (pkg.startsWith('motion')) return 'vendor-motion'
-          if (pkg.startsWith('@mui') || pkg.startsWith('@emotion') || pkg.startsWith('@radix-ui')) return 'vendor-ui'
-          if (pkg === 'recharts') return 'vendor-charts'
-          return 'vendor'
-        },
-      },
-    },
-  },
 })
