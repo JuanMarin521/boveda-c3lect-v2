@@ -83,20 +83,25 @@ export default function Checkout() {
     setError('');
     setEnviando(true);
     try {
-      const { data: order } = await api.post<OrderResponse>('/orders', {
-        metodoPago,
-        items: items.map((i) => ({ productId: i.producto.id, cantidad: i.cantidad })),
-        shippingInfo: form,
-      });
+      const itemsPayload = items.map((i) => ({ productId: i.producto.id, cantidad: i.cantidad }));
 
       if (metodoPago === 'CONTRAENTREGA') {
+        const { data: order } = await api.post<OrderResponse>('/orders', {
+          metodoPago,
+          items: itemsPayload,
+          shippingInfo: form,
+        });
         clearCart();
         setPedidoConfirmado(order);
         return;
       }
 
-      const { data: pago } = await api.post<{ checkoutUrl: string }>('/payments/create', {
-        orderId: order.id,
+      // El pedido todavía no existe — solo se crea (ya confirmado) cuando
+      // MercadoPago avise que el pago fue aprobado. Así, si el pago falla o
+      // se abandona, no queda ningún pedido huérfano.
+      const { data: pago } = await api.post<{ checkoutUrl: string }>('/payments/create-pending', {
+        items: itemsPayload,
+        shippingInfo: form,
       });
       clearCart();
       window.location.href = pago.checkoutUrl;
