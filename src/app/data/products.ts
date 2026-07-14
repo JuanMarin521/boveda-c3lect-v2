@@ -1,5 +1,3 @@
-export type { NotasPerfume, Producto, GeneroProducto } from "./types";
-
 import { supabase } from "../supabase";
 import { api } from "../lib/api";
 import type { Producto } from "./types";
@@ -59,8 +57,4 @@ export async function getProductos(): Promise<Producto[]> {
 
 export function getProductoById(id: string, productos: Producto[]) {
   return productos.find((p) => p.id === id);
-}
-
-export function getProductosPorCategoria(cat: 'reloj' | 'perfume' | 'accesorio', productos: Producto[]) {
-  return productos.filter((p) => p.cat === cat);
 }
