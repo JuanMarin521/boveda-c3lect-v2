@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { getProductos } from "../data/products";
 import type { Producto } from "../data/types";
 
@@ -6,6 +6,7 @@ interface ProductosContextValue {
   productos: Producto[];
   cargando: boolean;
   error: Error | null;
+  recargar: () => void;
 }
 
 const ProductosContext = createContext<ProductosContextValue | null>(null);
@@ -15,15 +16,19 @@ export function ProductosProvider({ children }: { children: ReactNode }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setCargando(true);
+    setError(null);
     getProductos()
       .then(setProductos)
       .catch((e) => setError(e instanceof Error ? e : new Error(String(e))))
       .finally(() => setCargando(false));
   }, []);
 
+  useEffect(() => { cargar(); }, [cargar]);
+
   return (
-    <ProductosContext.Provider value={{ productos, cargando, error }}>
+    <ProductosContext.Provider value={{ productos, cargando, error, recargar: cargar }}>
       {children}
     </ProductosContext.Provider>
   );

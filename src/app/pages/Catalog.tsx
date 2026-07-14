@@ -14,11 +14,12 @@ import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
 import { useProductFilter } from "../hooks/useProductFilter";
 import { BarraFiltros } from "../components/BarraFiltros";
+import { AvisoError } from "../components/AvisoError";
 
 export default function Catalog() {
   const { category } = useParams<{ category?: string }>();
   const navigate = useNavigate();
-  const { productos, cargando } = useProductos();
+  const { productos, cargando, error, recargar } = useProductos();
 
   const filtroActivo: "all" | "reloj" | "perfume" | "accesorio" =
     category === "watches"    ? "reloj"     :
@@ -94,39 +95,43 @@ export default function Catalog() {
         </div>
 
         {/* Barra de filtros premium */}
-        <BarraFiltros
-          marcasDisponibles={marcasDisponibles}
-          seleccionMarcas={seleccionMarcas}
-          seleccionGeneros={seleccionGeneros}
-          seleccionPrecios={seleccionPrecios}
-          filtroMarcas={filtroMarcas}
-          filtroGeneros={filtroGeneros}
-          filtroPrecios={filtroPrecios}
-          filtroDisponible={filtroDisponible}
-          onMarca={toggleMarca}
-          onGenero={toggleGenero}
-          onPrecio={togglePrecio}
-          onIniciarMarcas={iniciarMarcas}
-          onIniciarGeneros={iniciarGeneros}
-          onIniciarPrecios={iniciarPrecios}
-          onAplicarMarcas={aplicarMarcas}
-          onAplicarGeneros={aplicarGeneros}
-          onAplicarPrecios={aplicarPrecios}
-          onDisponible={setFiltroDisponible}
-          onLimpiar={limpiarFiltros}
-          hayFiltrosActivos={hayFiltrosActivos}
-          cantidadFiltrosActivos={cantidadFiltrosActivos}
-        />
+        {!error && (
+          <BarraFiltros
+            marcasDisponibles={marcasDisponibles}
+            seleccionMarcas={seleccionMarcas}
+            seleccionGeneros={seleccionGeneros}
+            seleccionPrecios={seleccionPrecios}
+            filtroMarcas={filtroMarcas}
+            filtroGeneros={filtroGeneros}
+            filtroPrecios={filtroPrecios}
+            filtroDisponible={filtroDisponible}
+            onMarca={toggleMarca}
+            onGenero={toggleGenero}
+            onPrecio={togglePrecio}
+            onIniciarMarcas={iniciarMarcas}
+            onIniciarGeneros={iniciarGeneros}
+            onIniciarPrecios={iniciarPrecios}
+            onAplicarMarcas={aplicarMarcas}
+            onAplicarGeneros={aplicarGeneros}
+            onAplicarPrecios={aplicarPrecios}
+            onDisponible={setFiltroDisponible}
+            onLimpiar={limpiarFiltros}
+            hayFiltrosActivos={hayFiltrosActivos}
+            cantidadFiltrosActivos={cantidadFiltrosActivos}
+          />
+        )}
 
         {/* Contador de resultados con filtros activos */}
-        {hayFiltrosActivos && !cargando && (
+        {hayFiltrosActivos && !cargando && !error && (
           <p className="text-sm text-white/40 mb-8 -mt-4">
             {productosFiltrados.length}{" "}
             {productosFiltrados.length === 1 ? "producto encontrado" : "productos encontrados"}
           </p>
         )}
 
-        {cargando ? (
+        {error ? (
+          <AvisoError onRetry={recargar} />
+        ) : cargando ? (
           <p className="text-center text-white/40 py-20">Cargando colección...</p>
         ) : (
           <>

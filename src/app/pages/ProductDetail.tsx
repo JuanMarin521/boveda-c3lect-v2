@@ -13,11 +13,12 @@ import { getProductoById } from "../data/products";
 import { useProductos } from "../context/ProductosContext";
 import { whatsappLink } from "../config";
 import { useCart } from "../context/CartContext";
+import { AvisoError } from "../components/AvisoError";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { productos, cargando } = useProductos();
+  const { productos, cargando, error, recargar } = useProductos();
   const producto = getProductoById(id ?? "", productos);
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
   const [zoomAbierto, setZoomAbierto] = useState(false);
@@ -54,6 +55,18 @@ export default function ProductDetail() {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
         <p className="text-white/40 uppercase tracking-widest text-sm">Cargando...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <AvisoError
+          titulo="No pudimos cargar este producto"
+          detalle="Puede ser un problema temporal de conexión — inténtalo de nuevo en un momento."
+          onRetry={recargar}
+        />
       </div>
     );
   }

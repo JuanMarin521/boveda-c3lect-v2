@@ -5,11 +5,12 @@ import type { Producto } from "../data/types";
 import { useProductos } from "../context/ProductosContext";
 import { useProductFilter } from "../hooks/useProductFilter";
 import { BarraFiltros } from "../components/BarraFiltros";
+import { AvisoError } from "../components/AvisoError";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
-  const { productos, cargando } = useProductos();
+  const { productos, cargando, error, recargar } = useProductos();
 
   const term = query.toLowerCase().trim();
   const resultadosBusqueda = term
@@ -63,7 +64,9 @@ export default function SearchResults() {
             "{query}"
           </h1>
           <p className="text-white/50 text-sm tracking-wide">
-            {cargando
+            {error
+              ? "No se pudo cargar"
+              : cargando
               ? "Buscando..."
               : total === 0
               ? "Sin resultados"
@@ -73,8 +76,10 @@ export default function SearchResults() {
           </p>
         </motion.div>
 
+        {error && <AvisoError onRetry={recargar} />}
+
         {/* Barra de filtros (solo cuando hay resultados de búsqueda) */}
-        {!cargando && resultadosBusqueda.length > 0 && (
+        {!error && !cargando && resultadosBusqueda.length > 0 && (
           <BarraFiltros
             marcasDisponibles={marcasDisponibles}
             seleccionMarcas={seleccionMarcas}
@@ -100,7 +105,7 @@ export default function SearchResults() {
           />
         )}
 
-        {!cargando && productosFiltrados.length > 0 && (
+        {!error && !cargando && productosFiltrados.length > 0 && (
           <motion.div
             layout
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
@@ -111,7 +116,7 @@ export default function SearchResults() {
           </motion.div>
         )}
 
-        {!cargando && productosFiltrados.length === 0 && (
+        {!error && !cargando && productosFiltrados.length === 0 && (
           <div className="py-20 text-center">
             <p className="text-white/40 mb-6">
               {hayFiltrosActivos
