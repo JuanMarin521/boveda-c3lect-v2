@@ -6,23 +6,30 @@ import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
+const NUEVO_MODELO = '__nuevo__';
+const NUEVA_MARCA = '__nueva__';
+
 interface Precio {
-  id: string; modelo: string; costoUnitario: number; costoAdicional: number;
+  id: string; marca: string; modelo: string; costoUnitario: number; costoAdicional: number;
   costoTotal: number; precioPublico: number | null; precioCierre: number | null;
   gananciaMinima: number | null;
 }
+interface InvItem { marca: string | null; modelo: string }
 
 const EMPTY_FORM = {
-  modelo: '', costoUnitario: '', costoAdicional: '25028',
+  marca: '', modelo: '', costoUnitario: '', costoAdicional: '25028',
   precioPublico: '', precioCierre: '',
 };
 
 export default function AdminPrecios() {
   const [items, setItems]   = useState<Precio[]>([]);
-  const [nombresProducto, setNombresProducto] = useState<string[]>([]);
+  const [marcas, setMarcas] = useState<string[]>([]);
+  const [inventarioItems, setInventarioItems] = useState<InvItem[]>([]);
   const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]     = useState(EMPTY_FORM);
+  const [modoMarcaNueva, setModoMarcaNueva] = useState(false);
+  const [modoModeloNuevo, setModoModeloNuevo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
@@ -36,10 +43,39 @@ export default function AdminPrecios() {
   useEffect(() => { cargar(); }, []);
   useRefetchOnFocus(cargar);
   useEffect(() => {
-    api.get<{ nombre: string }[]>('/products').then(({ data }) => {
-      setNombresProducto([...new Set(data.map(p => p.nombre))].sort());
-    }).catch(() => {});
+    api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)).catch(() => {});
+    api.get<InvItem[]>('/inventario').then(({ data }) => setInventarioItems(data)).catch(() => {});
   }, []);
+
+  const modelosPorMarca: Record<string, string[]> = {};
+  for (const item of inventarioItems) {
+    if (!item.marca) continue;
+    if (!modelosPorMarca[item.marca]) modelosPorMarca[item.marca] = [];
+    if (!modelosPorMarca[item.marca].includes(item.modelo)) modelosPorMarca[item.marca].push(item.modelo);
+  }
+  for (const key of Object.keys(modelosPorMarca)) modelosPorMarca[key].sort();
+  const modelosDisponibles = modelosPorMarca[form.marca] ?? [];
+
+  function handleMarcaChange(value: string) {
+    if (value === NUEVA_MARCA) {
+      setModoMarcaNueva(true);
+      setModoModeloNuevo(true);
+      setForm(f => ({ ...f, marca: '', modelo: '' }));
+    } else {
+      setModoMarcaNueva(false);
+      setModoModeloNuevo(false);
+      setForm(f => ({ ...f, marca: value, modelo: '' }));
+    }
+  }
+
+  function handleModeloChange(value: string) {
+    if (value === NUEVO_MODELO) {
+      setModoModeloNuevo(true);
+      setForm(f => ({ ...f, modelo: '' }));
+    } else {
+      setForm(f => ({ ...f, modelo: value }));
+    }
+  }
 
   const costoTotalPreview = Number(form.costoUnitario || 0) + Number(form.costoAdicional || 0);
 
@@ -49,6 +85,7 @@ export default function AdminPrecios() {
     setGuardando(true);
     try {
       await api.post('/precios', {
+        marca: form.marca,
         modelo: form.modelo,
         costoUnitario: Number(form.costoUnitario),
         costoAdicional: Number(form.costoAdicional),
@@ -57,6 +94,8 @@ export default function AdminPrecios() {
       });
       setShowForm(false);
       setForm(EMPTY_FORM);
+      setModoMarcaNueva(false);
+      setModoModeloNuevo(false);
       cargar();
     } catch (err: any) {
       setFormError(err?.response?.data?.message ?? 'Error al guardar');
@@ -115,14 +154,40 @@ export default function AdminPrecios() {
         <form onSubmit={handleSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
           <h2 className="text-sm font-medium text-[#C9A84C] mb-4">Agregar producto a tabla de precios</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-            <div className="md:col-span-3"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
-              {nombresProducto.length > 0 ? (
-                <select required value={form.modelo} onChange={e => setForm(f => ({...f, modelo: e.target.value}))} className={inp + ' cursor-pointer'}>
-                  <option value="">Seleccionar producto…</option>
-                  {nombresProducto.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+            <div><label className="text-xs text-white/40 mb-1 block">Marca *</label>
+              {modoMarcaNueva ? (
+                <div className="flex gap-2">
+                  <input type="text" required placeholder="Naviforce..." value={form.marca} onChange={e => setForm(f => ({...f, marca: e.target.value}))} className={inp} />
+                  {marcas.length > 0 && (
+                    <button type="button" onClick={() => { setModoMarcaNueva(false); setForm(f => ({...f, marca: ''})); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
+                      Elegir existente
+                    </button>
+                  )}
+                </div>
               ) : (
-                <input type="text" required placeholder="Naviforce NF 7105..." value={form.modelo} onChange={e => setForm(f => ({...f, modelo: e.target.value}))} className={inp} />
+                <select required value={form.marca} onChange={e => handleMarcaChange(e.target.value)} className={inp + ' cursor-pointer'}>
+                  <option value="">Seleccionar marca…</option>
+                  {marcas.map(m => <option key={m} value={m}>{m}</option>)}
+                  <option value={NUEVA_MARCA}>+ Nueva marca</option>
+                </select>
+              )}
+            </div>
+            <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
+              {modoModeloNuevo ? (
+                <div className="flex gap-2">
+                  <input type="text" required placeholder="NF 7105..." value={form.modelo} onChange={e => setForm(f => ({...f, modelo: e.target.value}))} className={inp} />
+                  {modelosDisponibles.length > 0 && (
+                    <button type="button" onClick={() => { setModoModeloNuevo(false); setForm(f => ({...f, modelo: ''})); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
+                      Elegir existente
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <select required value={form.modelo} onChange={e => handleModeloChange(e.target.value)} className={inp + ' cursor-pointer'}>
+                  <option value="">Seleccionar modelo…</option>
+                  {modelosDisponibles.map(m => <option key={m} value={m}>{m}</option>)}
+                  <option value={NUEVO_MODELO}>+ Nuevo modelo (no listado)</option>
+                </select>
               )}
             </div>
           </div>
@@ -157,7 +222,7 @@ export default function AdminPrecios() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                {['Modelo','Costo U.','Costo Adicional','Costo Total','Precio Público','Precio Cierre','Gan. Mínima',''].map(h => (
+                {['Marca','Modelo','Costo U.','Costo Adicional','Costo Total','Precio Público','Precio Cierre','Gan. Mínima',''].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -169,6 +234,7 @@ export default function AdminPrecios() {
                 const editGanancia = isEditing && editForm.precioCierre ? Number(editForm.precioCierre) - editTotal : null;
                 return (
                   <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                    <td className="px-4 py-3 text-white/60 whitespace-nowrap">{p.marca}</td>
                     <td className="px-4 py-3 text-white max-w-[180px] truncate">{p.modelo}</td>
                     {isEditing ? (
                       <>

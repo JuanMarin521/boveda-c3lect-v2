@@ -7,7 +7,7 @@ const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
 interface Item {
-  id: string; modelo: string; stock: number; costoUnitario: number;
+  id: string; marca: string | null; modelo: string; stock: number; costoUnitario: number;
   categoria: string; capitalItem: number;
 }
 
@@ -96,7 +96,7 @@ export default function AdminInventario() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                {['Modelo','Categoría','Stock','Costo Unitario','Capital'].map(h => (
+                {['Marca','Modelo','Categoría','Stock','Costo Unitario','Capital'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -104,6 +104,7 @@ export default function AdminInventario() {
             <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
               {filtrados.map(item => (
                 <tr key={item.id} className="hover:bg-white/5 transition-colors">
+                  <td className="px-4 py-3 text-white/60 whitespace-nowrap">{item.marca ?? '—'}</td>
                   <td className="px-4 py-3 text-white">{item.modelo}</td>
                   <td className="px-4 py-3">
                     <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(201,168,76,0.1)', color: '#C9A84C' }}>{item.categoria}</span>
@@ -120,7 +121,7 @@ export default function AdminInventario() {
             </tbody>
             <tfoot>
               <tr className="border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                <td colSpan={2} className="px-4 py-3 text-xs text-white/40 uppercase tracking-wider">Total</td>
+                <td colSpan={3} className="px-4 py-3 text-xs text-white/40 uppercase tracking-wider">Total</td>
                 <td className="px-4 py-3 text-white font-medium">{totalUnidades} uds</td>
                 <td />
                 <td className="px-4 py-3 text-[#C9A84C] font-semibold whitespace-nowrap">{COP(totalCapital)}</td>

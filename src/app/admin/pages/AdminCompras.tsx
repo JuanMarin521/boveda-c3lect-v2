@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Pencil, Plus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
 
 const NUEVO_MODELO = '__nuevo__';
+const NUEVA_MARCA = '__nueva__';
 
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
@@ -17,31 +18,46 @@ const fmtFecha = (s: string) => {
 const CATEGORIAS = ['Reloj', 'Perfume', 'Accesorio'];
 
 interface Compra {
-  id: string; fecha: string; modelo: string; cantidad: number;
+  id: string; fecha: string; marca: string; modelo: string; cantidad: number;
   costoUnitario: number; costoTotal: number; categoria: string;
 }
 interface Paginado { data: Compra[]; total: number; page: number; limit: number; pages: number }
 interface Resumen { totalCompras: number; comprasPorCategoria: Record<string, number> }
+interface InvItem { marca: string | null; modelo: string }
 
 const EMPTY_FORM = {
   fecha: new Date().toISOString().split('T')[0],
-  modelo: '', cantidad: '1', costoUnitario: '', categoria: 'Reloj',
+  marca: '', modelo: '', cantidad: '1', costoUnitario: '', categoria: 'Reloj',
 };
 type FormState = typeof EMPTY_FORM;
 
 const inp = 'bg-[#0A0A0A] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/60 w-full';
 const sel = inp + ' cursor-pointer';
 
-function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel, nombresProducto }: {
+function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel, marcas, modelosPorMarca }: {
   title: string; f: FormState; setF: (fn: (p: FormState) => FormState) => void;
   costoPreview: number; onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
-  error: string; saving: boolean; submitLabel: string; nombresProducto: string[];
+  error: string; saving: boolean; submitLabel: string; marcas: string[]; modelosPorMarca: Record<string, string[]>;
 }) {
-  const [modoNuevo, setModoNuevo] = useState(() => f.modelo !== '' && !nombresProducto.includes(f.modelo));
+  const [modoMarcaNueva, setModoMarcaNueva] = useState(() => f.marca !== '' && !marcas.includes(f.marca));
+  const modelosDisponibles = modelosPorMarca[f.marca] ?? [];
+  const [modoModeloNuevo, setModoModeloNuevo] = useState(() => f.modelo !== '' && !modelosDisponibles.includes(f.modelo));
 
-  function handleSelectChange(value: string) {
+  function handleMarcaChange(value: string) {
+    if (value === NUEVA_MARCA) {
+      setModoMarcaNueva(true);
+      setModoModeloNuevo(true);
+      setF(p => ({ ...p, marca: '', modelo: '' }));
+    } else {
+      setModoMarcaNueva(false);
+      setModoModeloNuevo(false);
+      setF(p => ({ ...p, marca: value, modelo: '' }));
+    }
+  }
+
+  function handleModeloChange(value: string) {
     if (value === NUEVO_MODELO) {
-      setModoNuevo(true);
+      setModoModeloNuevo(true);
       setF(p => ({ ...p, modelo: '' }));
     } else {
       setF(p => ({ ...p, modelo: value }));
@@ -51,23 +67,41 @@ function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, s
   return (
     <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
       <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
         <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label>
           <input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
-        <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
-          {modoNuevo ? (
+        <div><label className="text-xs text-white/40 mb-1 block">Marca *</label>
+          {modoMarcaNueva ? (
             <div className="flex gap-2">
-              <input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} />
-              {nombresProducto.length > 0 && (
-                <button type="button" onClick={() => { setModoNuevo(false); setF(p => ({ ...p, modelo: '' })); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
+              <input type="text" required placeholder="Naviforce..." value={f.marca} onChange={e => setF(p => ({ ...p, marca: e.target.value }))} className={inp} />
+              {marcas.length > 0 && (
+                <button type="button" onClick={() => { setModoMarcaNueva(false); setF(p => ({ ...p, marca: '' })); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
                   Elegir existente
                 </button>
               )}
             </div>
           ) : (
-            <select required value={f.modelo} onChange={e => handleSelectChange(e.target.value)} className={sel}>
-              <option value="">Seleccionar producto…</option>
-              {nombresProducto.map(n => <option key={n} value={n}>{n}</option>)}
+            <select required value={f.marca} onChange={e => handleMarcaChange(e.target.value)} className={sel}>
+              <option value="">Seleccionar marca…</option>
+              {marcas.map(m => <option key={m} value={m}>{m}</option>)}
+              <option value={NUEVA_MARCA}>+ Nueva marca</option>
+            </select>
+          )}
+        </div>
+        <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Modelo *</label>
+          {modoModeloNuevo ? (
+            <div className="flex gap-2">
+              <input type="text" required placeholder="NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} />
+              {modelosDisponibles.length > 0 && (
+                <button type="button" onClick={() => { setModoModeloNuevo(false); setF(p => ({ ...p, modelo: '' })); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
+                  Elegir existente
+                </button>
+              )}
+            </div>
+          ) : (
+            <select required value={f.modelo} onChange={e => handleModeloChange(e.target.value)} className={sel}>
+              <option value="">Seleccionar modelo…</option>
+              {modelosDisponibles.map(m => <option key={m} value={m}>{m}</option>)}
               <option value={NUEVO_MODELO}>+ Nuevo modelo (no listado)</option>
             </select>
           )}
@@ -114,7 +148,8 @@ export default function AdminCompras() {
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState('');
   const [resumen, setResumen]   = useState<Resumen | null>(null);
-  const [nombresProducto, setNombresProducto] = useState<string[]>([]);
+  const [marcas, setMarcas]     = useState<string[]>([]);
+  const [inventarioItems, setInventarioItems] = useState<InvItem[]>([]);
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
@@ -137,10 +172,20 @@ export default function AdminCompras() {
   useEffect(() => { setPage(1); cargar(1); }, [filtroCategoria, desde, hasta, cargar]);
   useEffect(() => { cargarResumen(); }, [cargarResumen]);
   useEffect(() => {
-    api.get<{ nombre: string }[]>('/products').then(({ data }) => {
-      setNombresProducto([...new Set(data.map(p => p.nombre))].sort());
-    }).catch(() => {});
+    api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)).catch(() => {});
+    api.get<InvItem[]>('/inventario').then(({ data }) => setInventarioItems(data)).catch(() => {});
   }, []);
+
+  const modelosPorMarca = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const item of inventarioItems) {
+      if (!item.marca) continue;
+      if (!map[item.marca]) map[item.marca] = [];
+      if (!map[item.marca].includes(item.modelo)) map[item.marca].push(item.modelo);
+    }
+    for (const key of Object.keys(map)) map[key].sort();
+    return map;
+  }, [inventarioItems]);
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
 
@@ -153,7 +198,7 @@ export default function AdminCompras() {
     setGuardando(true);
     try {
       await api.post('/compras', {
-        fecha: form.fecha, modelo: form.modelo,
+        fecha: form.fecha, marca: form.marca, modelo: form.modelo,
         cantidad: Number(form.cantidad),
         costoUnitario: Number(form.costoUnitario),
         categoria: form.categoria,
@@ -173,6 +218,7 @@ export default function AdminCompras() {
     setShowForm(false);
     setEditForm({
       fecha:         c.fecha.split('T')[0],
+      marca:         c.marca,
       modelo:        c.modelo,
       cantidad:      String(c.cantidad),
       costoUnitario: String(c.costoUnitario),
@@ -187,6 +233,7 @@ export default function AdminCompras() {
     try {
       await api.put(`/compras/${editId}`, {
         fecha:         editForm.fecha,
+        marca:         editForm.marca,
         modelo:        editForm.modelo,
         cantidad:      Number(editForm.cantidad),
         costoUnitario: Number(editForm.costoUnitario),
@@ -244,7 +291,7 @@ export default function AdminCompras() {
           f={form} setF={setForm} costoPreview={costoTotalPreview}
           onSubmit={handleSubmit} onCancel={() => setShowForm(false)}
           error={formError} saving={guardando} submitLabel="Guardar compra"
-          nombresProducto={nombresProducto}
+          marcas={marcas} modelosPorMarca={modelosPorMarca}
         />
       )}
 
@@ -254,7 +301,7 @@ export default function AdminCompras() {
           f={editForm} setF={setEditForm} costoPreview={editCostoTotalPreview}
           onSubmit={handleEditSave} onCancel={() => { setEditId(null); setEditError(''); }}
           error={editError} saving={guardando} submitLabel="Guardar cambios"
-          nombresProducto={nombresProducto}
+          marcas={marcas} modelosPorMarca={modelosPorMarca}
         />
       )}
 
@@ -285,7 +332,7 @@ export default function AdminCompras() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                {['Fecha','Modelo','Cantidad','Costo Unitario','Costo Total','Categoría',''].map(h => (
+                {['Fecha','Marca','Modelo','Cantidad','Costo Unitario','Costo Total','Categoría',''].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -294,6 +341,7 @@ export default function AdminCompras() {
               {data.map(c => (
                 <tr key={c.id} className={`transition-colors ${editId === c.id ? 'bg-[#C9A84C]/5' : 'hover:bg-white/5'}`}>
                   <td className="px-4 py-3 text-white/70 whitespace-nowrap">{fmtFecha(c.fecha)}</td>
+                  <td className="px-4 py-3 text-white/60 whitespace-nowrap">{c.marca}</td>
                   <td className="px-4 py-3 text-white max-w-[220px] truncate">{c.modelo}</td>
                   <td className="px-4 py-3 text-white/80 text-center">{c.cantidad}</td>
                   <td className="px-4 py-3 text-white/70 whitespace-nowrap">{COP(c.costoUnitario)}</td>
@@ -311,7 +359,7 @@ export default function AdminCompras() {
             </tbody>
             <tfoot>
               <tr className="border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                <td colSpan={4} className="px-4 py-3 text-xs text-white/40 uppercase tracking-wider">Total página</td>
+                <td colSpan={5} className="px-4 py-3 text-xs text-white/40 uppercase tracking-wider">Total página</td>
                 <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{COP(data.reduce((s, c) => s + c.costoTotal, 0))}</td>
                 <td colSpan={2} />
               </tr>

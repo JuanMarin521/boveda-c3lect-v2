@@ -22,21 +22,24 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
 const ESTADOS = ['Pagado', 'Abonado', 'Pendiente', 'Uso Personal'];
 const FUENTES = ['WhatsApp', 'Presencial', 'Referido', 'Instagram', 'Uso Personal'];
 
+const NUEVO_MODELO = '__nuevo__';
+const NUEVA_MARCA = '__nueva__';
+
 interface Venta {
   id: string; fecha: string; cliente: string; celular: string | null;
-  modelo: string; estilo: string | null; precioVenta: number; costoProducto: number;
+  marca: string; modelo: string; estilo: string | null; precioVenta: number; costoProducto: number;
   costoEnvio: number; abono: number; saldoPendiente: number; gananciaNeta: number | null;
   fuente: string | null; estado: string;
 }
 interface Paginado { data: Venta[]; total: number; page: number; limit: number; pages: number }
 interface Financial { totalPrecioVentas: number; pendienteCobro: number }
-interface InvItem { modelo: string; stock: number; }
-interface PrecioItem { modelo: string; costoTotal: number; }
+interface InvItem { marca: string | null; modelo: string; stock: number; }
+interface PrecioItem { marca: string | null; modelo: string; costoTotal: number; }
 interface ProductoItem { nombre: string; estilo: string; }
 
 const EMPTY_FORM = {
   fecha: new Date().toISOString().split('T')[0],
-  cliente: '', celular: '', modelo: '', estilo: '',
+  cliente: '', celular: '', marca: '', modelo: '', estilo: '',
   precioVenta: '', costoProducto: '', costoEnvio: '0',
   abono: '', fuente: '', estado: 'Pagado',
 };
@@ -58,17 +61,21 @@ function recalcEstado(f: FormState): FormState {
 }
 
 // Componente a nivel de módulo — no se recrea en cada render del padre
-function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLabel, inventario, precios, productos }: {
+function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLabel, marcas, inventario, precios, productos }: {
   title: string; f: FormState; setF: (fn: (prev: FormState) => FormState) => void;
   onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
   error: string; saving: boolean; submitLabel: string;
-  inventario?: InvItem[]; precios?: PrecioItem[]; productos?: ProductoItem[];
+  marcas?: string[]; inventario?: InvItem[]; precios?: PrecioItem[]; productos?: ProductoItem[];
 }) {
   const disponibles = inventario?.filter(i => i.stock > 0) ?? [];
+  const marcasDisponibles = marcas ?? [];
 
-  function onModeloChange(modelo: string) {
-    const precio = precios?.find(p => p.modelo === modelo);
-    const estilos = [...new Set((productos ?? []).filter(p => p.nombre === modelo).map(p => p.estilo))];
+  const [modoMarcaNueva, setModoMarcaNueva] = useState(() => f.marca !== '' && !marcasDisponibles.includes(f.marca));
+
+  function onModeloChange(marca: string, modelo: string) {
+    const precio = precios?.find(p => p.modelo === modelo && (!p.marca || p.marca === marca));
+    const nombreCompleto = `${marca} ${modelo}`.trim();
+    const estilos = [...new Set((productos ?? []).filter(p => p.nombre === nombreCompleto).map(p => p.estilo))];
     setF(p => ({
       ...p,
       modelo,
@@ -77,15 +84,43 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
     }));
   }
 
-  // Opciones para el selector de modelo:
+  function handleMarcaChange(value: string) {
+    if (value === NUEVA_MARCA) {
+      setModoMarcaNueva(true);
+      setModoModeloNuevo(true);
+      setF(p => ({ ...p, marca: '', modelo: '', estilo: '', costoProducto: '' }));
+    } else {
+      setModoMarcaNueva(false);
+      setModoModeloNuevo(false);
+      setF(p => ({ ...p, marca: value, modelo: '', estilo: '', costoProducto: '' }));
+    }
+  }
+
+  // Opciones para el selector de modelo, filtradas por la marca elegida:
   // - Si hay inventario con stock → muestra solo productos disponibles (nueva venta)
   // - Si hay precios pero no inventario → muestra todos los productos (editar venta)
   const modeloOpciones: { value: string; label: string }[] =
     disponibles.length > 0
-      ? disponibles.map(i => ({ value: i.modelo, label: `${i.modelo} — ${i.stock} ud${i.stock !== 1 ? 's' : ''}` }))
-      : (precios ?? []).map(p => ({ value: p.modelo, label: p.modelo }));
+      ? disponibles
+          .filter(i => !f.marca || i.marca === f.marca)
+          .map(i => ({ value: i.modelo, label: `${i.modelo} — ${i.stock} ud${i.stock !== 1 ? 's' : ''}` }))
+      : (precios ?? [])
+          .filter(p => !f.marca || p.marca === f.marca)
+          .map(p => ({ value: p.modelo, label: p.modelo }));
 
-  let estilosDisponibles = [...new Set((productos ?? []).filter(p => p.nombre === f.modelo).map(p => p.estilo))];
+  const [modoModeloNuevo, setModoModeloNuevo] = useState(() => f.modelo !== '' && !modeloOpciones.some(o => o.value === f.modelo));
+
+  function handleModeloSelectChange(value: string) {
+    if (value === NUEVO_MODELO) {
+      setModoModeloNuevo(true);
+      setF(p => ({ ...p, modelo: '', estilo: '', costoProducto: '' }));
+    } else {
+      onModeloChange(f.marca, value);
+    }
+  }
+
+  const nombreCompletoActual = `${f.marca} ${f.modelo}`.trim();
+  let estilosDisponibles = [...new Set((productos ?? []).filter(p => p.nombre === nombreCompletoActual).map(p => p.estilo))];
   if (f.estilo && !estilosDisponibles.includes(f.estilo)) estilosDisponibles = [f.estilo, ...estilosDisponibles];
 
   return (
@@ -105,17 +140,44 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-        <div className="md:col-span-2">
+        <div>
+          <label className="text-xs text-white/40 mb-1 block">Marca *</label>
+          {modoMarcaNueva ? (
+            <div className="flex gap-2">
+              <input type="text" required placeholder="Naviforce..." value={f.marca} onChange={e => setF(p => ({ ...p, marca: e.target.value }))} className={inp} />
+              {marcasDisponibles.length > 0 && (
+                <button type="button" onClick={() => { setModoMarcaNueva(false); setF(p => ({ ...p, marca: '' })); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
+                  Elegir existente
+                </button>
+              )}
+            </div>
+          ) : (
+            <select required value={f.marca} onChange={e => handleMarcaChange(e.target.value)} className={sel}>
+              <option value="">Seleccionar marca…</option>
+              {marcasDisponibles.map(m => <option key={m} value={m}>{m}</option>)}
+              <option value={NUEVA_MARCA}>+ Nueva marca</option>
+            </select>
+          )}
+        </div>
+        <div>
           <label className="text-xs text-white/40 mb-1 block">Modelo *</label>
-          {modeloOpciones.length > 0 ? (
-            <select required value={f.modelo} onChange={e => onModeloChange(e.target.value)} className={sel}>
+          {!modoModeloNuevo && modeloOpciones.length > 0 ? (
+            <select required value={f.modelo} onChange={e => handleModeloSelectChange(e.target.value)} className={sel}>
               <option value="">Seleccionar producto…</option>
               {modeloOpciones.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
+              <option value={NUEVO_MODELO}>+ Nuevo modelo (no listado)</option>
             </select>
           ) : (
-            <input type="text" required placeholder="Naviforce NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} />
+            <div className="flex gap-2">
+              <input type="text" required placeholder="NF 7105..." value={f.modelo} onChange={e => setF(p => ({ ...p, modelo: e.target.value }))} className={inp} />
+              {modeloOpciones.length > 0 && (
+                <button type="button" onClick={() => { setModoModeloNuevo(false); setF(p => ({ ...p, modelo: '' })); }} className="text-xs text-white/40 hover:text-white whitespace-nowrap px-2">
+                  Elegir existente
+                </button>
+              )}
+            </div>
           )}
         </div>
         <div><label className="text-xs text-white/40 mb-1 block">Estilo</label>
@@ -161,9 +223,9 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
 }
 
 function exportCSV(data: Venta[]) {
-  const headers = ['Fecha','Cliente','Celular','Modelo','Estilo','Precio Venta','Costo','Envío','Abono','Saldo Pendiente','Ganancia','Fuente','Estado'];
+  const headers = ['Fecha','Cliente','Celular','Marca','Modelo','Estilo','Precio Venta','Costo','Envío','Abono','Saldo Pendiente','Ganancia','Fuente','Estado'];
   const rows = data.map((v) => [
-    fmtFecha(v.fecha), v.cliente, v.celular ?? '', v.modelo, v.estilo ?? '',
+    fmtFecha(v.fecha), v.cliente, v.celular ?? '', v.marca, v.modelo, v.estilo ?? '',
     v.precioVenta, v.costoProducto, v.costoEnvio, v.abono, v.saldoPendiente,
     v.gananciaNeta ?? '', v.fuente ?? '', v.estado,
   ]);
@@ -197,6 +259,7 @@ export default function AdminVentas() {
   const [inventario, setInventario] = useState<InvItem[]>([]);
   const [precios, setPrecios]       = useState<PrecioItem[]>([]);
   const [productos, setProductos]   = useState<ProductoItem[]>([]);
+  const [marcas, setMarcas]         = useState<string[]>([]);
 
   const cargar = useCallback((p: number) => {
     setCargando(true);
@@ -220,6 +283,7 @@ export default function AdminVentas() {
     api.get<InvItem[]>('/inventario').then(({ data }) => setInventario(data)).catch(() => {});
     api.get<PrecioItem[]>('/precios').then(({ data }) => setPrecios(data)).catch(() => {});
     api.get<ProductoItem[]>('/products').then(({ data }) => setProductos(data)).catch(() => {});
+    api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)).catch(() => {});
   }, []);
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
@@ -240,7 +304,7 @@ export default function AdminVentas() {
       await api.post('/ventas', {
         fecha: form.fecha, cliente: form.cliente,
         celular: form.celular || undefined,
-        modelo: form.modelo, estilo: form.estilo || undefined,
+        marca: form.marca, modelo: form.modelo, estilo: form.estilo || undefined,
         precioVenta: Number(form.precioVenta),
         costoProducto: Number(form.costoProducto),
         costoEnvio: Number(form.costoEnvio),
@@ -265,6 +329,7 @@ export default function AdminVentas() {
       fecha:         v.fecha.split('T')[0],
       cliente:       v.cliente,
       celular:       v.celular ?? '',
+      marca:         v.marca,
       modelo:        v.modelo,
       estilo:        v.estilo ?? '',
       precioVenta:   String(v.precioVenta),
@@ -284,6 +349,7 @@ export default function AdminVentas() {
         fecha:         editForm.fecha,
         cliente:       editForm.cliente,
         celular:       editForm.celular || undefined,
+        marca:         editForm.marca,
         modelo:        editForm.modelo,
         estilo:        editForm.estilo || undefined,
         precioVenta:   Number(editForm.precioVenta),
@@ -353,7 +419,7 @@ export default function AdminVentas() {
           onSubmit={handleSubmit}
           onCancel={() => setShowForm(false)}
           error={formError} saving={guardando} submitLabel="Guardar venta"
-          inventario={inventario} precios={precios} productos={productos}
+          marcas={marcas} inventario={inventario} precios={precios} productos={productos}
         />
       )}
 
@@ -364,7 +430,7 @@ export default function AdminVentas() {
           onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}
           onCancel={() => { setEditId(null); setEditError(''); }}
           error={editError} saving={guardando} submitLabel="Guardar cambios"
-          precios={precios} productos={productos}
+          marcas={marcas} precios={precios} productos={productos}
         />
       )}
 
@@ -399,7 +465,7 @@ export default function AdminVentas() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                {['Fecha','Cliente','Celular','Modelo','Estilo','Precio','Costo','Envío','Abono','Saldo Pendiente','Ganancia','Fuente','Estado',''].map(h => (
+                {['Fecha','Cliente','Celular','Marca','Modelo','Estilo','Precio','Costo','Envío','Abono','Saldo Pendiente','Ganancia','Fuente','Estado',''].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -413,6 +479,7 @@ export default function AdminVentas() {
                     <td className="px-4 py-3 text-white/70 whitespace-nowrap">{fmtFecha(v.fecha)}</td>
                     <td className="px-4 py-3 text-white whitespace-nowrap">{v.cliente}</td>
                     <td className="px-4 py-3 text-white/50">{v.celular ?? '—'}</td>
+                    <td className="px-4 py-3 text-white/60 whitespace-nowrap">{v.marca}</td>
                     <td className="px-4 py-3 text-white max-w-[160px] truncate">{v.modelo}</td>
                     <td className="px-4 py-3 text-white/50">{v.estilo ?? '—'}</td>
                     <td className="px-4 py-3 text-white whitespace-nowrap">{COP(v.precioVenta)}</td>
