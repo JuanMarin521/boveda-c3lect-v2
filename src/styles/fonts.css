@@ -1,1 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400&display=swap');
+/* La hoja de Google Fonts se carga como <link> en index.html (no @import):
+   un @import dentro del CSS obliga al navegador a esperar a que baje TODO
+   el bundle CSS antes de descubrir y pedir la hoja de fuentes, agregando
+   un round-trip extra en el render-blocking path. */

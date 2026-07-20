@@ -31,6 +31,8 @@ export default function Home() {
             src={import.meta.env.BASE_URL + "images/homePage-C3LECT.webp"}
             alt="Reloj C3LECT — Curren 8467 Negro"
             className="w-full h-full object-cover opacity-70"
+            width={1179}
+            height={1459}
             loading="eager"
             fetchPriority="high"
           />
@@ -106,6 +108,8 @@ export default function Home() {
                 <img
                   src={import.meta.env.BASE_URL + "images/relojes/skeleton-kosmo-644-6-negro-1.webp"}
                   alt="Colección Máquinas y Joyas — alta relojería"
+                  width={700}
+                  height={700}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
@@ -136,6 +140,8 @@ export default function Home() {
                 <img
                   src={import.meta.env.BASE_URL + "images/perfumes/afnan-9-pm-rebel-roja-1.webp"}
                   alt="Colección Firmas y Elixires — perfumería de autor"
+                  width={1200}
+                  height={1200}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
