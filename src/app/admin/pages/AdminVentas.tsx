@@ -14,6 +14,11 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
 
 const ESTADOS = ['Pagado', 'Abonado', 'Pendiente', 'Uso Personal'];
 const FUENTES = ['WhatsApp', 'Presencial', 'Referido', 'Instagram', 'Uso Personal'];
+const CATEGORIAS_FILTRO = [
+  { value: 'reloj', label: 'Relojes' },
+  { value: 'perfume', label: 'Perfumes' },
+  { value: 'accesorio', label: 'Accesorios' },
+];
 
 interface Venta {
   id: string; fecha: string; cliente: string; celular: string | null;
@@ -21,8 +26,11 @@ interface Venta {
   costoEnvio: number; abono: number; saldoPendiente: number; gananciaNeta: number | null;
   fuente: string | null; estado: string;
 }
-interface Paginado { data: Venta[]; meta: { total: number; page: number; limit: number; totalPages: number } }
-interface Financial { totalPrecioVentas: number; pendienteCobro: number }
+interface Paginado {
+  data: Venta[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+  agregados: { totalVendido: number; pendienteCobro: number };
+}
 interface InvItem { marca: string | null; modelo: string; stock: number; }
 interface PrecioItem { marca: string | null; modelo: string; costoTotal: number; }
 interface ProductoItem { nombre: string; estilo: string; }
@@ -234,6 +242,7 @@ export default function AdminVentas() {
   const [page, setPage]         = useState(1);
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroFuente, setFiltroFuente] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
   const [desde, setDesde]       = useState('');
   const [hasta, setHasta]       = useState('');
   const [cargando, setCargando] = useState(true);
@@ -242,7 +251,7 @@ export default function AdminVentas() {
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [formError, setFormError] = useState('');
-  const [financial, setFinancial] = useState<Financial | null>(null);
+  const [resumen, setResumen] = useState({ totalVendido: 0, pendienteCobro: 0 });
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
@@ -258,20 +267,20 @@ export default function AdminVentas() {
     const params: Record<string, string> = { page: String(p), limit: '20' };
     if (filtroEstado) params.estado = filtroEstado;
     if (filtroFuente) params.fuente = filtroFuente;
+    if (filtroCategoria) params.categoria = filtroCategoria;
     if (desde) params.desde = desde;
     if (hasta) params.hasta = hasta;
     api.get<Paginado>('/metrics/sales', { params })
-      .then(({ data: res }) => { setData(res.data); setMeta({ total: res.meta.total, page: res.meta.page, pages: res.meta.totalPages }); })
+      .then(({ data: res }) => {
+        setData(res.data);
+        setMeta({ total: res.meta.total, page: res.meta.page, pages: res.meta.totalPages });
+        setResumen(res.agregados);
+      })
       .finally(() => setCargando(false));
-  }, [filtroEstado, filtroFuente, desde, hasta]);
+  }, [filtroEstado, filtroFuente, filtroCategoria, desde, hasta]);
 
-  const cargarFinancial = useCallback(() => {
-    api.get<Financial>('/metrics/financial').then(({ data }) => setFinancial(data)).catch(() => {});
-  }, []);
-
-  useEffect(() => { setPage(1); cargar(1); }, [filtroEstado, filtroFuente, desde, hasta, cargar]);
-  useEffect(() => { cargarFinancial(); }, [cargarFinancial]);
-  useRefetchOnFocus(useCallback(() => { cargar(page); cargarFinancial(); }, [cargar, page, cargarFinancial]));
+  useEffect(() => { setPage(1); cargar(1); }, [filtroEstado, filtroFuente, filtroCategoria, desde, hasta, cargar]);
+  useRefetchOnFocus(useCallback(() => cargar(page), [cargar, page]));
   useEffect(() => {
     Promise.allSettled([
       api.get<InvItem[]>('/inventario').then(({ data }) => setInventario(data)),
@@ -310,7 +319,6 @@ export default function AdminVentas() {
       setShowForm(false);
       setForm(EMPTY_FORM);
       cargar(1);
-      cargarFinancial();
     } catch (err: any) {
       setFormError(err?.response?.data?.message ?? 'Error al guardar la venta');
     } finally { setGuardando(false); }
@@ -356,7 +364,6 @@ export default function AdminVentas() {
       });
       setEditId(null);
       cargar(page);
-      cargarFinancial();
     } catch (err: any) {
       setEditError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
@@ -368,7 +375,6 @@ export default function AdminVentas() {
     try {
       await api.delete(`/ventas/${id}`);
       cargar(page);
-      cargarFinancial();
     } finally { setEliminando(null); }
   };
 
@@ -394,18 +400,16 @@ export default function AdminVentas() {
         </div>
       </div>
 
-      {financial && (
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Total Vendido</p>
-            <p className="text-lg font-semibold text-white">{COP(financial.totalPrecioVentas)}</p>
-          </div>
-          <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Pendiente de Cobro</p>
-            <p className="text-lg font-semibold text-yellow-400">{COP(financial.pendienteCobro)}</p>
-          </div>
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Total Vendido</p>
+          <p className="text-lg font-semibold text-white">{COP(resumen.totalVendido)}</p>
         </div>
-      )}
+        <div className="rounded-lg p-4" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Pendiente de Cobro</p>
+          <p className="text-lg font-semibold text-yellow-400">{COP(resumen.pendienteCobro)}</p>
+        </div>
+      </div>
 
       {showForm && (
         <VentaForm
@@ -438,6 +442,10 @@ export default function AdminVentas() {
           <option value="">Todas las fuentes</option>
           {FUENTES.map(f => <option key={f} value={f}>{f}</option>)}
         </select>
+        <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none cursor-pointer">
+          <option value="">Todas las categorías</option>
+          {CATEGORIAS_FILTRO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-white/40 whitespace-nowrap">Desde</label>
           <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" style={{ colorScheme: 'dark' }} />
@@ -446,8 +454,8 @@ export default function AdminVentas() {
           <label className="text-xs text-white/40 whitespace-nowrap">Hasta</label>
           <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="bg-[#111] border border-white/10 rounded px-3 py-1.5 text-sm text-white/80 focus:outline-none" style={{ colorScheme: 'dark' }} />
         </div>
-        {(filtroEstado || filtroFuente || desde || hasta) && (
-          <button onClick={() => { setFiltroEstado(''); setFiltroFuente(''); setDesde(''); setHasta(''); }} className="text-xs text-white/40 hover:text-white/70 px-2">Limpiar</button>
+        {(filtroEstado || filtroFuente || filtroCategoria || desde || hasta) && (
+          <button onClick={() => { setFiltroEstado(''); setFiltroFuente(''); setFiltroCategoria(''); setDesde(''); setHasta(''); }} className="text-xs text-white/40 hover:text-white/70 px-2">Limpiar</button>
         )}
       </div>
 
