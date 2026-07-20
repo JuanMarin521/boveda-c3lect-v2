@@ -2,8 +2,13 @@ import { createBrowserRouter } from "react-router";
 import { lazy } from "react";
 import Root from "./components/Root";
 import AdminRoot from "./admin/AdminRoot";
+// Home NO se carga con lazy(): es la ruta con la que aterriza casi todo el
+// mundo, así que separarla en su propio chunk solo suma un round-trip extra
+// antes del primer render Y deja el <Suspense fallback={null}> mostrando
+// nav+footer vacíos durante ese tiempo, lo que generaba un CLS enorme
+// (el contenido de Home se insertaba después, empujando el footer).
+import Home from "./pages/Home";
 
-const Home = lazy(() => import("./pages/Home"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const About = lazy(() => import("./pages/About"));

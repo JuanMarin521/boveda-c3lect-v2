@@ -23,8 +23,8 @@ function cspMeta() {
   const CSP = [
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
     "img-src 'self'",
     "connect-src 'self' https://c3lect-api.onrender.com https://afefampklagfcvtxtqxv.supabase.co",
     "object-src 'none'",
