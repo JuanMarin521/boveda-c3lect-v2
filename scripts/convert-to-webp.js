@@ -1,4 +1,5 @@
-// Convierte todas las imágenes (.jpg, .jpeg, .png, .tiff, .bmp, .gif) de una carpeta a .webp.
+// Convierte todas las imágenes (.jpg, .jpeg, .png, .tiff, .bmp, .gif, .heic, .heif) de una
+// carpeta a .webp — incluye las fotos que salen directo de iPhone en formato HEIC.
 //
 // Uso:
 //   node scripts/convert-to-webp.js <carpeta-origen> [carpeta-destino] [calidad 1-100]
@@ -13,9 +14,10 @@
 //   node scripts/convert-to-webp.js ./nuevas-fotos public/images/relojes 90
 //     → misma idea, con calidad 90 en vez del default (82)
 
-import { readdir, mkdir } from 'fs/promises';
+import { readdir, mkdir, readFile } from 'fs/promises';
 import { extname, join, basename } from 'path';
 import sharp from 'sharp';
+import heicConvert from 'heic-convert';
 
 const [, , inputDirArg, outputDirArg, qualityArg] = process.argv;
 
@@ -28,7 +30,8 @@ const inputDir = inputDirArg;
 const outputDir = outputDirArg ?? inputDirArg;
 const quality = qualityArg ? Number(qualityArg) : 82;
 
-const EXTENSIONES_VALIDAS = new Set(['.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.gif']);
+const EXTENSIONES_VALIDAS = new Set(['.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.gif', '.heic', '.heif']);
+const EXTENSIONES_HEIC = new Set(['.heic', '.heif']);
 
 async function main() {
   await mkdir(outputDir, { recursive: true });
@@ -44,11 +47,21 @@ async function main() {
   console.log(`Convirtiendo ${imagenes.length} imagen(es) a .webp (calidad ${quality})...\n`);
 
   for (const archivo of imagenes) {
+    const extension = extname(archivo).toLowerCase();
     const nombreBase = basename(archivo, extname(archivo));
     const rutaOrigen = join(inputDir, archivo);
     const rutaDestino = join(outputDir, `${nombreBase}.webp`);
 
-    await sharp(rutaOrigen).webp({ quality }).toFile(rutaDestino);
+    if (EXTENSIONES_HEIC.has(extension)) {
+      // sharp no trae soporte para leer HEIC/HEIF (licencia del códec) — se decodifica
+      // aparte con heic-convert a PNG en memoria y de ahí se le pasa a sharp.
+      const heicBuffer = await readFile(rutaOrigen);
+      const pngBuffer = await heicConvert({ buffer: heicBuffer, format: 'PNG' });
+      await sharp(pngBuffer).webp({ quality }).toFile(rutaDestino);
+    } else {
+      await sharp(rutaOrigen).webp({ quality }).toFile(rutaDestino);
+    }
+
     console.log(`  ✓ ${archivo} → ${rutaDestino}`);
   }
 
