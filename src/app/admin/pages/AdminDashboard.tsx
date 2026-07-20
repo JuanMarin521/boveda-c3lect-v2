@@ -199,7 +199,6 @@ export default function AdminDashboard() {
           label="Ventas Históricas"
           value={String(summary.totalPedidosHistoricos)}
           icon={DollarSign}
-          sub="del registro Excel"
         />
         <StatCard
           label="Productos Disponibles"
