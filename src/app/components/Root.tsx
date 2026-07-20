@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Navigation from "./Navigation";
 import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
+import OfflineBanner from "./OfflineBanner";
 import { CartProvider } from "../context/CartContext";
 import { ProductosProvider } from "../context/ProductosContext";
 
@@ -11,6 +12,7 @@ export default function Root() {
     <CartProvider>
       <ProductosProvider>
         <div className="min-h-screen flex flex-col bg-white">
+          <OfflineBanner />
           <ScrollRestoration />
           <Navigation />
           <main className="flex-1">

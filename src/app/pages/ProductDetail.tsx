@@ -123,6 +123,8 @@ export default function ProductDetail() {
                 alt={`${producto.display} — foto ${imagenSeleccionada + 1}`}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="eager"
+                width={800}
+                height={800}
               />
               {!producto.disponible && (
                 <div className="absolute top-4 left-4 bg-black/80 text-white text-xs uppercase tracking-widest px-3 py-1">
@@ -150,6 +152,8 @@ export default function ProductDetail() {
                       alt={`${producto.display} — foto ${index + 1}`}
                       loading="lazy"
                       className="w-full h-full object-cover"
+                      width={150}
+                      height={150}
                     />
                   </button>
                 ))}

@@ -1,9 +1,9 @@
 import { createBrowserRouter } from "react-router";
 import { lazy } from "react";
 import Root from "./components/Root";
-import Home from "./pages/Home";
 import AdminRoot from "./admin/AdminRoot";
 
+const Home = lazy(() => import("./pages/Home"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const About = lazy(() => import("./pages/About"));
