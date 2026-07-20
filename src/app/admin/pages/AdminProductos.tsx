@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../lib/api';
+import { formatPrecio as COP } from '../../lib/format';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 import type { Producto } from '../../data/types';
 
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
 const CATEGORIAS = ['', 'reloj', 'perfume', 'accesorio'];
 

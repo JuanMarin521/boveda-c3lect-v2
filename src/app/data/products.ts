@@ -11,9 +11,18 @@ async function getStockPorModelo(): Promise<Map<string, number>> {
   }
 }
 
+// Lista explícita de columnas (en vez de select("*")) para que una columna interna futura
+// (costo, margen) no llegue al navegador de un visitante anónimo por default. Debe mantenerse
+// en sync con los campos que el mapeo de abajo efectivamente lee de `p`.
+const PRODUCTOS_COLUMNAS =
+  "id, nombre, estilo, display, precio, disponible, cat, marca, genero, imgs, " +
+  "spec_movimiento, spec_dimensiones, spec_caja, spec_correa, spec_cristal, spec_funciones, " +
+  "spec_resistencia_agua, spec_peso, spec_bateria, spec_reserva_marcha, spec_observaciones, " +
+  "notas_descripcion, notas_top, notas_corazon, notas_base";
+
 export async function getProductos(): Promise<Producto[]> {
   const [{ data, error }, stockPorModelo] = await Promise.all([
-    supabase.from("productos").select("*").order("cat", { ascending: false }),
+    supabase.from("productos").select(PRODUCTOS_COLUMNAS).order("cat", { ascending: false }),
     getStockPorModelo(),
   ]);
 

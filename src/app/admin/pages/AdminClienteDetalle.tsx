@@ -4,9 +4,8 @@ import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
+import { formatPrecio as COP } from '../../lib/format';
 
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   PENDIENTE:  { label: 'Pendiente',  color: '#EAB308' },

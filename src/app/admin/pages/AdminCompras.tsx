@@ -1,19 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Pencil, Plus, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
-
-const NUEVO_MODELO = '__nuevo__';
-const NUEVA_MARCA = '__nueva__';
-
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
-
-const fmtFecha = (s: string) => {
-  const [y, m, d] = s.split('T')[0].split('-').map(Number);
-  return format(new Date(y, m - 1, d), 'd MMM yyyy', { locale: es });
-};
+import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
+import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
+import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const CATEGORIAS = ['Reloj', 'Perfume', 'Accesorio'];
 
@@ -21,7 +11,7 @@ interface Compra {
   id: string; fecha: string; marca: string; modelo: string; cantidad: number;
   costoUnitario: number; costoTotal: number; categoria: string;
 }
-interface Paginado { data: Compra[]; total: number; page: number; limit: number; pages: number }
+interface Paginado { data: Compra[]; meta: { total: number; page: number; limit: number; totalPages: number } }
 interface Resumen { totalCompras: number; comprasPorCategoria: Record<string, number> }
 interface InvItem { marca: string | null; modelo: string }
 
@@ -40,9 +30,9 @@ function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, s
   error: string; saving: boolean; submitLabel: string; marcas: string[]; modelosPorMarca: Record<string, string[]>;
   errorOpciones: boolean;
 }) {
-  const [modoMarcaNueva, setModoMarcaNueva] = useState(() => f.marca !== '' && !marcas.includes(f.marca));
   const modelosDisponibles = modelosPorMarca[f.marca] ?? [];
-  const [modoModeloNuevo, setModoModeloNuevo] = useState(() => f.modelo !== '' && !modelosDisponibles.includes(f.modelo));
+  const { modoMarcaNueva, setModoMarcaNueva, modoModeloNuevo, setModoModeloNuevo } =
+    useMarcaModeloToggle(f.marca, f.modelo, marcas, modelosDisponibles);
 
   function handleMarcaChange(value: string) {
     if (value === NUEVA_MARCA) {
@@ -164,7 +154,7 @@ export default function AdminCompras() {
     if (desde) params.desde = desde;
     if (hasta) params.hasta = hasta;
     api.get<Paginado>('/metrics/purchases', { params })
-      .then(({ data: res }) => { setData(res.data); setMeta({ total: res.total, page: res.page, pages: res.pages }); })
+      .then(({ data: res }) => { setData(res.data); setMeta({ total: res.meta.total, page: res.meta.page, pages: res.meta.totalPages }); })
       .finally(() => setCargando(false));
   }, [filtroCategoria, desde, hasta]);
 
@@ -174,6 +164,7 @@ export default function AdminCompras() {
 
   useEffect(() => { setPage(1); cargar(1); }, [filtroCategoria, desde, hasta, cargar]);
   useEffect(() => { cargarResumen(); }, [cargarResumen]);
+  useRefetchOnFocus(useCallback(() => { cargar(page); cargarResumen(); }, [cargar, page, cargarResumen]));
   useEffect(() => {
     Promise.allSettled([
       api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)),

@@ -1,16 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Check, Download, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
-
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
-
-const fmtFecha = (s: string) => {
-  const [y, m, d] = s.split('T')[0].split('-').map(Number);
-  return format(new Date(y, m - 1, d), 'd MMM yyyy', { locale: es });
-};
+import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
+import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
+import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
   Pagado:         { label: 'Pagado',        color: '#22C55E' },
@@ -22,16 +15,13 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
 const ESTADOS = ['Pagado', 'Abonado', 'Pendiente', 'Uso Personal'];
 const FUENTES = ['WhatsApp', 'Presencial', 'Referido', 'Instagram', 'Uso Personal'];
 
-const NUEVO_MODELO = '__nuevo__';
-const NUEVA_MARCA = '__nueva__';
-
 interface Venta {
   id: string; fecha: string; cliente: string; celular: string | null;
   marca: string; modelo: string; estilo: string | null; precioVenta: number; costoProducto: number;
   costoEnvio: number; abono: number; saldoPendiente: number; gananciaNeta: number | null;
   fuente: string | null; estado: string;
 }
-interface Paginado { data: Venta[]; total: number; page: number; limit: number; pages: number }
+interface Paginado { data: Venta[]; meta: { total: number; page: number; limit: number; totalPages: number } }
 interface Financial { totalPrecioVentas: number; pendienteCobro: number }
 interface InvItem { marca: string | null; modelo: string; stock: number; }
 interface PrecioItem { marca: string | null; modelo: string; costoTotal: number; }
@@ -71,8 +61,6 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
   const disponibles = inventario?.filter(i => i.stock > 0) ?? [];
   const marcasDisponibles = marcas ?? [];
 
-  const [modoMarcaNueva, setModoMarcaNueva] = useState(() => f.marca !== '' && !marcasDisponibles.includes(f.marca));
-
   function onModeloChange(marca: string, modelo: string) {
     const precio = precios?.find(p => p.modelo === modelo && (!p.marca || p.marca === marca));
     const nombreCompleto = `${marca} ${modelo}`.trim();
@@ -109,7 +97,8 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
           .filter(p => !f.marca || p.marca === f.marca)
           .map(p => ({ value: p.modelo, label: p.modelo }));
 
-  const [modoModeloNuevo, setModoModeloNuevo] = useState(() => f.modelo !== '' && !modeloOpciones.some(o => o.value === f.modelo));
+  const { modoMarcaNueva, setModoMarcaNueva, modoModeloNuevo, setModoModeloNuevo } =
+    useMarcaModeloToggle(f.marca, f.modelo, marcasDisponibles, modeloOpciones.map(o => o.value));
 
   function handleModeloSelectChange(value: string) {
     if (value === NUEVO_MODELO) {
@@ -272,7 +261,7 @@ export default function AdminVentas() {
     if (desde) params.desde = desde;
     if (hasta) params.hasta = hasta;
     api.get<Paginado>('/metrics/sales', { params })
-      .then(({ data: res }) => { setData(res.data); setMeta({ total: res.total, page: res.page, pages: res.pages }); })
+      .then(({ data: res }) => { setData(res.data); setMeta({ total: res.meta.total, page: res.meta.page, pages: res.meta.totalPages }); })
       .finally(() => setCargando(false));
   }, [filtroEstado, filtroFuente, desde, hasta]);
 
@@ -282,6 +271,7 @@ export default function AdminVentas() {
 
   useEffect(() => { setPage(1); cargar(1); }, [filtroEstado, filtroFuente, desde, hasta, cargar]);
   useEffect(() => { cargarFinancial(); }, [cargarFinancial]);
+  useRefetchOnFocus(useCallback(() => { cargar(page); cargarFinancial(); }, [cargar, page, cargarFinancial]));
   useEffect(() => {
     Promise.allSettled([
       api.get<InvItem[]>('/inventario').then(({ data }) => setInventario(data)),

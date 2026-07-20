@@ -207,11 +207,29 @@ function FiltroBtn({
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [abierto, onClose]);
 
+  // Escape cierra el dropdown y devuelve el foco al botón que lo abrió
+  useEffect(() => {
+    if (!abierto) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onClose();
+        btnRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [abierto, onClose]);
+
+  const panelId = `filtro-panel-${label}`;
+
   return (
     <div className="relative flex-shrink-0">
       <button
         ref={btnRef}
         onClick={onClick}
+        aria-haspopup="true"
+        aria-expanded={abierto}
+        aria-controls={panelId}
         className="flex items-center gap-2.5 px-6 py-4 text-xs uppercase tracking-widest border-r border-white/10 transition-colors whitespace-nowrap h-full"
         style={{ color: activo ? "#C9A84C" : "#FFF" }}
       >
@@ -239,6 +257,9 @@ function FiltroBtn({
               }}
             >
               <motion.div
+                id={panelId}
+                role="menu"
+                aria-label={`Filtrar por ${label}`}
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
@@ -277,6 +298,8 @@ function OpcionFiltro({
   return (
     <button
       onClick={onClick}
+      role="checkbox"
+      aria-checked={activo}
       className="flex items-center gap-3 w-full px-5 py-3 text-left hover:bg-white/5 transition-colors"
     >
       <span

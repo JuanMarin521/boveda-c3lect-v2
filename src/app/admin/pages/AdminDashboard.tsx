@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import {
   TrendingUp, TrendingDown, ShoppingBag, Package, Users,
   DollarSign, BarChart2, Clock,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
-
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
-
-const fmtFecha = (s: string) =>
-  format(new Date(s), 'd MMM yyyy', { locale: es });
+import { formatPrecio as COP, formatFecha } from '../../lib/format';
+import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const ESTADO_VENTA: Record<string, { label: string; color: string }> = {
   Pagado:         { label: 'Pagado',        color: '#22C55E' },
@@ -112,11 +106,6 @@ function Badge({ estado }: { estado: string }) {
 
 const DONUT_COLORS = { reloj: '#C9A84C', perfume: '#FFFFFF', accesorio: '#555555' };
 
-const fmtFechaSafe = (s: string) => {
-  const [y, m, d] = s.split('T')[0].split('-').map(Number);
-  return format(new Date(y, m - 1, d), 'd MMM yyyy', { locale: es });
-};
-
 export default function AdminDashboard() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [financial, setFinancial] = useState<Financial | null>(null);
@@ -124,7 +113,7 @@ export default function AdminDashboard() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     Promise.all([
       api.get<Summary>('/metrics/summary'),
       api.get<Financial>('/metrics/financial'),
@@ -143,6 +132,9 @@ export default function AdminDashboard() {
       })
       .finally(() => setCargando(false));
   }, []);
+
+  useEffect(() => { cargar(); }, [cargar]);
+  useRefetchOnFocus(cargar);
 
   if (cargando) {
     return (
@@ -287,7 +279,7 @@ export default function AdminDashboard() {
                 <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   {pendientes.map((v) => (
                     <tr key={v.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-4 py-2.5 text-white/60 whitespace-nowrap">{fmtFechaSafe(v.fecha)}</td>
+                      <td className="px-4 py-2.5 text-white/60 whitespace-nowrap">{formatFecha(v.fecha)}</td>
                       <td className="px-4 py-2.5 text-white whitespace-nowrap">{v.cliente}</td>
                       <td className="px-4 py-2.5 text-white/70 max-w-[160px] truncate">{v.modelo}</td>
                       <td className="px-4 py-2.5"><Badge estado={v.estado} /></td>
@@ -326,7 +318,7 @@ export default function AdminDashboard() {
                 <div className="min-w-0">
                   <p className="text-sm text-white truncate">{v.modelo}</p>
                   <p className="text-xs text-white/40 mt-0.5">
-                    {v.cliente} · {fmtFecha(v.fecha)}
+                    {v.cliente} · {formatFecha(v.fecha)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-2">

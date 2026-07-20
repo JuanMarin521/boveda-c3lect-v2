@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Check, X } from 'lucide-react';
 import { api } from '../../lib/api';
+import { formatPrecio as COP } from '../../lib/format';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
-
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
-
-const NUEVO_MODELO = '__nuevo__';
-const NUEVA_MARCA = '__nueva__';
+import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
 
 interface Precio {
   id: string; marca: string; modelo: string; costoUnitario: number; costoAdicional: number;
@@ -28,8 +24,6 @@ export default function AdminPrecios() {
   const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]     = useState(EMPTY_FORM);
-  const [modoMarcaNueva, setModoMarcaNueva] = useState(false);
-  const [modoModeloNuevo, setModoModeloNuevo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
@@ -55,6 +49,9 @@ export default function AdminPrecios() {
   }
   for (const key of Object.keys(modelosPorMarca)) modelosPorMarca[key].sort();
   const modelosDisponibles = modelosPorMarca[form.marca] ?? [];
+
+  const { modoMarcaNueva, setModoMarcaNueva, modoModeloNuevo, setModoModeloNuevo } =
+    useMarcaModeloToggle(form.marca, form.modelo, marcas, modelosDisponibles);
 
   function handleMarcaChange(value: string) {
     if (value === NUEVA_MARCA) {

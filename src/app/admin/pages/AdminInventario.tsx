@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { api } from '../../lib/api';
+import { formatPrecio as COP } from '../../lib/format';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
 interface Item {
   id: string; marca: string | null; modelo: string; stock: number; costoUnitario: number;

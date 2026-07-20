@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
-
-const COP = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
-
-const fmtFecha = (s: string) => format(new Date(s), 'd MMM yyyy', { locale: es });
+import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
+import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 interface Gasto {
   id: string; fecha: string; concepto: string; monto: number;
@@ -36,6 +31,7 @@ export default function AdminGastos() {
   };
 
   useEffect(() => { cargar(); }, []);
+  useRefetchOnFocus(cargar);
 
   const total = gastos.reduce((s, g) => s + g.monto, 0);
 
