@@ -3,21 +3,10 @@ import { Link, useNavigate } from 'react-router';
 import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
+import type { Producto } from '../../data/types';
 
 const COP = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
-
-interface Producto {
-  id: string;
-  nombre: string;
-  estilo: string;
-  display: string;
-  cat: string;
-  marca?: string;
-  precio: number;
-  disponible: boolean;
-  imgs: string[];
-}
 
 const CATEGORIAS = ['', 'reloj', 'perfume', 'accesorio'];
 
@@ -153,7 +142,7 @@ export default function AdminProductos() {
                       <div className="flex items-center gap-3">
                         {p.imgs[0] && (
                           <img
-                            src={`/boveda-c3lect-v2/${p.imgs[0]}`}
+                            src={import.meta.env.BASE_URL + p.imgs[0]}
                             alt={p.display}
                             className="w-9 h-9 object-cover rounded shrink-0 opacity-80"
                           />

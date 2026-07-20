@@ -5,11 +5,9 @@ import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
 import { CartProvider } from "../context/CartContext";
 import { ProductosProvider } from "../context/ProductosContext";
-import { AuthProvider } from "../context/AuthContext";
 
 export default function Root() {
   return (
-    <AuthProvider>
     <CartProvider>
       <ProductosProvider>
         <div className="min-h-screen flex flex-col bg-white">
@@ -25,6 +23,5 @@ export default function Root() {
         </div>
       </ProductosProvider>
     </CartProvider>
-    </AuthProvider>
   );
 }

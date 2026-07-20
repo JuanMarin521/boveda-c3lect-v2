@@ -34,10 +34,11 @@ type FormState = typeof EMPTY_FORM;
 const inp = 'bg-[#0A0A0A] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]/60 w-full';
 const sel = inp + ' cursor-pointer';
 
-function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel, marcas, modelosPorMarca }: {
+function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, saving, submitLabel, marcas, modelosPorMarca, errorOpciones }: {
   title: string; f: FormState; setF: (fn: (p: FormState) => FormState) => void;
   costoPreview: number; onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
   error: string; saving: boolean; submitLabel: string; marcas: string[]; modelosPorMarca: Record<string, string[]>;
+  errorOpciones: boolean;
 }) {
   const [modoMarcaNueva, setModoMarcaNueva] = useState(() => f.marca !== '' && !marcas.includes(f.marca));
   const modelosDisponibles = modelosPorMarca[f.marca] ?? [];
@@ -67,6 +68,7 @@ function CompraForm({ title, f, setF, costoPreview, onSubmit, onCancel, error, s
   return (
     <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
       <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
+      {errorOpciones && <p className="text-xs text-red-400 mb-3">No se pudieron cargar marcas/modelos existentes — puedes escribirlos manualmente.</p>}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
         <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label>
           <input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
@@ -150,6 +152,7 @@ export default function AdminCompras() {
   const [resumen, setResumen]   = useState<Resumen | null>(null);
   const [marcas, setMarcas]     = useState<string[]>([]);
   const [inventarioItems, setInventarioItems] = useState<InvItem[]>([]);
+  const [errorOpciones, setErrorOpciones] = useState(false);
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
@@ -172,8 +175,10 @@ export default function AdminCompras() {
   useEffect(() => { setPage(1); cargar(1); }, [filtroCategoria, desde, hasta, cargar]);
   useEffect(() => { cargarResumen(); }, [cargarResumen]);
   useEffect(() => {
-    api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)).catch(() => {});
-    api.get<InvItem[]>('/inventario').then(({ data }) => setInventarioItems(data)).catch(() => {});
+    Promise.allSettled([
+      api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)),
+      api.get<InvItem[]>('/inventario').then(({ data }) => setInventarioItems(data)),
+    ]).then((results) => setErrorOpciones(results.some((r) => r.status === 'rejected')));
   }, []);
 
   const modelosPorMarca = useMemo(() => {
@@ -291,7 +296,7 @@ export default function AdminCompras() {
           f={form} setF={setForm} costoPreview={costoTotalPreview}
           onSubmit={handleSubmit} onCancel={() => setShowForm(false)}
           error={formError} saving={guardando} submitLabel="Guardar compra"
-          marcas={marcas} modelosPorMarca={modelosPorMarca}
+          marcas={marcas} modelosPorMarca={modelosPorMarca} errorOpciones={errorOpciones}
         />
       )}
 
@@ -301,7 +306,7 @@ export default function AdminCompras() {
           f={editForm} setF={setEditForm} costoPreview={editCostoTotalPreview}
           onSubmit={handleEditSave} onCancel={() => { setEditId(null); setEditError(''); }}
           error={editError} saving={guardando} submitLabel="Guardar cambios"
-          marcas={marcas} modelosPorMarca={modelosPorMarca}
+          marcas={marcas} modelosPorMarca={modelosPorMarca} errorOpciones={errorOpciones}
         />
       )}
 

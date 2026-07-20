@@ -61,11 +61,12 @@ function recalcEstado(f: FormState): FormState {
 }
 
 // Componente a nivel de módulo — no se recrea en cada render del padre
-function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLabel, marcas, inventario, precios, productos }: {
+function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLabel, marcas, inventario, precios, productos, errorOpciones }: {
   title: string; f: FormState; setF: (fn: (prev: FormState) => FormState) => void;
   onSubmit: (e: React.FormEvent) => void; onCancel: () => void;
   error: string; saving: boolean; submitLabel: string;
   marcas?: string[]; inventario?: InvItem[]; precios?: PrecioItem[]; productos?: ProductoItem[];
+  errorOpciones?: boolean;
 }) {
   const disponibles = inventario?.filter(i => i.stock > 0) ?? [];
   const marcasDisponibles = marcas ?? [];
@@ -126,6 +127,7 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
   return (
     <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
       <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
+      {errorOpciones && <p className="text-xs text-red-400 mb-3">No se pudieron cargar marcas/modelos/inventario existentes — puedes escribirlos manualmente.</p>}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
         <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label>
           <input type="date" required value={f.fecha} onChange={e => setF(p => ({ ...p, fecha: e.target.value }))} className={inp} /></div>
@@ -260,6 +262,7 @@ export default function AdminVentas() {
   const [precios, setPrecios]       = useState<PrecioItem[]>([]);
   const [productos, setProductos]   = useState<ProductoItem[]>([]);
   const [marcas, setMarcas]         = useState<string[]>([]);
+  const [errorOpciones, setErrorOpciones] = useState(false);
 
   const cargar = useCallback((p: number) => {
     setCargando(true);
@@ -280,10 +283,12 @@ export default function AdminVentas() {
   useEffect(() => { setPage(1); cargar(1); }, [filtroEstado, filtroFuente, desde, hasta, cargar]);
   useEffect(() => { cargarFinancial(); }, [cargarFinancial]);
   useEffect(() => {
-    api.get<InvItem[]>('/inventario').then(({ data }) => setInventario(data)).catch(() => {});
-    api.get<PrecioItem[]>('/precios').then(({ data }) => setPrecios(data)).catch(() => {});
-    api.get<ProductoItem[]>('/products').then(({ data }) => setProductos(data)).catch(() => {});
-    api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)).catch(() => {});
+    Promise.allSettled([
+      api.get<InvItem[]>('/inventario').then(({ data }) => setInventario(data)),
+      api.get<PrecioItem[]>('/precios').then(({ data }) => setPrecios(data)),
+      api.get<ProductoItem[]>('/products').then(({ data }) => setProductos(data)),
+      api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)),
+    ]).then((results) => setErrorOpciones(results.some((r) => r.status === 'rejected')));
   }, []);
 
   const handlePage = (p: number) => { setPage(p); cargar(p); };
@@ -419,7 +424,7 @@ export default function AdminVentas() {
           onSubmit={handleSubmit}
           onCancel={() => setShowForm(false)}
           error={formError} saving={guardando} submitLabel="Guardar venta"
-          marcas={marcas} inventario={inventario} precios={precios} productos={productos}
+          marcas={marcas} inventario={inventario} precios={precios} productos={productos} errorOpciones={errorOpciones}
         />
       )}
 
@@ -430,7 +435,7 @@ export default function AdminVentas() {
           onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}
           onCancel={() => { setEditId(null); setEditError(''); }}
           error={editError} saving={guardando} submitLabel="Guardar cambios"
-          marcas={marcas} precios={precios} productos={productos}
+          marcas={marcas} precios={precios} productos={productos} errorOpciones={errorOpciones}
         />
       )}
 
