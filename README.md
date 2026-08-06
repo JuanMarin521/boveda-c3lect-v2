@@ -6,6 +6,13 @@ Catálogo digital de relojería y perfumería de alta gama. Es la tienda en lín
 
 ![Bóveda C3LECT — vista de escritorio](docs/screenshots/desktop.png)
 
+<table>
+<tr>
+<td width="65%"><img src="docs/screenshots/producto.png" alt="Ficha de producto"></td>
+<td width="35%"><img src="docs/screenshots/movil.png" alt="Vista móvil"></td>
+</tr>
+</table>
+
 ---
 
 ## El problema
