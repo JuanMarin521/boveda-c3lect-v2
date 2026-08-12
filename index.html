@@ -19,7 +19,17 @@
       <meta name="robots" content="index, follow" />
       <meta name="author" content="C3LECT" />
       <link rel="canonical" href="https://cetremore26.github.io/boveda-c3lect-v2/" />
-      <style>html, body { height: 100%; margin: 0; overflow-x: hidden; } #root { height: 100%; }</style>
+      <!--
+        html/body NO deben tener height:100% — eso fuerza al body a la
+        altura exacta del viewport y, junto con overflow-x:hidden, el
+        navegador convierte a `body` en su propio contenedor de scroll
+        interno (en vez de que la ventana haga scroll). React Router's
+        <ScrollRestoration> opera sobre `window`, así que con el body como
+        scroller anidado nunca veía ni restauraba el scroll real: el
+        catálogo "perdía" la posición al volver y el detalle de producto
+        abría con el scroll heredado de la página anterior.
+      -->
+      <style>html { overflow-x: hidden; } body { margin: 0; } #root { min-height: 100%; }</style>
       <link rel="preload" as="image" href="/images/homePage-C3LECT.webp" fetchpriority="high" />
       <link rel="icon" type="image/png" href="favicon.png">
       <script src="/spa-redirect.js"></script>

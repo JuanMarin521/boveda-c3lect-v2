@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import type { Producto } from "../data/types";
 import { useProductos } from "../context/ProductosContext";
@@ -38,9 +38,15 @@ export default function SearchResults() {
     limpiarFiltros,
   } = useProductFilter(resultadosBusqueda);
 
-  // Limpiar filtros cuando cambia la búsqueda
+  // Limpiar filtros solo cuando el término de búsqueda CAMBIA (no en el
+  // montaje inicial) — si no, al volver desde un producto con "atrás" se
+  // perdían los filtros que la URL acababa de restaurar.
+  const queryAnterior = useRef(query);
   useEffect(() => {
-    limpiarFiltros();
+    if (queryAnterior.current !== query) {
+      queryAnterior.current = query;
+      limpiarFiltros();
+    }
   }, [query]);
 
   const total = productosFiltrados.length;

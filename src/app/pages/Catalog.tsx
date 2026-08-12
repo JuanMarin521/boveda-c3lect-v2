@@ -6,7 +6,7 @@
 // ============================================================
 
 import { Link, useParams, useNavigate } from "react-router";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { ShoppingBag, Check } from "lucide-react";
 import type { Producto } from "../data/types";
@@ -56,9 +56,15 @@ export default function Catalog() {
     limpiarFiltros,
   } = useProductFilter(productosPorCategoria);
 
-  // Al cambiar categoría, resetear marcas en selección y aplicado
+  // Al cambiar categoría, resetear marcas en selección y aplicado — pero no
+  // en el montaje inicial, o se perdería el filtro de marca que la URL
+  // acaba de restaurar (p. ej. al volver "atrás" desde un producto).
+  const categoriaAnterior = useRef(filtroActivo);
   useEffect(() => {
-    resetMarcas();
+    if (categoriaAnterior.current !== filtroActivo) {
+      categoriaAnterior.current = filtroActivo;
+      resetMarcas();
+    }
   }, [filtroActivo]);
 
   return (
