@@ -44,7 +44,7 @@ function cspMeta() {
 }
 
 export default defineConfig({
-  base: '/boveda-c3lect-v2/',
+  base: '/',
   plugins: [
     react(),
     tailwindcss(),

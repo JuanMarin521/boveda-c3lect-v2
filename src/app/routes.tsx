@@ -84,5 +84,4 @@ export const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: "/boveda-c3lect-v2" }
 );

@@ -2,7 +2,7 @@
 
 Catálogo digital de relojería y perfumería de alta gama. Es la tienda en línea de **C3LECT** — Medellín, Colombia.
 
-🔗 **[Ver en vivo](https://cetremore26.github.io/boveda-c3lect-v2/)** · 🔐 **[API que la alimenta](https://github.com/cetremore26/c3lect-api)** · 📘 **[Docs de la API](https://c3lect-api.onrender.com/api/docs)**
+🔗 **[Ver en vivo](https://c3lect.com/)** · 🔐 **[API que la alimenta](https://github.com/cetremore26/c3lect-api)** · 📘 **[Docs de la API](https://c3lect-api.onrender.com/api/docs)**
 
 ![Bóveda C3LECT — vista de escritorio](docs/screenshots/desktop.png)
 
