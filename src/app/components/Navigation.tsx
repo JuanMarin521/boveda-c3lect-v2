@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { CartBadge } from "./ds/CartBadge";
 
 const NAV_HEIGHT = 64;
 
@@ -118,7 +119,7 @@ export default function Navigation() {
   }
 
   const links = [
-    { to: "/catalog", label: "Colecciones" },
+    { to: "/catalog", label: "Catálogo" },
     { to: "/about", label: "Manifiesto" },
     { to: "/contact", label: "Contacto" },
   ];
@@ -193,20 +194,17 @@ export default function Navigation() {
               className="relative p-1 text-white transition-colors hover:text-[#C9A84C] cursor-pointer"
             >
               <ShoppingBag size={20} />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center tabular-nums" style={{ backgroundColor: "#C9A84C" }}>
-                  {totalItems > 9 ? "9+" : totalItems}
-                </span>
-              )}
+              <CartBadge totalItems={totalItems} className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center tabular-nums" />
             </button>
             {autenticado ? (
               <div className="flex items-center gap-2">
-                <span
-                  className="text-sm tracking-wide"
+                <Link
+                  to="/cuenta"
+                  className="text-sm tracking-wide hover:underline underline-offset-4"
                   style={{ color: "#C9A84C" }}
                 >
                   {user?.nombre?.split(" ")[0]}
-                </span>
+                </Link>
                 <button
                   onClick={logout}
                   aria-label="Cerrar sesión"
@@ -233,11 +231,7 @@ export default function Navigation() {
               className="relative p-2 text-white transition-colors"
             >
               <ShoppingBag size={20} />
-              {totalItems > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center tabular-nums" style={{ backgroundColor: "#C9A84C" }}>
-                  {totalItems > 9 ? "9+" : totalItems}
-                </span>
-              )}
+              <CartBadge totalItems={totalItems} className="absolute top-1 right-1 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center tabular-nums" />
             </button>
             <button
               onClick={toggleSearch}
@@ -382,6 +376,13 @@ export default function Navigation() {
                 {autenticado ? (
                   <>
                     <p className="text-sm text-white/40 mb-3">{user?.nombre}</p>
+                    <Link
+                      to="/cuenta"
+                      className="block mb-4 text-lg tracking-wide uppercase text-white hover:text-[#C9A84C] transition-colors"
+                      style={{ fontFamily: "var(--font-serif)" }}
+                    >
+                      Mis pedidos
+                    </Link>
                     <button
                       onClick={logout}
                       className="text-lg tracking-wide uppercase text-white/50 hover:text-[#C9A84C] transition-colors text-left cursor-pointer"

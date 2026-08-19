@@ -15,10 +15,11 @@ interface AuthContextValue {
   autenticado: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginConOtp: (email: string, code: string) => Promise<{ requiresRegistration?: boolean }>;
-  register: (email: string, password: string, nombre: string) => Promise<void>;
+  register: (email: string, password: string, nombre: string, telefono?: string) => Promise<void>;
   logout: () => Promise<void>;
   requestOtp: (email: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
+  refrescarUsuario: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -95,12 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { requiresRegistration: data.requiresRegistration };
   }
 
-  async function register(email: string, password: string, nombre: string) {
+  async function register(email: string, password: string, nombre: string, telefono?: string) {
     const { data } = await api.post<{
       accessToken: string;
       refreshToken: string;
       user: AuthUser;
-    }>('/auth/register', { email, password, nombre });
+    }>('/auth/register', { email, password, nombre, telefono });
     saveSession(data.accessToken, data.refreshToken, data.user);
     setAccessToken(data.accessToken);
     setUser(data.user);
@@ -125,6 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.post('/auth/request-password-reset', { email });
   }
 
+  // Vuelve a leer /auth/me — se usa tras editar el perfil (nombre/teléfono)
+  // para que el nombre en el nav y el resto de la app queden al día.
+  async function refrescarUsuario() {
+    const { data } = await api.get<AuthUser>('/auth/me');
+    setUser(data);
+    sessionStorage.setItem('authUser', JSON.stringify(data));
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -137,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       requestOtp,
       requestPasswordReset,
+      refrescarUsuario,
     }}>
       {children}
     </AuthContext.Provider>

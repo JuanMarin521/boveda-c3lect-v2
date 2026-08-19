@@ -51,6 +51,15 @@ export const router = createBrowserRouter(
         { path: "login", lazy: lazyPage(() => import("./pages/Login")) },
         { path: "register", lazy: lazyPage(() => import("./pages/Register")) },
         { path: "reset-password", lazy: lazyPage(() => import("./pages/ResetPassword")) },
+        {
+          path: "cuenta",
+          lazy: lazyPage(() => import("./components/AccountLayout")),
+          children: [
+            { index: true, lazy: lazyPage(() => import("./pages/AccountOrders")) },
+            { path: "datos", lazy: lazyPage(() => import("./pages/AccountProfile")) },
+            { path: "direcciones", lazy: lazyPage(() => import("./pages/AccountAddresses")) },
+          ],
+        },
         { path: "checkout", lazy: lazyPage(() => import("./pages/Checkout")) },
         { path: "checkout/success", lazy: lazyPage(() => import("./pages/CheckoutResult")) },
         { path: "checkout/failure", lazy: lazyPage(() => import("./pages/CheckoutResult")) },

@@ -3,6 +3,8 @@ import { X, Minus, Plus, ShoppingBag, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useCart, formatPrecio } from "../context/CartContext";
 import { CONFIG } from "../config";
+import { Button } from "./ds/Button";
+import { PriceTag } from "./ds/PriceTag";
 
 function buildWhatsAppMessage(items: ReturnType<typeof useCart>["items"], total: number): string {
   const lineas = items.map((item) => {
@@ -186,20 +188,18 @@ export default function CartDrawer() {
 
                 <div className="px-6 py-6 border-t border-white/10 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm uppercase tracking-widest text-white/50">
+                    <span className="text-xs uppercase tracking-widest text-white/50">
                       Total estimado
                     </span>
-                    <span className="text-xl" style={{ color: "#C9A84C" }}>
-                      {formatPrecio(totalPrice)}
-                    </span>
+                    <PriceTag value={formatPrecio(totalPrice)} />
                   </div>
-                  <button
+                  <Button
+                    as="button"
                     onClick={() => { closeCart(); navigate("/checkout"); }}
-                    className="w-full text-white px-6 py-4 text-sm uppercase tracking-widest hover:opacity-90 transition-all duration-300"
-                    style={{ backgroundColor: "#C9A84C" }}
+                    variant="block-dark"
                   >
                     Continuar al pago
-                  </button>
+                  </Button>
                   <a
                     href={buildWhatsAppMessage(items, totalPrice)}
                     target="_blank"

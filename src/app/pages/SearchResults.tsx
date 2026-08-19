@@ -6,6 +6,7 @@ import { useProductos } from "../context/ProductosContext";
 import { useProductFilter } from "../hooks/useProductFilter";
 import { BarraFiltros } from "../components/BarraFiltros";
 import { AvisoError } from "../components/AvisoError";
+import { Badge } from "../components/ds/Badge";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -114,10 +115,10 @@ export default function SearchResults() {
         {!error && !cargando && productosFiltrados.length > 0 && (
           <motion.div
             layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
+            className="grid grid-cols-2 md:gap-x-14 md:gap-y-[72px] gap-x-3 gap-y-8 pt-11"
           >
             {productosFiltrados.map((producto, index) => (
-              <TarjetaProducto key={producto.id} producto={producto} index={index} />
+              <TarjetaProducto key={producto.id} producto={producto} index={index} orden={index + 1} />
             ))}
           </motion.div>
         )}
@@ -151,12 +152,15 @@ export default function SearchResults() {
   );
 }
 
-function TarjetaProducto({ producto, index }: { producto: Producto; index: number }) {
+function TarjetaProducto({ producto, index, orden }: { producto: Producto; index: number; orden: number }) {
   const precioFormateado = new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
     minimumFractionDigits: 0,
   }).format(producto.precio as number);
+
+  const categoriaLabel =
+    producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios";
 
   return (
     <motion.div
@@ -166,38 +170,40 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
       transition={{ delay: index * 0.04 }}
     >
       <Link to={`/product/${producto.id}`} className="group block">
-        <div className="relative aspect-[3/4] mb-6 overflow-hidden bg-[#1A1A1A]">
+        <div className="relative overflow-hidden bg-[#141414]" style={{ aspectRatio: "4 / 5" }}>
           <img
             src={import.meta.env.BASE_URL + producto.imgs[0]}
             alt={producto.display}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform ease-out group-hover:scale-[1.06]"
+            style={{ transitionDuration: "1200ms", transitionTimingFunction: "cubic-bezier(.2,.7,.2,1)" }}
           />
+          <p className="absolute top-3 left-3 md:top-4 md:left-4 text-white/50" style={{ fontFamily: "var(--font-serif)", fontSize: 20 }}>
+            {String(orden).padStart(2, "0")}
+          </p>
+          <div
+            className="absolute left-0 right-0 bottom-0 pointer-events-none"
+            style={{ height: 140, background: "linear-gradient(180deg, rgba(10,10,10,0), rgba(10,10,10,.85))" }}
+          />
+          <p className="absolute bottom-3 right-3 md:bottom-4 md:right-4 text-white/60 text-[10px] uppercase" style={{ letterSpacing: "0.26em" }}>
+            {categoriaLabel}
+          </p>
           {!producto.disponible && (
-            <div className="absolute top-4 left-4 bg-black/80 text-white text-xs uppercase tracking-widest px-3 py-1">
-              Agotado
-            </div>
-          )}
-          {producto.disponible && (
-            <div
-              className="absolute top-4 left-4 text-white text-xs uppercase tracking-widest px-3 py-1"
-              style={{ backgroundColor: "#C9A84C" }}
-            >
-              Disponible
+            <div className="absolute top-3 right-3 md:top-4 md:right-4">
+              <Badge status="soldout" />
             </div>
           )}
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-widest text-white/40 mb-2">
-            {producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios Premium"}
-          </p>
+        <div className="pt-6 border-t border-white/12 mt-6 flex items-start justify-between gap-4">
           <h3
-            className="text-xl md:text-2xl mb-3 tracking-wide text-white group-hover:text-[#C9A84C] transition-colors"
-            style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
+            className="text-lg md:text-[34px] mb-1 tracking-wide text-white group-hover:text-[#C9A84C] transition-colors duration-[400ms] leading-tight min-w-0"
+            style={{ fontFamily: "var(--font-serif)", fontWeight: 300 }}
           >
             {producto.display}
           </h3>
-          <p className="text-sm text-white/60 tracking-wide">{precioFormateado}</p>
+          <p className="shrink-0 text-base md:text-[28px]" style={{ fontFamily: "var(--font-serif)", color: "#C9A84C" }}>
+            {precioFormateado}
+          </p>
         </div>
       </Link>
     </motion.div>

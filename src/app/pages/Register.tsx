@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Field } from '../components/ds/Field';
+import { FormError } from '../components/ds/FormError';
+import { Button } from '../components/ds/Button';
 
 interface Fuerza {
   nivel: 0 | 1 | 2 | 3;
@@ -27,6 +30,7 @@ export default function Register() {
 
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -45,7 +49,7 @@ export default function Register() {
 
     setEnviando(true);
     try {
-      await register(email, password, nombre);
+      await register(email, password, nombre, telefono || undefined);
       navigate('/catalog');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -55,116 +59,106 @@ export default function Register() {
     }
   }
 
-  const inputClasses =
-    'w-full border border-white/10 rounded px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#C9A84C] transition-colors bg-[#1A1A1A]';
-  const labelClasses = 'block text-sm tracking-widest uppercase text-white/70 mb-1.5';
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
+    <div className="min-h-screen flex items-center justify-center px-6 bg-[#0A0A0A]">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="mb-10 text-center">
+        <div className="mb-12 text-center">
           <Link
             to="/"
-            className="text-3xl tracking-[0.22em]"
+            className="text-2xl tracking-[0.22em]"
             style={{ fontFamily: 'var(--font-sans)', fontWeight: 300, color: '#C9A84C' }}
           >
             C3LECT
           </Link>
-          <p className="mt-2 text-sm tracking-widest uppercase text-white/50">
+          <h1
+            className="mt-6 text-4xl text-white"
+            style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}
+          >
             Crear cuenta
-          </p>
+          </h1>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-6 px-4 py-3 border border-red-500/30 bg-red-500/10 text-red-400 text-sm rounded">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-6"><FormError>{error}</FormError></div>}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-7">
+          <Field
+            label="Nombre completo"
+            type="text"
+            required
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            placeholder="Tu nombre"
+            autoComplete="name"
+          />
+
+          <Field
+            label="Correo electrónico"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@correo.com"
+            autoComplete="email"
+          />
+
+          <Field
+            label="Celular"
+            type="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            placeholder="+57 300 000 0000"
+            autoComplete="tel"
+          />
+
           <div>
-            <label className={labelClasses}>Nombre completo</label>
-            <input
-              type="text"
+            <Field
+              label="Contraseña"
+              type={showPassword ? 'text' : 'password'}
               required
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className={inputClasses}
-              placeholder="Tu nombre"
-              autoComplete="name"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              suffix={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="text-white/30 hover:text-[#C9A84C] transition-colors cursor-pointer"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              }
             />
-          </div>
-
-          <div>
-            <label className={labelClasses}>Correo electrónico</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClasses}
-              placeholder="tu@correo.com"
-              autoComplete="email"
-            />
-          </div>
-
-          <div>
-            <label className={labelClasses}>Contraseña</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={inputClasses}
-                style={{ paddingRight: '2.75rem' }}
-                placeholder="••••••••"
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
-                tabIndex={-1}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
             {/* Indicador de fortaleza */}
             {password && (
-              <div className="mt-2 space-y-1">
+              <div className="mt-3 space-y-1">
                 <div className="flex gap-1">
                   {[1, 2, 3].map((n) => (
                     <div
                       key={n}
-                      className="h-1 flex-1 rounded-full transition-colors duration-300"
+                      className="h-px flex-1 transition-colors duration-300"
                       style={{
-                        backgroundColor: fuerza.nivel >= n ? fuerza.color : '#2a2a2a',
+                        backgroundColor: fuerza.nivel >= n ? fuerza.color : 'rgba(255,255,255,0.15)',
                       }}
                     />
                   ))}
                 </div>
-                <p className="text-sm" style={{ color: fuerza.color }}>
+                <p className="text-xs uppercase tracking-widest" style={{ color: fuerza.color }}>
                   {fuerza.label}
                   {fuerza.nivel < 2 && (
-                    <span className="text-white/30 ml-1">— añade mayúsculas, números o símbolos</span>
+                    <span className="text-white/30 ml-1 normal-case tracking-normal">— añade mayúsculas, números o símbolos</span>
                   )}
                 </p>
               </div>
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={enviando}
-            className="w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
-            style={{ backgroundColor: '#C9A84C' }}
-          >
+          <Button type="submit" disabled={enviando} variant="block-dark">
             {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-8 text-center text-sm text-white/50">

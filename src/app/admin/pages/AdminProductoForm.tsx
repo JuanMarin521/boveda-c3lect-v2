@@ -12,6 +12,7 @@ interface ProductoForm {
   genero: string;
   precio: string;
   disponible: boolean;
+  destacado: boolean;
   imgsRaw: string;
   specMovimiento: string;
   specDimensiones: string;
@@ -32,7 +33,7 @@ interface ProductoForm {
 
 const EMPTY: ProductoForm = {
   id: '', nombre: '', estilo: '', display: '', cat: 'reloj',
-  marca: '', genero: '', precio: '', disponible: true, imgsRaw: '',
+  marca: '', genero: '', precio: '', disponible: true, destacado: false, imgsRaw: '',
   specMovimiento: '', specDimensiones: '', specCaja: '', specCorrea: '',
   specCristal: '', specFunciones: '', specResistenciaAgua: '', specPeso: '',
   specBateria: '', specReservaMarcha: '', specObservaciones: '',
@@ -104,6 +105,7 @@ export default function AdminProductoForm() {
           genero: String(data.genero ?? ''),
           precio: String(data.precio ?? ''),
           disponible: Boolean(data.disponible ?? true),
+          destacado: Boolean(data.destacado ?? false),
           imgsRaw: Array.isArray(data.imgs) ? (data.imgs as string[]).join(', ') : '',
           specMovimiento: String(data.specMovimiento ?? ''),
           specDimensiones: String(data.specDimensiones ?? ''),
@@ -161,6 +163,7 @@ export default function AdminProductoForm() {
       cat: form.cat,
       precio: Number(form.precio),
       disponible: form.disponible,
+      destacado: form.destacado,
       imgs,
     };
     if (form.marca) payload.marca = form.marca;
@@ -297,7 +300,7 @@ export default function AdminProductoForm() {
               <Field label="Precio (COP)" id="precio" value={form.precio} onChange={set('precio')} type="number" required />
               {errores.precio && <p className="text-xs text-red-400 mt-1">{errores.precio}</p>}
             </div>
-            <div className="flex flex-col justify-end">
+            <div className="flex flex-col justify-end gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <div
                   onClick={() => set('disponible')(!form.disponible)}
@@ -307,8 +310,20 @@ export default function AdminProductoForm() {
                 </div>
                 <span className="text-xs text-white/60">Disponible</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <div
+                  onClick={() => set('destacado')(!form.destacado)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${form.destacado ? 'bg-[#C9A84C]' : 'bg-white/20'}`}
+                >
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${form.destacado ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </div>
+                <span className="text-xs text-white/60">Destacado en Home</span>
+              </label>
             </div>
           </div>
+          <p className="text-xs text-white/30">
+            "Destacado en Home" lo muestra en el carrusel de la portada — solo si además está "Disponible" (si se vende, sale solo del carrusel). El Home muestra máximo 5 a la vez, aunque marques más: si marcas 6, 7 u 8 como respaldo, cuando uno se venda otro ya marcado toma su lugar automáticamente, sin que tengas que entrar a cambiar nada.
+          </p>
         </section>
 
         {/* Imágenes */}

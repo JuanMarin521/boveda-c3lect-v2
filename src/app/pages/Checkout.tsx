@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { CreditCard, Truck, CheckCircle2 } from 'lucide-react';
 import { useCart, formatPrecio } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { Field, FieldArea } from '../components/ds/Field';
+import { FormError } from '../components/ds/FormError';
+import { Button } from '../components/ds/Button';
 
 type MetodoPago = 'MERCADOPAGO' | 'CONTRAENTREGA';
 
@@ -12,16 +15,9 @@ interface OrderResponse {
   orderNumber: string;
 }
 
-const inputClasses =
-  'w-full border border-white/10 rounded px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#C9A84C] transition-colors bg-[#1A1A1A]';
-const labelClasses = 'block text-sm tracking-widest uppercase text-white/70 mb-1.5';
-const btnPrimary =
-  'w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer';
-
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     nombreCompleto: user?.nombre ?? '',
@@ -44,7 +40,7 @@ export default function Checkout() {
 
   if (items.length === 0 && !pedidoConfirmado) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6" style={{ backgroundColor: '#0A0A0A' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 bg-[#0A0A0A]">
         <p className="text-white/70 tracking-wide">Tu carrito está vacío.</p>
         <Link
           to="/catalog"
@@ -58,21 +54,19 @@ export default function Checkout() {
 
   if (pedidoConfirmado) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
+      <div className="min-h-screen flex items-center justify-center px-6 bg-[#0A0A0A]">
         <div className="w-full max-w-sm text-center">
-          <CheckCircle2 size={48} className="mx-auto mb-6" style={{ color: '#C9A84C' }} />
-          <h1 className="text-xl tracking-widest uppercase text-white mb-3">Pedido recibido</h1>
-          <p className="text-white/60 text-sm leading-relaxed mb-6">
+          <CheckCircle2 size={40} className="mx-auto mb-6 text-[#C9A84C]" />
+          <h1 className="text-3xl mb-4 text-white" style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}>
+            Pedido recibido
+          </h1>
+          <p className="text-white/60 text-sm leading-relaxed mb-8">
             Tu número de pedido es <strong className="text-white">#{pedidoConfirmado.orderNumber}</strong>.
             Te contactaremos para coordinar la entrega y el pago contra entrega.
           </p>
-          <Link
-            to="/catalog"
-            className={`${btnPrimary} inline-block`}
-            style={{ backgroundColor: '#C9A84C' }}
-          >
+          <Button as={Link} to="/catalog" variant="block-dark">
             Seguir explorando
-          </Link>
+          </Button>
         </div>
       </div>
     );
@@ -113,61 +107,40 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen px-6 py-16" style={{ backgroundColor: '#0A0A0A' }}>
-      <div className="max-w-3xl mx-auto grid md:grid-cols-[1.3fr_1fr] gap-12">
+    <div className="min-h-screen px-6 py-16 md:py-24 bg-[#0A0A0A]">
+      <div className="max-w-4xl mx-auto grid md:grid-cols-[1.2fr_1fr] gap-16">
         <div>
-          <h1 className="text-2xl tracking-widest uppercase text-white mb-8">Finalizar pedido</h1>
+          <p className="text-[11px] uppercase text-white/40 mb-3" style={{ letterSpacing: '0.26em' }}>
+            Paso 02 de 02 — Confirmación
+          </p>
+          <h1 className="text-4xl md:text-5xl mb-10 text-white" style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}>
+            Finalizar pedido
+          </h1>
 
-          {error && (
-            <div className="mb-6 px-4 py-3 border border-red-500/30 bg-red-500/10 text-red-400 text-sm rounded">
-              {error}
-            </div>
-          )}
+          {error && <div className="mb-8"><FormError>{error}</FormError></div>}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className={labelClasses}>Nombre completo</label>
-              <input required value={form.nombreCompleto} onChange={set('nombreCompleto')} className={inputClasses} placeholder="Juan Pérez" />
+          <form onSubmit={handleSubmit} className="space-y-7">
+            <Field label="Nombre completo" required value={form.nombreCompleto} onChange={set('nombreCompleto')} placeholder="Juan Pérez" />
+            <div className="grid grid-cols-2 gap-6">
+              <Field label="Correo electrónico" type="email" required value={form.email} onChange={set('email')} placeholder="tu@correo.com" />
+              <Field label="Teléfono" required value={form.telefono} onChange={set('telefono')} placeholder="+57 300 000 0000" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClasses}>Correo electrónico</label>
-                <input type="email" required value={form.email} onChange={set('email')} className={inputClasses} placeholder="tu@correo.com" />
-              </div>
-              <div>
-                <label className={labelClasses}>Teléfono</label>
-                <input required value={form.telefono} onChange={set('telefono')} className={inputClasses} placeholder="+57 300 000 0000" />
-              </div>
+            <div className="grid grid-cols-2 gap-6">
+              <Field label="Ciudad" required value={form.ciudad} onChange={set('ciudad')} placeholder="Medellín" />
+              <Field label="Departamento" required value={form.departamento} onChange={set('departamento')} placeholder="Antioquia" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClasses}>Ciudad</label>
-                <input required value={form.ciudad} onChange={set('ciudad')} className={inputClasses} placeholder="Medellín" />
-              </div>
-              <div>
-                <label className={labelClasses}>Departamento</label>
-                <input required value={form.departamento} onChange={set('departamento')} className={inputClasses} placeholder="Antioquia" />
-              </div>
-            </div>
-            <div>
-              <label className={labelClasses}>Dirección</label>
-              <input required value={form.direccion} onChange={set('direccion')} className={inputClasses} placeholder="Calle 10 #20-30, Apt 5" />
-            </div>
-            <div>
-              <label className={labelClasses}>Notas (opcional)</label>
-              <textarea value={form.notas} onChange={set('notas')} className={inputClasses} rows={2} placeholder="Indicaciones de entrega" />
-            </div>
+            <Field label="Dirección" required value={form.direccion} onChange={set('direccion')} placeholder="Calle 10 #20-30, Apt 5" />
+            <FieldArea label="Notas (opcional)" value={form.notas} onChange={set('notas')} rows={2} placeholder="Indicaciones de entrega" />
 
             <div>
-              <label className={labelClasses}>Método de pago</label>
-              <div className="space-y-3 mt-2">
+              <p className="text-[10px] uppercase text-white/40 mb-3" style={{ letterSpacing: '0.28em' }}>Método de pago</p>
+              <div className="space-y-3">
                 <button
                   type="button"
                   onClick={() => setMetodoPago('MERCADOPAGO')}
-                  className="w-full flex items-center gap-3 px-4 py-3 border rounded text-left transition-colors"
+                  className="w-full flex items-center gap-4 px-5 py-4 border text-left transition-colors duration-300"
                   style={{
-                    borderColor: metodoPago === 'MERCADOPAGO' ? '#C9A84C' : 'rgba(255,255,255,0.1)',
-                    backgroundColor: metodoPago === 'MERCADOPAGO' ? 'rgba(201,168,76,0.08)' : 'transparent',
+                    borderColor: metodoPago === 'MERCADOPAGO' ? '#C9A84C' : 'rgba(255,255,255,0.15)',
                   }}
                 >
                   <CreditCard size={18} className={metodoPago === 'MERCADOPAGO' ? 'text-[#C9A84C]' : 'text-white/40'} />
@@ -179,10 +152,9 @@ export default function Checkout() {
                 <button
                   type="button"
                   onClick={() => setMetodoPago('CONTRAENTREGA')}
-                  className="w-full flex items-center gap-3 px-4 py-3 border rounded text-left transition-colors"
+                  className="w-full flex items-center gap-4 px-5 py-4 border text-left transition-colors duration-300"
                   style={{
-                    borderColor: metodoPago === 'CONTRAENTREGA' ? '#C9A84C' : 'rgba(255,255,255,0.1)',
-                    backgroundColor: metodoPago === 'CONTRAENTREGA' ? 'rgba(201,168,76,0.08)' : 'transparent',
+                    borderColor: metodoPago === 'CONTRAENTREGA' ? '#C9A84C' : 'rgba(255,255,255,0.15)',
                   }}
                 >
                   <Truck size={18} className={metodoPago === 'CONTRAENTREGA' ? 'text-[#C9A84C]' : 'text-white/40'} />
@@ -194,29 +166,31 @@ export default function Checkout() {
               </div>
             </div>
 
-            <button type="submit" disabled={enviando} className={btnPrimary} style={{ backgroundColor: '#C9A84C' }}>
+            <Button type="submit" disabled={enviando} variant="block-dark">
               {enviando ? 'Procesando…' : metodoPago === 'MERCADOPAGO' ? 'Continuar al pago' : 'Confirmar pedido'}
-            </button>
+            </Button>
           </form>
         </div>
 
-        <div>
-          <h2 className="text-sm tracking-widest uppercase text-white/50 mb-4">Resumen</h2>
-          <div className="space-y-4 border-t border-white/10 pt-4">
+        <div className="border border-[#C9A84C]/30 p-8 h-fit">
+          <p className="text-[10px] uppercase text-white/40 mb-6" style={{ letterSpacing: '0.26em' }}>Resumen</p>
+          <div className="space-y-4">
             {items.map((item) => (
               <div key={item.producto.id} className="flex justify-between gap-3 text-sm">
                 <span className="text-white/70">
                   {item.producto.display} <span className="text-white/30">× {item.cantidad}</span>
                 </span>
-                <span style={{ color: '#C9A84C' }}>
+                <span className="text-[#C9A84C]">
                   {formatPrecio((item.producto.precio as number) * item.cantidad)}
                 </span>
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-white/10">
-            <span className="text-sm uppercase tracking-widest text-white/50">Total</span>
-            <span className="text-xl" style={{ color: '#C9A84C' }}>{formatPrecio(totalPrice)}</span>
+          <div className="flex justify-between items-baseline mt-6 pt-6 border-t border-white/15">
+            <span className="text-xs uppercase tracking-widest text-white/50">Total</span>
+            <span className="text-3xl text-[#C9A84C]" style={{ fontFamily: 'var(--font-serif)' }}>
+              {formatPrecio(totalPrice)}
+            </span>
           </div>
         </div>
       </div>

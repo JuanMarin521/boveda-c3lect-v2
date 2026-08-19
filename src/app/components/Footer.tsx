@@ -24,8 +24,11 @@ export default function Footer() {
           <div>
             <h4 className="text-sm uppercase tracking-widest mb-6 text-white/60">Navegación</h4>
             <div className="flex flex-col gap-3">
+              <Link to="/" className="text-sm hover:text-[#C9A84C] transition-colors">
+                Inicio
+              </Link>
               <Link to="/catalog" className="text-sm hover:text-[#C9A84C] transition-colors">
-                Colecciones
+                Catálogo
               </Link>
               <Link to="/about" className="text-sm hover:text-[#C9A84C] transition-colors">
                 Manifiesto

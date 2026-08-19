@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { Field } from '../components/ds/Field';
+import { Button } from '../components/ds/Button';
 
 export default function ResetPassword() {
   const { requestPasswordReset } = useAuth();
@@ -20,25 +22,24 @@ export default function ResetPassword() {
     }
   }
 
-  const inputClasses =
-    'w-full border border-white/10 rounded px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#C9A84C] transition-colors bg-[#1A1A1A]';
-  const labelClasses = 'block text-sm tracking-widest uppercase text-white/70 mb-1.5';
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
+    <div className="min-h-screen flex items-center justify-center px-6 bg-[#0A0A0A]">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="mb-10 text-center">
+        <div className="mb-12 text-center">
           <Link
             to="/"
-            className="text-3xl tracking-[0.22em]"
+            className="text-2xl tracking-[0.22em]"
             style={{ fontFamily: 'var(--font-sans)', fontWeight: 300, color: '#C9A84C' }}
           >
             C3LECT
           </Link>
-          <p className="mt-2 text-sm tracking-widest uppercase text-white/50">
+          <h1
+            className="mt-6 text-4xl text-white"
+            style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}
+          >
             Recuperar contraseña
-          </p>
+          </h1>
         </div>
 
         {enviado ? (
@@ -49,40 +50,32 @@ export default function ResetPassword() {
             </p>
             <Link
               to="/login"
-              className="inline-block text-sm text-[#C9A84C] hover:underline"
+              className="inline-block text-xs uppercase tracking-widest text-[#C9A84C] hover:underline"
             >
               Volver al inicio de sesión
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <p className="text-base text-white/50 leading-relaxed">
+          <form onSubmit={handleSubmit} className="space-y-7">
+            <p className="text-sm text-white/50 leading-relaxed">
               Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
             </p>
-            <div>
-              <label className={labelClasses}>Correo electrónico</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClasses}
-                placeholder="tu@correo.com"
-                autoComplete="email"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
-              style={{ backgroundColor: '#C9A84C' }}
-            >
+            <Field
+              label="Correo electrónico"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              autoComplete="email"
+            />
+            <Button type="submit" disabled={enviando} variant="block-dark">
               {enviando ? 'Enviando…' : 'Enviar enlace'}
-            </button>
+            </Button>
             <div className="text-center">
               <Link
                 to="/login"
-                className="text-sm text-white/50 hover:text-[#C9A84C] transition-colors"
+                className="text-xs uppercase tracking-widest text-white/40 hover:text-[#C9A84C] transition-colors"
               >
                 Volver al inicio de sesión
               </Link>

@@ -5,11 +5,37 @@
 // Cambia el número o las redes SOLO en ese archivo.
 // ============================================================
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Instagram, MapPin } from "lucide-react";
 import { CONFIG, whatsappContactLink } from "../config";
+import { Field, FieldArea } from "../components/ds/Field";
+import { Button } from "../components/ds/Button";
+
+function buildEncargoWhatsAppLink(nombre: string, whatsapp: string, queBuscas: string): string {
+  const mensaje = [
+    "Hola C3LECT, quiero hacer un encargo:",
+    "",
+    `Nombre: ${nombre}`,
+    `WhatsApp: ${whatsapp}`,
+    `Qué busco: ${queBuscas}`,
+  ].join("\n");
+  return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensaje)}`;
+}
 
 export default function Contact() {
+  const [form, setForm] = useState({ nombre: "", whatsapp: "", queBuscas: "" });
+
+  function set<K extends keyof typeof form>(key: K) {
+    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [key]: e.target.value }));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    window.open(buildEncargoWhatsAppLink(form.nombre, form.whatsapp, form.queBuscas), "_blank", "noopener,noreferrer");
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] py-24 md:py-32">
       <div className="max-w-4xl mx-auto px-6 md:px-12">
@@ -20,92 +46,92 @@ export default function Contact() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-20 text-center"
         >
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <span style={{ width: 32, height: 1, backgroundColor: "#C9A84C" }} />
+            <p className="text-[11px] uppercase text-white/50" style={{ letterSpacing: "0.32em" }}>
+              Escríbenos
+            </p>
+            <span style={{ width: 32, height: 1, backgroundColor: "#C9A84C" }} />
+          </div>
           <h1
             className="text-5xl md:text-7xl mb-8 tracking-wide text-white"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 300 }}
           >
-            Contacto
+            Conseguimos por encargo.
           </h1>
           <p className="text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
             Estamos aquí para responder tus preguntas sobre nuestras piezas excepcionales. Escríbenos para consultas personalizadas.
           </p>
         </motion.div>
 
-        {/* SECCIÓN: MÉTODOS DE CONTACTO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+        {/* SECCIÓN: ENCARGO + MÉTODOS DE CONTACTO */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-20">
 
-          {/* WhatsApp */}
-          <motion.a
-            href={whatsappContactLink()}
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* Formulario de encargo — abre WhatsApp con el mensaje pre-armado */}
+          <motion.form
+            onSubmit={handleSubmit}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="group p-12 bg-[#1A1A1A] border border-white/10 hover:border-[#C9A84C] transition-all duration-300 hover:shadow-lg"
-            aria-label="Contactar por WhatsApp"
+            className="space-y-7"
           >
-            <MessageCircle size={32} className="mb-6 text-[#C9A84C]" aria-hidden="true" />
-            <h3
-              className="text-2xl mb-4 tracking-wide text-white group-hover:text-[#C9A84C] transition-colors"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              WhatsApp
-            </h3>
-            <p className="text-white/60 mb-2">
-              Asesoría personalizada y órdenes directas
+            <p className="text-[10px] uppercase text-white/40" style={{ letterSpacing: "0.28em" }}>
+              Dinos la referencia que buscas
             </p>
-            <p className="text-sm text-white/40 mb-4">{CONFIG.whatsappDisplay}</p>
-            <span className="text-sm uppercase tracking-widest text-[#C9A84C]">
-              Iniciar conversación →
-            </span>
-          </motion.a>
+            <Field label="Nombre" required value={form.nombre} onChange={set("nombre")} placeholder="Tu nombre" />
+            <Field label="WhatsApp" required value={form.whatsapp} onChange={set("whatsapp")} placeholder="300 000 0000" />
+            <FieldArea label="Qué buscas" required rows={3} value={form.queBuscas} onChange={set("queBuscas")} placeholder="Referencia, marca o descripción" />
+            <Button type="submit" variant="block-dark">
+              Enviar el encargo
+            </Button>
+          </motion.form>
 
-          {/* Instagram */}
-          <motion.a
-            href={CONFIG.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* Métodos de contacto */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="group p-12 bg-[#1A1A1A] border border-white/10 hover:border-[#C9A84C] transition-all duration-300 hover:shadow-lg"
-            aria-label="Ver Instagram de C3LECT"
+            className="flex flex-col gap-8"
           >
-            <Instagram size={32} className="mb-6 text-[#C9A84C]" aria-hidden="true" />
-            <h3
-              className="text-2xl mb-4 tracking-wide text-white group-hover:text-[#C9A84C] transition-colors"
-              style={{ fontFamily: "var(--font-serif)" }}
+            <a
+              href={whatsappContactLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-start gap-4"
+              aria-label="Contactar por WhatsApp"
             >
-              Instagram
-            </h3>
-            <p className="text-white/60 mb-4">
-              Curadurías visuales y nuevas adquisiciones
-            </p>
-            <span className="text-sm uppercase tracking-widest text-[#C9A84C]">
-              {CONFIG.instagramHandle} →
-            </span>
-          </motion.a>
-        </div>
+              <MessageCircle size={20} className="mt-1 shrink-0 text-[#C9A84C]" aria-hidden="true" />
+              <div>
+                <h3 className="text-lg text-white group-hover:text-[#C9A84C] transition-colors">WhatsApp</h3>
+                <p className="text-white/50 text-sm">Asesoría personalizada y órdenes directas</p>
+                <p className="text-sm text-white/40">{CONFIG.whatsappDisplay}</p>
+              </div>
+            </a>
 
-        {/* SECCIÓN: UBICACIÓN */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-center py-16 border-t border-white/10"
-        >
-          <MapPin size={24} className="mx-auto mb-6 text-[#C9A84C]" aria-hidden="true" />
-          <h3
-            className="text-2xl mb-4 tracking-wide text-white"
-            style={{ fontFamily: "var(--font-serif)" }}
-          >
-            {CONFIG.ciudad}
-          </h3>
-          <p className="text-white/60">
-            Atención con cita previa para inspección personal de piezas selectas
-          </p>
-        </motion.div>
+            <a
+              href={CONFIG.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-start gap-4"
+              aria-label="Ver Instagram de C3LECT"
+            >
+              <Instagram size={20} className="mt-1 shrink-0 text-[#C9A84C]" aria-hidden="true" />
+              <div>
+                <h3 className="text-lg text-white group-hover:text-[#C9A84C] transition-colors">Instagram</h3>
+                <p className="text-white/50 text-sm">Curadurías visuales y nuevas adquisiciones</p>
+                <p className="text-sm text-white/40">{CONFIG.instagramHandle}</p>
+              </div>
+            </a>
+
+            <div className="flex items-start gap-4">
+              <MapPin size={20} className="mt-1 shrink-0 text-[#C9A84C]" aria-hidden="true" />
+              <div>
+                <h3 className="text-lg text-white">{CONFIG.ciudad}</h3>
+                <p className="text-white/50 text-sm">Atención con cita previa para inspección personal de piezas selectas</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
 
         {/* Nota de servicio */}
         <motion.div

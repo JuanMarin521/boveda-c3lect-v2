@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router';
 import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Button } from '../components/ds/Button';
 
 type Status = 'success' | 'failure' | 'pending';
 
@@ -12,7 +13,7 @@ const CONTENT: Record<Status, { icon: typeof CheckCircle2; color: string; title:
   },
   failure: {
     icon: XCircle,
-    color: '#ef4444',
+    color: '#C9A84C',
     title: 'Pago rechazado',
     body: 'No pudimos procesar tu pago. Tu pedido fue cancelado — puedes intentarlo de nuevo desde el carrito.',
   },
@@ -38,21 +39,19 @@ export default function CheckoutResult() {
   const { icon: Icon, color, title, body } = CONTENT[status];
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
+    <div className="min-h-screen flex items-center justify-center px-6 bg-[#0A0A0A]">
       <div className="w-full max-w-sm text-center">
-        <Icon size={48} className="mx-auto mb-6" style={{ color }} />
-        <h1 className="text-xl tracking-widest uppercase text-white mb-3">{title}</h1>
+        <Icon size={40} className="mx-auto mb-6" style={{ color }} />
+        <h1 className="text-3xl mb-4 text-white" style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}>
+          {title}
+        </h1>
         {orderNumber && (
-          <p className="text-white/40 text-sm mb-2">Pedido #{orderNumber}</p>
+          <p className="text-white/40 text-xs uppercase tracking-widest mb-3">Pedido #{orderNumber}</p>
         )}
-        <p className="text-white/60 text-sm leading-relaxed mb-8">{body}</p>
-        <Link
-          to="/catalog"
-          className="inline-block w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90"
-          style={{ backgroundColor: '#C9A84C' }}
-        >
+        <p className="text-white/60 text-sm leading-relaxed mb-10">{body}</p>
+        <Button as={Link} to="/catalog" variant="block-dark">
           Seguir explorando
-        </Link>
+        </Button>
       </div>
     </div>
   );

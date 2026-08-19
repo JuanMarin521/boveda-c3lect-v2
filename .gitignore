@@ -20,3 +20,12 @@ pnpm-debug.log*
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# design-sync — staged converter scripts, build output, and campaign-local
+# verification state (durable inputs like .design-sync/config.json,
+# NOTES.md, conventions.md, and previews/ are committed)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

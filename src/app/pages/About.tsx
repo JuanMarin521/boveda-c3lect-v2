@@ -5,20 +5,34 @@ export default function About() {
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       {/* Hero */}
-      <section className="py-24 md:py-32 bg-black text-white">
+      <section className="pt-24 md:pt-40 pb-12 md:pb-16 bg-black text-white">
         <div className="max-w-4xl mx-auto px-6 md:px-12 text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center gap-4 mb-8"
+          >
+            <span style={{ width: 40, height: 1, backgroundColor: "#C9A84C" }} />
+            <p className="text-[11px] uppercase text-white/60" style={{ letterSpacing: "0.32em" }}>
+              La curaduría
+            </p>
+            <span style={{ width: 40, height: 1, backgroundColor: "#C9A84C" }} />
+          </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl mb-8 tracking-wide"
+            transition={{ delay: 0.1 }}
+            className="text-6xl md:text-8xl mb-10 tracking-wide leading-[0.96]"
             style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}
           >
-            Manifiesto
+            Cinco piezas,
+            <br />
+            no cinco mil.
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.2 }}
             className="text-lg text-white/70 leading-relaxed"
           >
             En un mundo saturado de ruido, elegimos el silencio. En una era de abundancia vacía, curamos la escasez significativa.
@@ -26,8 +40,23 @@ export default function About() {
         </div>
       </section>
 
+      {/* Origen */}
+      <section className="py-20 md:py-28 bg-black text-white border-t border-b border-white/10">
+        <div className="max-w-3xl mx-auto px-6 md:px-12 text-center">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-2xl md:text-4xl leading-relaxed text-white/85"
+            style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}
+          >
+            Empezamos en 2026 comprando un solo reloj por mes, el que sí queríamos usar. La regla no cambió: si no lo usaríamos nosotros, no entra a la vitrina.
+          </motion.p>
+        </div>
+      </section>
+
       {/* Philosophy Sections */}
-      <section className="py-24 md:py-32">
+      <section className="pt-12 md:pt-16 pb-24 md:pb-32">
         <div className="max-w-4xl mx-auto px-6 md:px-12 space-y-24">
           {/* Section 1 */}
           <motion.div

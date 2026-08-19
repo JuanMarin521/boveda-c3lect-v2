@@ -4,9 +4,9 @@ import type { Producto, GeneroProducto } from "../data/types";
 
 export type RangoPrecio = "0-150" | "150-300" | "300+";
 
-const RANGOS_VALIDOS: RangoPrecio[] = ["0-150", "150-300", "300+"];
+export const RANGOS_VALIDOS: RangoPrecio[] = ["0-150", "150-300", "300+"];
 
-function enRango(precio: number, rango: RangoPrecio): boolean {
+export function enRango(precio: number, rango: RangoPrecio): boolean {
   if (rango === "0-150")   return precio <= 150000;
   if (rango === "150-300") return precio > 150000 && precio <= 300000;
   return precio > 300000;

@@ -11,9 +11,13 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, MessageCircle, ShoppingBag, Check, ZoomIn, X } from "lucide-react";
 import { getProductoById } from "../data/products";
 import { useProductos } from "../context/ProductosContext";
-import { whatsappLink } from "../config";
+import { whatsappLink, whatsappAvisarLink } from "../config";
 import { useCart } from "../context/CartContext";
 import { AvisoError } from "../components/AvisoError";
+import { Badge } from "../components/ds/Badge";
+import { PriceTag } from "../components/ds/PriceTag";
+import { SpecRow } from "../components/ds/SpecRow";
+import { Button } from "../components/ds/Button";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -23,7 +27,12 @@ export default function ProductDetail() {
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
   const [zoomAbierto, setZoomAbierto] = useState(false);
   const [añadido, setAñadido] = useState(false);
+  const [avisado, setAvisado] = useState(false);
   const { addItem, items } = useCart();
+
+  useEffect(() => {
+    setImagenSeleccionada(0);
+  }, [producto?.id]);
 
   useEffect(() => {
     if (!zoomAbierto) return;
@@ -41,6 +50,13 @@ export default function ProductDetail() {
     addItem(producto);
     setAñadido(true);
     setTimeout(() => setAñadido(false), 1500);
+  }
+
+  function handleAvisar() {
+    if (!producto) return;
+    window.open(whatsappAvisarLink(producto.display), "_blank", "noopener,noreferrer");
+    setAvisado(true);
+    setTimeout(() => setAvisado(false), 2000);
   }
 
   const precioFormateado = producto
@@ -88,7 +104,11 @@ export default function ProductDetail() {
 
   const urlWhatsApp = whatsappLink(producto.display);
   const cantidadEnCarrito = items.find((i) => i.producto.id === producto.id)?.cantidad ?? 0;
-  const stockAgotadoEnCarrito = producto.stock != null && cantidadEnCarrito >= producto.stock;
+  const stockRestante = producto.stock != null ? Math.max(0, producto.stock - cantidadEnCarrito) : null;
+  const stockAgotadoEnCarrito = stockRestante === 0;
+  const stockBajo = producto.stock != null && producto.stock <= 2;
+  const categoriaLabel = producto.cat === "reloj" ? "Relojería · Máquinas y Joyas" : "Perfumería · Firmas y Elixires";
+  const categoriaCatalogo = producto.cat === "reloj" ? "/catalog/watches" : "/catalog/perfumes";
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
@@ -113,28 +133,44 @@ export default function ProductDetail() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <button
-              onClick={() => setZoomAbierto(true)}
-              className="aspect-square mb-6 bg-[#1A1A1A] overflow-hidden relative w-full block group cursor-zoom-in"
-              aria-label="Ampliar imagen"
-            >
-              <img
-                src={import.meta.env.BASE_URL + producto.imgs[imagenSeleccionada]}
-                alt={`${producto.display} — foto ${imagenSeleccionada + 1}`}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                loading="eager"
-                width={800}
-                height={800}
-              />
-              {!producto.disponible && (
-                <div className="absolute top-4 left-4 bg-black/80 text-white text-xs uppercase tracking-widest px-3 py-1">
-                  Agotado
+            <div className="flex gap-3">
+              <button
+                onClick={() => setZoomAbierto(true)}
+                className="flex-1 aspect-square mb-6 bg-[#1A1A1A] overflow-hidden relative block group cursor-zoom-in"
+                aria-label="Ampliar imagen"
+              >
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.img
+                    key={imagenSeleccionada}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45 }}
+                    src={import.meta.env.BASE_URL + producto.imgs[imagenSeleccionada]}
+                    alt={`${producto.display} — foto ${imagenSeleccionada + 1}`}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    style={!producto.disponible ? { filter: "grayscale(.35)", opacity: 0.7 } : undefined}
+                    loading="eager"
+                    width={800}
+                    height={800}
+                  />
+                </AnimatePresence>
+                {!producto.disponible && (
+                  <div className="absolute top-4 left-4">
+                    <Badge status="soldout" />
+                  </div>
+                )}
+                <div className="absolute bottom-4 right-4 w-9 h-9 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <ZoomIn size={16} className="text-white" />
                 </div>
-              )}
-              <div className="absolute bottom-4 right-4 w-9 h-9 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <ZoomIn size={16} className="text-white" />
-              </div>
-            </button>
+              </button>
+              <p
+                className="hidden lg:block text-[10px] uppercase text-white/30 shrink-0"
+                style={{ writingMode: "vertical-rl", letterSpacing: "0.2em" }}
+              >
+                Clic para ampliar
+              </p>
+            </div>
 
             {producto.imgs.length > 1 && (
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
@@ -142,8 +178,12 @@ export default function ProductDetail() {
                   <button
                     key={index}
                     onClick={() => setImagenSeleccionada(index)}
-                    className="aspect-square bg-[#1A1A1A] overflow-hidden transition-opacity"
-                    style={{ opacity: imagenSeleccionada === index ? 1 : 0.45 }}
+                    className="aspect-square bg-[#1A1A1A] overflow-hidden transition-all"
+                    style={{
+                      opacity: imagenSeleccionada === index ? 1 : 0.55,
+                      border: imagenSeleccionada === index ? "1px solid #C9A84C" : "1px solid transparent",
+                      transitionDuration: "300ms",
+                    }}
                     aria-label={`Ver foto ${index + 1}`}
                     aria-pressed={imagenSeleccionada === index}
                   >
@@ -168,20 +208,46 @@ export default function ProductDetail() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex flex-col"
           >
-            <p className="text-xs uppercase tracking-widest text-white/40 mb-4">
-              {producto.cat === "reloj" ? "Relojería · Máquinas y Joyas" : "Perfumería · Firmas y Elixires"}
-            </p>
+            <div className="flex items-center gap-3 mb-5">
+              <p className="text-xs uppercase tracking-widest text-white/40">
+                {categoriaLabel}
+                {producto.disponible && stockBajo && ` · Quedan ${producto.stock} unidad${producto.stock === 1 ? "" : "es"}`}
+              </p>
+              <Badge status={producto.disponible ? "available" : "soldout"} />
+            </div>
 
             <h1
-              className="text-4xl md:text-5xl mb-6 tracking-wide text-white"
-              style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
+              className="text-4xl md:text-6xl mb-8 tracking-wide text-white leading-[0.95]"
+              style={{ fontFamily: "var(--font-serif)", fontWeight: 300 }}
             >
               {producto.display}
             </h1>
 
-            <p className="text-3xl mb-8" style={{ color: "#C9A84C" }}>
-              {precioFormateado}
-            </p>
+            <div
+              className={`py-7 mb-8 ${stockBajo && producto.disponible ? "border px-6" : "border-t border-b border-white/12"}`}
+              style={stockBajo && producto.disponible ? { borderColor: "rgba(201,168,76,0.35)" } : undefined}
+            >
+              <PriceTag
+                value={precioFormateado}
+                size="lg"
+                note={producto.disponible ? "COP · Envío incluido" : "Precio del último lote"}
+                apagado={!producto.disponible}
+              />
+
+              {producto.disponible && producto.stock != null && (
+                <p
+                  className="mt-5 pt-5 border-t border-white/10 text-[11px] uppercase"
+                  style={{
+                    letterSpacing: "0.2em",
+                    color: stockAgotadoEnCarrito ? "#C9A84C" : "rgba(255,255,255,0.4)",
+                  }}
+                >
+                  {stockAgotadoEnCarrito
+                    ? "Ya tenés todo el stock disponible en tu carrito"
+                    : `${stockRestante} unidad${stockRestante === 1 ? "" : "es"} disponible${stockRestante === 1 ? "" : "s"}`}
+                </p>
+              )}
+            </div>
 
             {producto.notas && (
               <div className="mb-10">
@@ -205,16 +271,16 @@ export default function ProductDetail() {
                   Ficha Técnica
                 </h3>
                 <div className="space-y-0">
-                  <FilaTecnica label="Movimiento" valor={producto.specs.movimiento} />
-                  {producto.specs.dimensiones   && <FilaTecnica label="Dimensiones"        valor={producto.specs.dimensiones} />}
-                  {producto.specs.caja          && <FilaTecnica label="Caja"                valor={producto.specs.caja} />}
-                  {producto.specs.correa        && <FilaTecnica label="Correa"              valor={producto.specs.correa} />}
-                  {producto.specs.cristal       && <FilaTecnica label="Cristal"             valor={producto.specs.cristal} />}
-                  {producto.specs.funciones     && <FilaTecnica label="Funciones"           valor={producto.specs.funciones} />}
-                  {producto.specs.bateria       && <FilaTecnica label="Batería"             valor={producto.specs.bateria} />}
-                  {producto.specs.reservaMarcha && <FilaTecnica label="Reserva de marcha"  valor={producto.specs.reservaMarcha} />}
-                  {producto.specs.peso          && <FilaTecnica label="Peso"                valor={producto.specs.peso} />}
-                  <FilaTecnica label="Resistencia al agua" valor={producto.specs.resistenciaAgua} />
+                  <SpecRow label="Movimiento" value={producto.specs.movimiento} />
+                  {producto.specs.dimensiones   && <SpecRow label="Dimensiones"        value={producto.specs.dimensiones} />}
+                  {producto.specs.caja          && <SpecRow label="Caja"                value={producto.specs.caja} />}
+                  {producto.specs.correa        && <SpecRow label="Correa"              value={producto.specs.correa} />}
+                  {producto.specs.cristal       && <SpecRow label="Cristal"             value={producto.specs.cristal} />}
+                  {producto.specs.funciones     && <SpecRow label="Funciones"           value={producto.specs.funciones} />}
+                  {producto.specs.bateria       && <SpecRow label="Batería"             value={producto.specs.bateria} />}
+                  {producto.specs.reservaMarcha && <SpecRow label="Reserva de marcha"  value={producto.specs.reservaMarcha} />}
+                  {producto.specs.peso          && <SpecRow label="Peso"                value={producto.specs.peso} />}
+                  <SpecRow label="Resistencia al agua" value={producto.specs.resistenciaAgua} />
                   {producto.specs.observaciones && (
                     <p className="mt-4 text-xs text-white/60 leading-relaxed border-t border-white/10 pt-4">
                       {producto.specs.observaciones}
@@ -225,30 +291,50 @@ export default function ProductDetail() {
             )}
 
             <div className="space-y-4 mt-auto">
-              <a
-                href={urlWhatsApp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-black text-white px-8 py-5 text-sm uppercase tracking-widest hover:bg-[#C9A84C] transition-all duration-300 flex items-center justify-center gap-3"
-                aria-label={`Ordenar ${producto.display} por WhatsApp`}
-              >
-                <MessageCircle size={18} aria-hidden="true" />
-                {producto.disponible ? "Ordenar por WhatsApp" : "Consultar disponibilidad"}
-              </a>
+              {producto.disponible ? (
+                <>
+                  <Button as="a" href={urlWhatsApp} target="_blank" rel="noopener noreferrer" variant="block-dark"
+                    aria-label={`Ordenar ${producto.display} por WhatsApp`}
+                  >
+                    <MessageCircle size={18} aria-hidden="true" />
+                    Ordenar por WhatsApp
+                  </Button>
 
-              <button
-                onClick={handleAddToCart}
-                disabled={!producto.disponible || stockAgotadoEnCarrito}
-                className="w-full border-2 px-8 py-5 text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={añadido
-                  ? { borderColor: "#C9A84C", color: "#C9A84C" }
-                  : { borderColor: "white", color: "white" }
-                }
-                aria-label={añadido ? "Producto añadido al carrito" : `Añadir ${producto.display} al carrito`}
-              >
-                {añadido ? <Check size={18} aria-hidden="true" /> : <ShoppingBag size={18} aria-hidden="true" />}
-                {añadido ? "¡Añadido al carrito!" : stockAgotadoEnCarrito ? "Stock máximo en el carrito" : "Añadir al carrito"}
-              </button>
+                  <Button
+                    as="button"
+                    onClick={handleAddToCart}
+                    disabled={stockAgotadoEnCarrito}
+                    variant="block-outline"
+                    aria-label={añadido ? "Producto añadido al carrito" : `Añadir ${producto.display} al carrito`}
+                  >
+                    {añadido ? <Check size={18} aria-hidden="true" /> : <ShoppingBag size={18} aria-hidden="true" />}
+                    {añadido
+                      ? "¡Añadido al carrito!"
+                      : stockAgotadoEnCarrito
+                      ? "Stock máximo en el carrito"
+                      : "Añadir al carrito"}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    as="button"
+                    onClick={handleAvisar}
+                    disabled={avisado}
+                    variant="block-outline"
+                    aria-label={`Avisarme cuando ${producto.display} vuelva a estar disponible`}
+                  >
+                    {avisado ? "Te avisamos" : "Avisame cuando vuelva"}
+                  </Button>
+                  <Link
+                    to={categoriaCatalogo}
+                    className="block text-center text-[10px] uppercase text-white/40 hover:text-[#C9A84C] transition-colors"
+                    style={{ letterSpacing: "0.2em" }}
+                  >
+                    Ver alternativas en {producto.cat === "reloj" ? "relojería" : "perfumería"}
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         </div>
@@ -327,17 +413,6 @@ export default function ProductDetail() {
           </>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-function FilaTecnica({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="flex gap-4 py-3 border-b border-white/10 last:border-0">
-      <span className="text-xs uppercase tracking-wider text-white/50 w-36 shrink-0 pt-0.5">
-        {label}
-      </span>
-      <span className="text-sm text-white/80 leading-relaxed">{valor}</span>
     </div>
   );
 }

@@ -7,8 +7,6 @@ import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 import type { Producto } from '../../data/types';
 
 
-const CATEGORIAS = ['', 'reloj', 'perfume', 'accesorio'];
-
 const esIncompleto = (p: Producto) => p.precio === 0 || p.estilo === '' || p.imgs.length === 0;
 
 export default function AdminProductos() {
@@ -21,6 +19,7 @@ export default function AdminProductos() {
   const [disponible, setDisponible] = useState('');
   const [incompletos, setIncompletos] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [destacadosCount, setDestacadosCount] = useState<number | null>(null);
 
   const LIMIT = 20;
   const totalPages = Math.ceil(total / LIMIT);
@@ -44,8 +43,19 @@ export default function AdminProductos() {
       .finally(() => setCargando(false));
   }
 
+  function fetchDestacadosCount() {
+    api.get('/products', { params: { destacado: 'true', limit: 100 } })
+      .then(({ data }) => {
+        const total = (data as { meta?: { total: number } })?.meta?.total;
+        setDestacadosCount(typeof total === 'number' ? total : null);
+      })
+      .catch(() => setDestacadosCount(null));
+  }
+
   useEffect(() => { fetchProductos(); }, [page, categoria, disponible, incompletos]);
+  useEffect(() => { fetchDestacadosCount(); }, []);
   useRefetchOnFocus(fetchProductos);
+  useRefetchOnFocus(fetchDestacadosCount);
 
   async function toggleDisponible(id: string, current: boolean) {
     await api.patch(`/products/${id}`, { disponible: !current });
@@ -64,7 +74,22 @@ export default function AdminProductos() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-white">Productos</h1>
-          <p className="text-sm text-white/40 mt-0.5">{total} productos en total</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-sm text-white/40">{total} productos en total</p>
+            {destacadosCount !== null && (
+              <span
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={
+                  destacadosCount === 0
+                    ? { background: 'rgba(234,179,8,0.15)', color: '#EAB308' }
+                    : { background: 'rgba(201,168,76,0.15)', color: '#C9A84C' }
+                }
+                title="El Home muestra máximo 5 a la vez; si marcas más quedan de respaldo por si algo se vende"
+              >
+                Destacados en Home: {destacadosCount} marcado{destacadosCount === 1 ? '' : 's'}
+              </span>
+            )}
+          </div>
         </div>
         <Link
           to="/admin/productos/nuevo"

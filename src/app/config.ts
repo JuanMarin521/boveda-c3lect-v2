@@ -22,13 +22,23 @@ export const CONFIG = {
   ciudad: "Medellín, Colombia",
 
   // SECCIÓN: TEXTOS DEL SITIO (edita aquí para cambiar sin tocar componentes)
-  tagline: "Curadurías excepcionales de alta relojería y perfumería de autor",
+  tagline: "Cinco piezas por temporada. Cada reloj y cada frasco entra a C3LECT solo si sobrevive a la mesa de curaduría en Medellín.",
   quote: '"El lujo verdadero no grita. Susurra con precisión, perdura en el tiempo, y se manifiesta en los detalles invisibles."',
 } as const;
+
+// La selección de temporada del Home (carrusel del hero) ya no se edita acá:
+// se marca por producto con el check "Destacado en Home" en el panel de
+// administración (máx. 5 piezas). Ver Home.tsx → piezasTemporada.
 
 // Genera el link de WhatsApp con mensaje pre-escrito para un producto
 export function whatsappLink(nombreProducto: string): string {
   const mensaje = `Hola, me interesa el ${nombreProducto}. ¿Está disponible?`;
+  return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensaje)}`;
+}
+
+// Genera el link de WhatsApp para pedir aviso de reingreso de un producto agotado
+export function whatsappAvisarLink(nombreProducto: string): string {
+  const mensaje = `Hola, quiero que me avisen cuando el ${nombreProducto} vuelva a estar disponible.`;
   return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensaje)}`;
 }
 

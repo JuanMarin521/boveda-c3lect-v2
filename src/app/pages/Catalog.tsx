@@ -1,172 +1,343 @@
 // ============================================================
-// PÁGINA: CATÁLOGO — /catalog
+// PÁGINA: LA VITRINA — /catalog
 //
-// Filtros: categoría (URL) + marca, género, precio,
-// disponibilidad (BarraFiltros). Todos combinan con AND.
+// Dirección "pocas piezas, escala grande" —
+// ver design_handoff_c3lect_visual/README.md, sección 2.
+// Riel de categorías + marca/género/precio a la izquierda (desktop,
+// sticky) / tabs + panel plegable (móvil). Filtros propios en URL,
+// separados de BarraFiltros/useProductFilter (esos siguen existiendo
+// para SearchResults.tsx, que usa el patrón de dropdowns + "Aplicar").
 // ============================================================
 
-import { Link, useParams, useNavigate } from "react-router";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router";
+import { useState, useMemo, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { ShoppingBag, Check } from "lucide-react";
-import type { Producto } from "../data/types";
+import { ShoppingBag, Check, ChevronDown } from "lucide-react";
+import type { GeneroProducto, Producto } from "../data/types";
 import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
-import { useProductFilter } from "../hooks/useProductFilter";
-import { BarraFiltros } from "../components/BarraFiltros";
+import { enRango, RANGOS_VALIDOS, type RangoPrecio } from "../hooks/useProductFilter";
 import { AvisoError } from "../components/AvisoError";
+import { Badge } from "../components/ds/Badge";
+
+type Categoria = "all" | "reloj" | "perfume" | "accesorio";
+
+const RANGOS: { id: RangoPrecio; label: string }[] = [
+  { id: "0-150",   label: "Hasta $150.000" },
+  { id: "150-300", label: "$150.000 – $300.000" },
+  { id: "300+",    label: "Más de $300.000" },
+];
+const GENEROS: GeneroProducto[] = ["Hombre", "Mujer", "Unisex"];
+
+type OrdenId = "curaduria" | "precio-asc" | "precio-desc";
+const OPCIONES_ORDEN: { id: OrdenId; label: string }[] = [
+  { id: "curaduria",   label: "Curaduría" },
+  { id: "precio-asc",  label: "Precio: menor a mayor" },
+  { id: "precio-desc", label: "Precio: mayor a menor" },
+];
+
+function parseLista(valor: string | null): string[] {
+  return valor ? valor.split(",").filter(Boolean) : [];
+}
 
 export default function Catalog() {
   const { category } = useParams<{ category?: string }>();
   const navigate = useNavigate();
   const { productos, cargando, error, recargar } = useProductos();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filtrosMóvilAbierto, setFiltrosMóvilAbierto] = useState(false);
 
-  const filtroActivo: "all" | "reloj" | "perfume" | "accesorio" =
+  const filtroActivo: Categoria =
     category === "watches"    ? "reloj"     :
     category === "perfumes"   ? "perfume"   :
     category === "accesorios" ? "accesorio" : "all";
 
-  function cambiarCategoria(filtro: "all" | "reloj" | "perfume" | "accesorio") {
-    if (filtro === "reloj")          navigate("/catalog/watches");
-    else if (filtro === "perfume")   navigate("/catalog/perfumes");
-    else if (filtro === "accesorio") navigate("/catalog/accesorios");
-    else                             navigate("/catalog");
+  const soloDisponible = searchParams.get("disponible") === "1";
+  const filtroMarcas = useMemo(() => parseLista(searchParams.get("marca")), [searchParams]);
+  const filtroGeneros = useMemo(() => parseLista(searchParams.get("genero")) as GeneroProducto[], [searchParams]);
+  const filtroPrecios = useMemo(
+    () => parseLista(searchParams.get("precio")).filter((r): r is RangoPrecio => RANGOS_VALIDOS.includes(r as RangoPrecio)),
+    [searchParams]
+  );
+  const ordenParam = searchParams.get("orden");
+  const criterioOrden: OrdenId = OPCIONES_ORDEN.some((o) => o.id === ordenParam) ? (ordenParam as OrdenId) : "curaduria";
+
+  function irACategoria(cat: Categoria) {
+    if (cat === "reloj")          navigate("/catalog/watches");
+    else if (cat === "perfume")   navigate("/catalog/perfumes");
+    else if (cat === "accesorio") navigate("/catalog/accesorios");
+    else                          navigate("/catalog");
   }
 
-  // Productos de la categoría activa (base para el hook de filtros)
-  const productosPorCategoria = useMemo(() =>
-    filtroActivo === "all"
-      ? productos
-      : productos.filter(p => p.cat === filtroActivo),
+  function toggleDisponible() {
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      if (soloDisponible) p.delete("disponible");
+      else p.set("disponible", "1");
+      return p;
+    }, { replace: true });
+  }
+
+  function toggleListParam(key: "marca" | "genero" | "precio", valor: string) {
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      const actuales = parseLista(p.get(key));
+      const siguientes = actuales.includes(valor) ? actuales.filter((v) => v !== valor) : [...actuales, valor];
+      if (siguientes.length > 0) p.set(key, siguientes.join(","));
+      else p.delete(key);
+      return p;
+    }, { replace: true });
+  }
+
+  function limpiarFiltros() {
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.delete("marca"); p.delete("genero"); p.delete("precio"); p.delete("disponible");
+      return p;
+    }, { replace: true });
+  }
+
+  function seleccionarOrden(valor: OrdenId) {
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      if (valor === "curaduria") p.delete("orden");
+      else p.set("orden", valor);
+      return p;
+    }, { replace: true });
+  }
+
+  const conteoRelojes = useMemo(() => productos.filter((p) => p.cat === "reloj").length, [productos]);
+  const conteoPerfumes = useMemo(() => productos.filter((p) => p.cat === "perfume").length, [productos]);
+  const conteoAccesorios = useMemo(() => productos.filter((p) => p.cat === "accesorio").length, [productos]);
+
+  const productosPorCategoria = useMemo(
+    () => productos.filter((p) => filtroActivo === "all" || p.cat === filtroActivo),
     [productos, filtroActivo]
   );
 
-  const {
-    seleccionMarcas, seleccionGeneros, seleccionPrecios,
-    toggleMarca, toggleGenero, togglePrecio,
-    iniciarMarcas, iniciarGeneros, iniciarPrecios,
-    aplicarMarcas, aplicarGeneros, aplicarPrecios,
-    filtroMarcas, filtroGeneros, filtroPrecios,
-    filtroDisponible, setFiltroDisponible,
-    resetMarcas,
-    marcasDisponibles,
-    productosFiltrados,
-    hayFiltrosActivos,
-    cantidadFiltrosActivos,
-    limpiarFiltros,
-  } = useProductFilter(productosPorCategoria);
+  const marcasDisponibles = useMemo(() => {
+    const ms = productosPorCategoria.map((p) => p.marca).filter((m): m is string => Boolean(m));
+    return [...new Set(ms)].sort();
+  }, [productosPorCategoria]);
 
-  // Al cambiar categoría, resetear marcas en selección y aplicado — pero no
-  // en el montaje inicial, o se perdería el filtro de marca que la URL
-  // acaba de restaurar (p. ej. al volver "atrás" desde un producto).
-  const categoriaAnterior = useRef(filtroActivo);
-  useEffect(() => {
-    if (categoriaAnterior.current !== filtroActivo) {
-      categoriaAnterior.current = filtroActivo;
-      resetMarcas();
-    }
-  }, [filtroActivo]);
+  const productosFiltrados = useMemo(() => {
+    const filtrados = productosPorCategoria
+      .filter((p) => filtroMarcas.length === 0 || (p.marca != null && filtroMarcas.includes(p.marca)))
+      .filter((p) => filtroGeneros.length === 0 || (p.genero != null && filtroGeneros.includes(p.genero)))
+      .filter((p) => filtroPrecios.length === 0 || filtroPrecios.some((r) => enRango(p.precio, r)))
+      .filter((p) => !soloDisponible || p.disponible);
+
+    if (criterioOrden === "precio-asc") return [...filtrados].sort((a, b) => a.precio - b.precio);
+    if (criterioOrden === "precio-desc") return [...filtrados].sort((a, b) => b.precio - a.precio);
+    // "Curaduría": el orden que ya trae el catálogo, con los agotados al final.
+    return [...filtrados].sort((a, b) => (a.disponible === b.disponible ? 0 : a.disponible ? -1 : 1));
+  }, [productosPorCategoria, filtroMarcas, filtroGeneros, filtroPrecios, soloDisponible, criterioOrden]);
+
+  const cantidadFiltrosActivos =
+    (filtroMarcas.length > 0 ? 1 : 0) +
+    (filtroGeneros.length > 0 ? 1 : 0) +
+    (filtroPrecios.length > 0 ? 1 : 0) +
+    (soloDisponible ? 1 : 0);
+  const hayFiltrosActivos = cantidadFiltrosActivos > 0;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] py-12 md:py-20">
+    <div className="min-h-screen bg-[#0A0A0A]">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
 
+        {/* Encabezado — desktop */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-16"
+          className="hidden md:flex items-end justify-between border-b border-white/10 pb-7"
+          style={{ paddingTop: 140 }}
         >
-          <h1
-            className="text-4xl md:text-6xl mb-6 tracking-wide text-white"
-            style={{ fontFamily: "var(--font-serif)" }}
-          >
-            Colecciones
+          <h1 style={{ fontFamily: "var(--font-serif)", fontWeight: 300, fontSize: 76, letterSpacing: "0.04em" }}>
+            La vitrina
           </h1>
-          <p className="text-white/60 max-w-2xl">
-            Cada pieza es seleccionada con criterio excepcional. Relojería de precisión y perfumería de autor.
-          </p>
+          <div className="flex items-center" style={{ gap: 24 }}>
+            {hayFiltrosActivos && (
+              <button
+                onClick={limpiarFiltros}
+                className="text-[11px] uppercase text-[#C9A84C] hover:text-white transition-colors"
+                style={{ letterSpacing: "0.26em" }}
+              >
+                Limpiar filtros
+              </button>
+            )}
+            {!cargando && !error && (
+              <span className="text-[11px] uppercase text-white/40" style={{ letterSpacing: "0.26em" }}>
+                {String(productosFiltrados.length).padStart(2, "0")} piezas disponibles · Medellín
+              </span>
+            )}
+          </div>
         </motion.div>
 
-        {/* Tabs de categoría */}
+        {/* Encabezado — móvil */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="md:hidden pt-12 pb-4"
+        >
+          <h1 style={{ fontFamily: "var(--font-serif)", fontWeight: 300, fontSize: 38 }}>La vitrina</h1>
+        </motion.div>
+
+        {/* Tabs de categoría — móvil */}
         <div
-          className="flex gap-4 mb-8 overflow-x-auto pb-2"
+          className="md:hidden flex gap-1 border-b border-white/10 overflow-x-auto"
           role="tablist"
           aria-label="Filtrar por categoría"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
         >
-          <BotónFiltro activo={filtroActivo === "all"}       onClick={() => cambiarCategoria("all")}       label="Todas" />
-          <BotónFiltro activo={filtroActivo === "reloj"}     onClick={() => cambiarCategoria("reloj")}     label="Máquinas y Joyas" />
-          <BotónFiltro activo={filtroActivo === "perfume"}   onClick={() => cambiarCategoria("perfume")}   label="Firmas y Elixires" />
-          <BotónFiltro activo={filtroActivo === "accesorio"} onClick={() => cambiarCategoria("accesorio")} label="Accesorios Premium" />
+          <TabMóvil activo={filtroActivo === "all"}     onClick={() => irACategoria("all")}     label="Todo" />
+          <TabMóvil activo={filtroActivo === "reloj"}   onClick={() => irACategoria("reloj")}   label="Relojes" />
+          <TabMóvil activo={filtroActivo === "perfume"} onClick={() => irACategoria("perfume")} label="Perfumes" />
+          {conteoAccesorios > 0 && (
+            <TabMóvil activo={filtroActivo === "accesorio"} onClick={() => irACategoria("accesorio")} label="Accesorios" />
+          )}
         </div>
 
-        {/* Barra de filtros premium */}
-        {!error && (
-          <BarraFiltros
-            marcasDisponibles={marcasDisponibles}
-            seleccionMarcas={seleccionMarcas}
-            seleccionGeneros={seleccionGeneros}
-            seleccionPrecios={seleccionPrecios}
-            filtroMarcas={filtroMarcas}
-            filtroGeneros={filtroGeneros}
-            filtroPrecios={filtroPrecios}
-            filtroDisponible={filtroDisponible}
-            onMarca={toggleMarca}
-            onGenero={toggleGenero}
-            onPrecio={togglePrecio}
-            onIniciarMarcas={iniciarMarcas}
-            onIniciarGeneros={iniciarGeneros}
-            onIniciarPrecios={iniciarPrecios}
-            onAplicarMarcas={aplicarMarcas}
-            onAplicarGeneros={aplicarGeneros}
-            onAplicarPrecios={aplicarPrecios}
-            onDisponible={setFiltroDisponible}
-            onLimpiar={limpiarFiltros}
-            hayFiltrosActivos={hayFiltrosActivos}
-            cantidadFiltrosActivos={cantidadFiltrosActivos}
-          />
-        )}
-
-        {/* Contador de resultados con filtros activos */}
-        {hayFiltrosActivos && !cargando && !error && (
-          <p className="text-sm text-white/40 mb-8 -mt-4">
-            {productosFiltrados.length}{" "}
-            {productosFiltrados.length === 1 ? "producto encontrado" : "productos encontrados"}
-          </p>
-        )}
-
-        {error ? (
-          <AvisoError onRetry={recargar} />
-        ) : cargando ? (
-          <p className="text-center text-white/40 py-20">Cargando colección...</p>
-        ) : (
-          <>
-            <motion.div
-              layout
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
+        {/* Panel de filtros — móvil, plegable */}
+        <div className="md:hidden mb-6">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setFiltrosMóvilAbierto((v) => !v)}
+              className="flex items-center gap-2 py-4 text-[10px] uppercase text-white/50"
+              style={{ letterSpacing: "0.24em" }}
             >
-              {productosFiltrados.map((producto, index) => (
-                <TarjetaProducto key={producto.id} producto={producto} index={index} />
-              ))}
-            </motion.div>
-
-            {productosFiltrados.length === 0 && (
-              <div className="text-center py-20">
-                <p className="text-white/40 mb-6">
-                  No hay productos que coincidan con los filtros seleccionados.
-                </p>
-                {hayFiltrosActivos && (
-                  <button
-                    onClick={limpiarFiltros}
-                    className="text-sm uppercase tracking-widest underline underline-offset-4 text-white/60 hover:text-white transition-colors"
-                  >
-                    Limpiar filtros
-                  </button>
-                )}
-              </div>
+              Filtros{hayFiltrosActivos && ` · ${cantidadFiltrosActivos}`}
+              <ChevronDown size={12} style={{ transform: filtrosMóvilAbierto ? "rotate(180deg)" : undefined, transition: "transform .3s" }} />
+            </button>
+            {hayFiltrosActivos && (
+              <button
+                onClick={limpiarFiltros}
+                className="text-[10px] uppercase text-[#C9A84C]"
+                style={{ letterSpacing: "0.24em" }}
+              >
+                Limpiar filtros
+              </button>
             )}
-          </>
-        )}
+          </div>
+          {filtrosMóvilAbierto && (
+            <div className="flex flex-col gap-6 pb-6 border-b border-white/10">
+              <RielGrupo titulo="Disponibilidad">
+                <RielItem activo={soloDisponible} onClick={toggleDisponible} label="Disponible" />
+              </RielGrupo>
+              <RielMarcas marcas={marcasDisponibles} filtroMarcas={filtroMarcas} onToggle={(m) => toggleListParam("marca", m)} />
+              <RielGrupo titulo="Género">
+                {GENEROS.map((genero) => (
+                  <RielItem key={genero} activo={filtroGeneros.includes(genero)} onClick={() => toggleListParam("genero", genero)} label={genero} />
+                ))}
+              </RielGrupo>
+              <RielGrupo titulo="Precio">
+                {RANGOS.map((r) => (
+                  <RielItem key={r.id} activo={filtroPrecios.includes(r.id)} onClick={() => toggleListParam("precio", r.id)} label={r.label} />
+                ))}
+              </RielGrupo>
+              <RielOrden valor={criterioOrden} onSeleccionar={seleccionarOrden} />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-12 pb-12 md:pb-20">
+          {/* Riel de filtros — desktop, sticky */}
+          <aside
+            className="hidden md:flex flex-col shrink-0 overflow-y-auto riel-filtros-scroll"
+            style={{
+              width: 180,
+              paddingTop: 44,
+              paddingBottom: 40,
+              gap: 28,
+              position: "sticky",
+              top: 120,
+              alignSelf: "flex-start",
+              maxHeight: "calc(100vh - 120px)",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(201,168,76,0.35) transparent",
+            } as React.CSSProperties}
+          >
+            <RielGrupo titulo="Filtrar">
+              <RielItem activo={filtroActivo === "all"} onClick={() => irACategoria("all")}
+                label={`Todo · ${String(productos.length).padStart(2, "0")}`} />
+              <RielItem activo={filtroActivo === "reloj"} onClick={() => irACategoria("reloj")}
+                label={`Relojería · ${String(conteoRelojes).padStart(2, "0")}`} />
+              <RielItem activo={filtroActivo === "perfume"} onClick={() => irACategoria("perfume")}
+                label={`Perfumería · ${String(conteoPerfumes).padStart(2, "0")}`} />
+              {conteoAccesorios > 0 && (
+                <RielItem activo={filtroActivo === "accesorio"} onClick={() => irACategoria("accesorio")}
+                  label={`Accesorios · ${String(conteoAccesorios).padStart(2, "0")}`} />
+              )}
+              <RielItem activo={soloDisponible} onClick={toggleDisponible} label="Disponible" />
+            </RielGrupo>
+
+            <RielMarcas marcas={marcasDisponibles} filtroMarcas={filtroMarcas} onToggle={(m) => toggleListParam("marca", m)} />
+
+            <RielGrupo titulo="Género">
+              {GENEROS.map((genero) => (
+                <RielItem key={genero} activo={filtroGeneros.includes(genero)} onClick={() => toggleListParam("genero", genero)} label={genero} />
+              ))}
+            </RielGrupo>
+
+            <RielGrupo titulo="Precio">
+              {RANGOS.map((r) => (
+                <RielItem key={r.id} activo={filtroPrecios.includes(r.id)} onClick={() => toggleListParam("precio", r.id)} label={r.label} />
+              ))}
+            </RielGrupo>
+
+            <RielOrden valor={criterioOrden} onSeleccionar={seleccionarOrden} />
+            <style>{`
+              .riel-filtros-scroll::-webkit-scrollbar { width: 5px; }
+              .riel-filtros-scroll::-webkit-scrollbar-track { background: transparent; }
+              .riel-filtros-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.35); border-radius: 3px; }
+              .riel-filtros-scroll::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.6); }
+            `}</style>
+          </aside>
+
+          {/* Grilla */}
+          <div className="flex-1">
+            {error ? (
+              <AvisoError
+                titulo="No pudimos cargar la vitrina"
+                detalle="Revisá tu conexión y volvé a intentarlo. Las piezas siguen ahí."
+                onRetry={recargar}
+              />
+            ) : cargando ? (
+              <p className="text-center text-white/40 py-20">Cargando colección...</p>
+            ) : (
+              <>
+                <motion.div
+                  layout
+                  className="grid grid-cols-2 gap-x-3 gap-y-8 md:gap-x-14 md:gap-y-[72px] pt-11"
+                >
+                  {productosFiltrados.map((producto, index) => (
+                    <TarjetaProducto key={producto.id} producto={producto} index={index} />
+                  ))}
+                </motion.div>
+
+                {productosFiltrados.length === 0 && (
+                  <div className="text-center py-20">
+                    <p
+                      className="text-2xl md:text-[44px] mb-4 text-white"
+                      style={{ fontFamily: "var(--font-serif)", fontWeight: 300 }}
+                    >
+                      Ninguna pieza cumple esos filtros.
+                    </p>
+                    <p className="text-sm text-white/50 mb-6">
+                      Prueba quitando alguno de los filtros seleccionados.
+                    </p>
+                    {hayFiltrosActivos && (
+                      <button
+                        onClick={limpiarFiltros}
+                        className="border border-white/30 text-white px-8 py-3 text-sm uppercase tracking-widest hover:bg-[#C9A84C] hover:border-[#C9A84C] hover:text-[#0A0A0A] active:bg-[#C9A84C] active:border-[#C9A84C] active:text-[#0A0A0A] transition-all duration-300"
+                      >
+                        Quitar filtros
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -174,19 +345,137 @@ export default function Catalog() {
 
 // ── Subcomponentes ─────────────────────────────────────────
 
-function BotónFiltro({
-  activo, onClick, label,
-}: { activo: boolean; onClick: () => void; label: string }) {
+function RielGrupo({ titulo, children }: { titulo: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col" style={{ gap: 14 }}>
+      <span className="text-[10px] uppercase text-white/30" style={{ letterSpacing: "0.3em" }}>
+        {titulo}
+      </span>
+      <div className="flex flex-col text-[12px] uppercase" style={{ gap: 14, letterSpacing: "0.2em" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function RielMarcas({
+  marcas, filtroMarcas, onToggle,
+}: { marcas: string[]; filtroMarcas: string[]; onToggle: (marca: string) => void }) {
+  const [abierto, setAbierto] = useState(filtroMarcas.length > 0);
+
+  if (marcas.length === 0) return null;
+
+  return (
+    <div className="flex flex-col" style={{ gap: 14 }}>
+      <button
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+        className="flex items-center justify-between text-left text-[10px] uppercase text-white/30 hover:text-white/60 transition-colors"
+        style={{ letterSpacing: "0.3em" }}
+      >
+        <span>Marca{filtroMarcas.length > 0 ? ` · ${filtroMarcas.length}` : ""}</span>
+        <ChevronDown size={12} style={{ transform: abierto ? "rotate(180deg)" : undefined, transition: "transform .3s" }} />
+      </button>
+      {abierto && (
+        <div className="flex flex-col" style={{ gap: 12 }}>
+          {marcas.map((marca) => (
+            <MarcaCheckbox key={marca} marca={marca} activo={filtroMarcas.includes(marca)} onToggle={onToggle} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MarcaCheckbox({ marca, activo, onToggle }: { marca: string; activo: boolean; onToggle: (marca: string) => void }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={activo}
+      onClick={() => onToggle(marca)}
+      className={
+        "flex items-center gap-3 text-left text-[12px] uppercase transition-colors " +
+        (activo ? "text-[#C9A84C]" : "text-white/55 hover:text-white/80")
+      }
+      style={{ letterSpacing: "0.2em" }}
+    >
+      <span
+        className="flex items-center justify-center shrink-0 border transition-colors"
+        style={{
+          width: 14,
+          height: 14,
+          borderColor: activo ? "#C9A84C" : "rgba(255,255,255,0.3)",
+          backgroundColor: activo ? "#C9A84C" : "transparent",
+        }}
+      >
+        {activo && <Check size={10} color="#0A0A0A" strokeWidth={3} aria-hidden="true" />}
+      </span>
+      {marca}
+    </button>
+  );
+}
+
+function RielOrden({ valor, onSeleccionar }: { valor: OrdenId; onSeleccionar: (v: OrdenId) => void }) {
+  const [abierto, setAbierto] = useState(false);
+  const actual = OPCIONES_ORDEN.find((o) => o.id === valor) ?? OPCIONES_ORDEN[0];
+
+  return (
+    <div className="flex flex-col" style={{ gap: 14, marginTop: 12 }}>
+      <button
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+        className="flex items-center justify-between text-left text-[10px] uppercase text-white/30 hover:text-white/60 transition-colors"
+        style={{ letterSpacing: "0.24em" }}
+      >
+        <span>Orden</span>
+        <ChevronDown size={12} style={{ transform: abierto ? "rotate(180deg)" : undefined, transition: "transform .3s" }} />
+      </button>
+      {abierto ? (
+        <div className="flex flex-col text-[12px] uppercase" style={{ gap: 14, letterSpacing: "0.2em" }}>
+          {OPCIONES_ORDEN.map((o) => (
+            <RielItem
+              key={o.id}
+              activo={valor === o.id}
+              onClick={() => { onSeleccionar(o.id); setAbierto(false); }}
+              label={o.label}
+            />
+          ))}
+        </div>
+      ) : (
+        <span className="text-[12px] uppercase text-[#C9A84C]" style={{ letterSpacing: "0.2em" }}>
+          {actual.label}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function RielItem({ activo, onClick, label }: { activo: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={
+        "text-left pb-2 border-b transition-colors duration-[400ms] " +
+        (activo ? "text-[#C9A84C] border-[#C9A84C]" : "text-white/55 border-white/[.08] hover:text-[#C9A84C]")
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
+function TabMóvil({ activo, onClick, label }: { activo: boolean; onClick: () => void; label: string }) {
   return (
     <button
       onClick={onClick}
       role="tab"
       aria-selected={activo}
-      className="relative px-6 py-3 text-sm uppercase tracking-widest whitespace-nowrap transition-colors"
-      style={{
-        color: activo ? "#C9A84C" : "#FFFFFF",
-        borderBottom: activo ? "2px solid #C9A84C" : "2px solid transparent",
-      }}
+      className={
+        "shrink-0 px-3 py-2 text-[10px] uppercase whitespace-nowrap border-b-2 transition-colors " +
+        (activo ? "text-[#C9A84C] border-[#C9A84C]" : "text-white border-transparent")
+      }
+      style={{ letterSpacing: "0.22em" }}
     >
       {label}
     </button>
@@ -212,6 +501,9 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
     minimumFractionDigits: 0,
   }).format(producto.precio as number);
 
+  const categoriaLabel =
+    producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios";
+
   return (
     <motion.div
       layout
@@ -220,31 +512,34 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
       transition={{ delay: index * 0.04 }}
     >
       <Link to={`/product/${producto.id}`} className="group block">
-        <div className="relative aspect-[3/4] mb-6 overflow-hidden bg-[#1A1A1A]">
+        <div className="relative overflow-hidden bg-[#141414]" style={{ aspectRatio: "4 / 5" }}>
           <img
             src={import.meta.env.BASE_URL + producto.imgs[0]}
             alt={producto.display}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform ease-out group-hover:scale-[1.06]"
+            style={{ transitionDuration: "1200ms", transitionTimingFunction: "cubic-bezier(.2,.7,.2,1)" }}
           />
+          <div
+            className="absolute left-0 right-0 bottom-0 pointer-events-none"
+            style={{ height: 140, background: "linear-gradient(180deg, rgba(10,10,10,0), rgba(10,10,10,.85))" }}
+          />
+          <p
+            className="absolute bottom-3 right-3 md:bottom-6 md:right-6 text-white/60 text-[10px] uppercase"
+            style={{ letterSpacing: "0.26em" }}
+          >
+            {categoriaLabel}
+          </p>
           {!producto.disponible && (
-            <div className="absolute top-4 left-4 bg-black/80 text-white text-xs uppercase tracking-widest px-3 py-1">
-              Agotado
-            </div>
-          )}
-          {producto.disponible && (
-            <div
-              className="absolute top-4 left-4 text-white text-xs uppercase tracking-widest px-3 py-1"
-              style={{ backgroundColor: "#C9A84C" }}
-            >
-              Disponible
+            <div className="absolute top-3 right-3 md:top-6 md:right-6">
+              <Badge status="soldout" />
             </div>
           )}
           {producto.disponible && (
             <button
               onClick={handleAddToCart}
               aria-label={añadido ? "Añadido al carrito" : `Añadir ${producto.display} al carrito`}
-              className="absolute bottom-4 right-4 w-10 h-10 flex items-center justify-center text-white transition-all duration-300 md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0"
+              className="absolute bottom-3 left-3 md:bottom-6 md:left-6 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-white transition-all duration-300 md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0"
               style={{ backgroundColor: añadido ? "#C9A84C" : "rgba(0,0,0,0.75)" }}
             >
               {añadido ? <Check size={16} /> : <ShoppingBag size={16} />}
@@ -252,26 +547,24 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
           )}
         </div>
 
-        <div>
-          <p className="text-xs uppercase tracking-widest text-white/40 mb-2">
-            {producto.cat === "reloj"
-              ? "Relojería"
-              : producto.cat === "perfume"
-              ? "Perfumería"
-              : "Accesorios Premium"}
-          </p>
-          <h3
-            className="text-xl md:text-2xl mb-3 tracking-wide text-white group-hover:text-[#C9A84C] transition-colors"
-            style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
+        <div className="pt-6 border-t border-white/12 mt-6 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h3
+              className="text-lg md:text-[34px] mb-1 tracking-wide text-white group-hover:text-[#C9A84C] transition-colors duration-[400ms] leading-tight"
+              style={{ fontFamily: "var(--font-serif)", fontWeight: 300 }}
+            >
+              {producto.display}
+            </h3>
+            {producto.notas && (
+              <p className="hidden md:block text-[13px] text-white/45 max-w-[340px] line-clamp-2 mt-2">
+                {producto.notas.descripcion}
+              </p>
+            )}
+          </div>
+          <p
+            className="shrink-0 text-base md:text-[28px] transition-transform duration-300 group-hover:translate-x-1"
+            style={{ fontFamily: "var(--font-serif)", color: "#C9A84C" }}
           >
-            {producto.display}
-          </h3>
-          {producto.notas && (
-            <p className="text-sm text-white/50 mb-4 line-clamp-2">
-              {producto.notas.descripcion}
-            </p>
-          )}
-          <p className="text-lg font-medium" style={{ color: "#C9A84C" }}>
             {precioFormateado}
           </p>
         </div>

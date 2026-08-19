@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Field } from '../components/ds/Field';
+import { FormError } from '../components/ds/FormError';
+import { Button } from '../components/ds/Button';
 
 type Modo = 'password' | 'otp-request' | 'otp-verify';
 
@@ -70,170 +73,138 @@ export default function Login() {
     setError('');
   }
 
-  const inputClasses =
-    'w-full border border-white/10 rounded px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#C9A84C] transition-colors bg-[#1A1A1A]';
-  const labelClasses = 'block text-sm tracking-widest uppercase text-white/70 mb-1.5';
-  const btnPrimary =
-    'w-full py-3 text-sm tracking-widest uppercase text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer';
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#0A0A0A' }}>
+    <div className="min-h-screen flex items-center justify-center px-6 bg-[#0A0A0A]">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="mb-10 text-center">
+        <div className="mb-12 text-center">
           <Link
             to="/"
-            className="text-3xl tracking-[0.22em]"
+            className="text-2xl tracking-[0.22em]"
             style={{ fontFamily: 'var(--font-sans)', fontWeight: 300, color: '#C9A84C' }}
           >
             C3LECT
           </Link>
-          <p className="mt-2 text-sm tracking-widest uppercase text-white/50">
-            {modo === 'password' ? 'Iniciar sesión' : 'Código de acceso'}
-          </p>
+          <h1
+            className="mt-6 text-4xl text-white"
+            style={{ fontFamily: 'var(--font-serif)', fontWeight: 300 }}
+          >
+            {modo === 'password' ? 'Ingresar' : 'Código de acceso'}
+          </h1>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-6 px-4 py-3 border border-red-500/30 bg-red-500/10 text-red-400 text-sm rounded">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-6"><FormError>{error}</FormError></div>}
 
-        {/* Formulario contraseña */}
         {modo === 'password' && (
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className={labelClasses}>Correo electrónico</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClasses}
-                placeholder="tu@correo.com"
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <label className={labelClasses}>Contraseña</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClasses}
-                  style={{ paddingRight: '2.75rem' }}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                />
+          <form onSubmit={handleLogin} className="space-y-7">
+            <Field
+              label="Correo electrónico"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              autoComplete="email"
+            />
+            <Field
+              label="Contraseña"
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              suffix={
                 <button
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
+                  className="text-white/30 hover:text-[#C9A84C] transition-colors cursor-pointer"
                   tabIndex={-1}
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
-              </div>
-            </div>
+              }
+            />
             <div className="flex justify-end">
               <Link
                 to="/reset-password"
-                className="text-sm text-white/50 hover:text-[#C9A84C] transition-colors"
+                className="text-xs uppercase tracking-widest text-white/40 hover:text-[#C9A84C] transition-colors"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <button
-              type="submit"
-              disabled={enviando}
-              className={btnPrimary}
-              style={{ backgroundColor: '#C9A84C' }}
-            >
-              {enviando ? 'Ingresando…' : 'Iniciar sesión'}
-            </button>
+            <Button type="submit" disabled={enviando} variant="block-dark">
+              {enviando ? 'Ingresando…' : 'Ingresar'}
+            </Button>
           </form>
         )}
 
-        {/* Formulario OTP — solicitar */}
         {modo === 'otp-request' && (
-          <form onSubmit={handleRequestOtp} className="space-y-5">
+          <form onSubmit={handleRequestOtp} className="space-y-7">
             <p className="text-sm text-white/50">
               Te enviaremos un código de 6 dígitos al correo para entrar sin contraseña.
             </p>
-            <div>
-              <label className={labelClasses}>Correo electrónico</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClasses}
-                placeholder="tu@correo.com"
-                autoComplete="email"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={enviando}
-              className={btnPrimary}
-              style={{ backgroundColor: '#C9A84C' }}
-            >
+            <Field
+              label="Correo electrónico"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              autoComplete="email"
+            />
+            <Button type="submit" disabled={enviando} variant="block-dark">
               {enviando ? 'Enviando…' : 'Enviar código'}
-            </button>
+            </Button>
           </form>
         )}
 
-        {/* Formulario OTP — verificar */}
         {modo === 'otp-verify' && (
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
+          <form onSubmit={handleVerifyOtp} className="space-y-7">
             <p className="text-sm text-white/50">
               Se envió un código a <strong className="text-white/70">{email}</strong>. Ingrésalo abajo.
             </p>
-            <div>
-              <label className={labelClasses}>Código OTP</label>
-              <input
-                type="text"
-                required
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className={`${inputClasses} text-center tracking-[0.5em] text-lg`}
-                placeholder="000000"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={enviando}
-              className={btnPrimary}
-              style={{ backgroundColor: '#C9A84C' }}
-            >
+            <Field
+              label="Código OTP"
+              type="text"
+              required
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="text-center tracking-[0.5em] text-lg"
+              placeholder="000000"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+            />
+            <Button type="submit" disabled={enviando} variant="block-dark">
               {enviando ? 'Verificando…' : 'Verificar código'}
-            </button>
+            </Button>
           </form>
         )}
 
         {/* Toggle OTP / contraseña */}
-        <div className="mt-8 pt-6 border-t border-white/10">
+        <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-1">
           {modo === 'password' ? (
             <button
               onClick={() => cambiarModo('otp-request')}
-              className="w-full text-center text-sm text-white/50 hover:text-[#C9A84C] transition-colors cursor-pointer"
+              className="text-xs uppercase tracking-widest text-white/40 hover:text-[#C9A84C] transition-colors cursor-pointer"
             >
               Entrar con código OTP
             </button>
           ) : (
             <button
               onClick={() => cambiarModo('password')}
-              className="w-full text-center text-sm text-white/50 hover:text-[#C9A84C] transition-colors cursor-pointer"
+              className="text-xs uppercase tracking-widest text-white/40 hover:text-[#C9A84C] transition-colors cursor-pointer"
             >
               Volver al inicio de sesión
             </button>
           )}
+        </div>
+
+        <div className="mt-6 flex items-center gap-4 text-white/15">
+          <div className="flex-1 h-px bg-white/10" />
+          <span className="text-[10px] uppercase tracking-widest">o</span>
+          <div className="flex-1 h-px bg-white/10" />
         </div>
 
         <p className="mt-6 text-center text-sm text-white/50">

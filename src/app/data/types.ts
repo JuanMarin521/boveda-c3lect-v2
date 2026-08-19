@@ -28,6 +28,7 @@ export interface Producto {
   display: string;      // Nombre completo para mostrar, ej: "Curren 8467 — Negro"
   precio: number;       // Precio en pesos colombianos, ej: 149000
   disponible: boolean;  // true = disponible | false = agotado
+  destacado: boolean;   // true = aparece en el carrusel de temporada del Home (máx. 5)
   stock?: number;       // Unidades disponibles en inventario (si se trackea); undefined = sin límite conocido
   cat: 'reloj' | 'perfume' | 'accesorio';
   marca?: string;       // Marca del producto, ej: "Curren", "Lattafa"
