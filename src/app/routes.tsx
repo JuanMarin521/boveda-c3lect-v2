@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { lazy, type ComponentType } from "react";
 import Root from "./components/Root";
 import AdminRoot from "./admin/AdminRoot";
+import { RouteError } from "./components/RouteError";
 // Home NO se carga con lazy(): es la ruta con la que aterriza casi todo el
 // mundo, así que separarla en su propio chunk solo suma un round-trip extra
 // antes del primer render Y deja el <Suspense fallback={null}> mostrando
@@ -40,6 +41,7 @@ export const router = createBrowserRouter(
     {
       path: "/",
       Component: Root,
+      errorElement: <RouteError />,
       children: [
         { index: true, Component: Home },
         { path: "catalog", lazy: lazyPage(() => import("./pages/Catalog")) },
@@ -70,6 +72,7 @@ export const router = createBrowserRouter(
     {
       path: "/admin",
       Component: AdminRoot,
+      errorElement: <RouteError />,
       children: [
         {
           Component: AdminLayout,
