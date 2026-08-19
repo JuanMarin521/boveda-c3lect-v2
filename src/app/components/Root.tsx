@@ -19,7 +19,19 @@ export default function Root() {
           <Navigation />
           <main className="flex-1 relative">
             <Suspense fallback={null}>
-              <AnimatePresence mode="wait" initial={false}>
+              {/* mode="popLayout" (no "wait"): "wait" NO monta la pagina entrante
+                  hasta que Framer Motion confirme que la saliente termino su
+                  animacion de salida. Si esa confirmacion se pierde (tab en
+                  background, un frame de animacion que no dispara en el
+                  dispositivo real), el area de contenido queda vacia
+                  indefinidamente sin ningun error en consola — el router ya
+                  cargo la pagina nueva, pero AnimatePresence nunca la monta.
+                  El router.lazy en routes.tsx ya garantiza que el contenido
+                  este listo antes del swap, asi que no hace falta secuenciar
+                  salida-antes-que-entrada aca. popLayout saca la pagina
+                  saliente del flujo (position absolute mientras se desvanece)
+                  para que no se amontone con la entrante durante el crossfade. */}
+              <AnimatePresence mode="popLayout" initial={false}>
                 <motion.div
                   key={location.pathname}
                   initial={{ opacity: 0, y: 18 }}
