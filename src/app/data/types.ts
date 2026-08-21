@@ -29,6 +29,7 @@ export interface Producto {
   precio: number;       // Precio en pesos colombianos, ej: 149000
   disponible: boolean;  // true = disponible | false = agotado
   destacado: boolean;   // true = aparece en el carrusel de temporada del Home (máx. 5)
+  destacadoOrden?: number | null; // orden dentro del carrusel de destacados; menor = primero
   stock?: number;       // Unidades disponibles en inventario (si se trackea); undefined = sin límite conocido
   cat: 'reloj' | 'perfume' | 'accesorio';
   marca?: string;       // Marca del producto, ej: "Curren", "Lattafa"

@@ -7,10 +7,12 @@ import CartDrawer from "./CartDrawer";
 import OfflineBanner from "./OfflineBanner";
 import { CartProvider } from "../context/CartContext";
 import { ProductosProvider } from "../context/ProductosContext";
+import { PromocionesProvider } from "../context/PromocionesContext";
 
 export default function Root() {
   const location = useLocation();
   return (
+    <PromocionesProvider>
     <CartProvider>
       <ProductosProvider>
         <div className="min-h-screen flex flex-col bg-[#0A0A0A]">
@@ -49,5 +51,6 @@ export default function Root() {
         </div>
       </ProductosProvider>
     </CartProvider>
+    </PromocionesProvider>
   );
 }

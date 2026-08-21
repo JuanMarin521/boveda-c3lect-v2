@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { api } from '../../lib/api';
 
 interface ProductoForm {
@@ -13,6 +13,7 @@ interface ProductoForm {
   precio: string;
   disponible: boolean;
   destacado: boolean;
+  destacadoOrden: string;
   imgsRaw: string;
   specMovimiento: string;
   specDimensiones: string;
@@ -33,7 +34,7 @@ interface ProductoForm {
 
 const EMPTY: ProductoForm = {
   id: '', nombre: '', estilo: '', display: '', cat: 'reloj',
-  marca: '', genero: '', precio: '', disponible: true, destacado: false, imgsRaw: '',
+  marca: '', genero: '', precio: '', disponible: true, destacado: false, destacadoOrden: '', imgsRaw: '',
   specMovimiento: '', specDimensiones: '', specCaja: '', specCorrea: '',
   specCristal: '', specFunciones: '', specResistenciaAgua: '', specPeso: '',
   specBateria: '', specReservaMarcha: '', specObservaciones: '',
@@ -84,6 +85,8 @@ function TextArea({ label, id, value, onChange }: {
 export default function AdminProductoForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const volverA = (location.state as { from?: string } | null)?.from ?? '/admin/productos';
   const isEdit = !!id && id !== 'nuevo';
   const [form, setForm] = useState<ProductoForm>(EMPTY);
   const [cargando, setCargando] = useState(isEdit);
@@ -106,6 +109,7 @@ export default function AdminProductoForm() {
           precio: String(data.precio ?? ''),
           disponible: Boolean(data.disponible ?? true),
           destacado: Boolean(data.destacado ?? false),
+          destacadoOrden: data.destacadoOrden != null ? String(data.destacadoOrden) : '',
           imgsRaw: Array.isArray(data.imgs) ? (data.imgs as string[]).join(', ') : '',
           specMovimiento: String(data.specMovimiento ?? ''),
           specDimensiones: String(data.specDimensiones ?? ''),
@@ -164,6 +168,7 @@ export default function AdminProductoForm() {
       precio: Number(form.precio),
       disponible: form.disponible,
       destacado: form.destacado,
+      destacadoOrden: form.destacado && form.destacadoOrden ? Number(form.destacadoOrden) : null,
       imgs,
     };
     if (form.marca) payload.marca = form.marca;
@@ -197,7 +202,7 @@ export default function AdminProductoForm() {
         payload.id = form.id;
         await api.post('/products', payload);
       }
-      navigate('/admin/productos');
+      navigate(volverA);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string | string[] } } })
@@ -321,6 +326,18 @@ export default function AdminProductoForm() {
               </label>
             </div>
           </div>
+          {form.destacado && (
+            <div className="max-w-[220px]">
+              <Field
+                label="Orden en destacados"
+                id="destacadoOrden"
+                value={form.destacadoOrden}
+                onChange={set('destacadoOrden')}
+                type="number"
+              />
+              <p className="text-xs text-white/30 mt-1">Menor número aparece primero. Déjalo vacío para que no importe el orden.</p>
+            </div>
+          )}
           <p className="text-xs text-white/30">
             "Destacado en Home" lo muestra en el carrusel de la portada — solo si además está "Disponible" (si se vende, sale solo del carrusel). El Home muestra máximo 5 a la vez, aunque marques más: si marcas 6, 7 u 8 como respaldo, cuando uno se venda otro ya marcado toma su lugar automáticamente, sin que tengas que entrar a cambiar nada.
           </p>
@@ -383,7 +400,7 @@ export default function AdminProductoForm() {
         <div className="flex gap-3 justify-end pb-4">
           <button
             type="button"
-            onClick={() => navigate('/admin/productos')}
+            onClick={() => navigate(volverA)}
             className="px-5 py-2 text-sm text-white/60 hover:text-white transition-colors"
           >
             Cancelar

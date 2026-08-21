@@ -11,14 +11,14 @@
 // Para cambiar estas imágenes, edita las rutas "src" en cada <img> de esta página.
 // ============================================================
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence, useScroll, useTransform } from "motion/react";
 import { ChevronRight } from "lucide-react";
 import { CONFIG } from "../config";
 import { Button } from "../components/ds/Button";
 import { useProductos } from "../context/ProductosContext";
-import { formatPrecio } from "../lib/format";
+import { Precio } from "../components/Precio";
 import type { Producto } from "../data/types";
 
 export default function Home() {
@@ -34,11 +34,13 @@ export default function Home() {
   // Reactivar cuando ese producto se limpie de la base de datos.
 
   // Selección de temporada — se marca por producto desde el panel de administración
-  // ("Destacado en Home" en el formulario de producto). Tope de 5 piezas: si hay más
+  // ("Destacado en Home" en el formulario de producto). Se ordena por "destacadoOrden"
+  // (menor primero; sin orden asignado va al final). Tope de 5 piezas: si hay más
   // marcadas, se muestran las primeras 5 y el resto se ignora silenciosamente.
   const piezasTemporada = useMemo(() => {
     return productos
       .filter((p) => p.destacado && p.disponible)
+      .sort((a, b) => (a.destacadoOrden ?? Infinity) - (b.destacadoOrden ?? Infinity))
       .slice(0, 5);
   }, [productos]);
 
@@ -145,19 +147,78 @@ export default function Home() {
           </div>
           <h1
             style={{ fontFamily: "var(--font-serif)", fontWeight: 300, fontSize: 42, lineHeight: 1.05 }}
-            className="mb-6"
+            className="mb-4"
           >
             Máquinas y elixires,{" "}
             <span style={{ color: "#C9A84C", fontStyle: "italic" }}>curados a mano.</span>
           </h1>
-          <div className="mb-8" style={{ height: 230 }}>
-            <img
-              src={import.meta.env.BASE_URL + "images/homePage-C3LECT.webp"}
-              alt="Reloj C3LECT — Curren 8467 Negro"
-              className="w-full h-full object-cover"
+          <p className="text-[14px] text-white/55 mb-8" style={{ lineHeight: 1.7, maxWidth: 420 }}>
+            {CONFIG.tagline}
+          </p>
+        </div>
+
+        {/* Pieza de temporada — misma fuente de datos que el hero de escritorio */}
+        <div className="relative overflow-hidden bg-[#141414]" style={{ height: 440 }}>
+          <AnimatePresence initial={false}>
+            <motion.img
+              key={piezaActual?.id ?? "default"}
+              src={import.meta.env.BASE_URL + (piezaActual ? piezaActual.imgs[0] : "images/homePage-C3LECT.webp")}
+              alt={piezaActual ? piezaActual.display : "Selección C3LECT"}
+              className="absolute inset-0 w-full h-full object-cover"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
               loading="eager"
+              fetchPriority="high"
             />
-          </div>
+          </AnimatePresence>
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(180deg, rgba(10,10,10,0) 38%, rgba(10,10,10,.9) 100%)" }}
+          />
+
+          {piezasTemporada.length > 1 && (
+            <span
+              className="absolute top-4 right-4 text-[10px] uppercase text-white/70"
+              style={{ letterSpacing: "0.22em" }}
+            >
+              {String((temporadaIndex % piezasTemporada.length) + 1).padStart(2, "0")} / {String(piezasTemporada.length).padStart(2, "0")}
+            </span>
+          )}
+
+          {piezaActual && (
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={piezaActual.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.3 }}
+                className="absolute left-0 right-0 bottom-0 p-6 flex items-end justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase text-white/50 mb-1.5" style={{ letterSpacing: "0.24em" }}>
+                    {piezaActual.nombre}
+                  </p>
+                  <Precio producto={piezaActual} className="text-2xl" />
+                </div>
+                {piezasTemporada.length > 1 && (
+                  <button
+                    onClick={siguientePieza}
+                    aria-label="Ver la siguiente pieza de la selección de temporada"
+                    className="shrink-0 flex items-center justify-center rounded-full border border-white/40 active:bg-[#C9A84C]/15 active:border-[#C9A84C] transition-colors"
+                    style={{ width: 48, height: 48 }}
+                  >
+                    <ChevronRight size={20} aria-hidden="true" />
+                  </button>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </div>
+
+        <div className="px-6 pt-8">
           <div className="flex flex-col">
             <IndiceFila to="/catalog/watches" nombre="Relojería" conteo={relojes.length} />
             <IndiceFila to="/catalog/perfumes" nombre="Perfumería" conteo={perfumes.length} />
@@ -170,7 +231,9 @@ export default function Home() {
             <ChevronRight size={16} aria-hidden="true" />
           </Link>
         </div>
-        <Ticker />
+        <div className="mt-10">
+          <Ticker />
+        </div>
       </div>
 
       {/* ── BANDA DE TRANSICIÓN — colecciones ───────────────────── */}
@@ -225,15 +288,15 @@ export default function Home() {
 
 // ── Subcomponentes ────────────────────────────────────────────
 
-function MetaPar({ label, valor, dorado }: { label: string; valor: string; dorado?: boolean }) {
+function MetaPar({ label, valor, dorado }: { label: string; valor: ReactNode; dorado?: boolean }) {
   return (
     <div>
       <p className="text-[10px] uppercase text-white/35 mb-1" style={{ letterSpacing: "0.28em" }}>
         {label}
       </p>
-      <p style={{ fontFamily: "var(--font-serif)", fontSize: 26, color: dorado ? "#C9A84C" : "#FFFFFF" }}>
+      <div style={{ fontFamily: "var(--font-serif)", fontSize: 26, color: dorado ? "#C9A84C" : "#FFFFFF" }}>
         {valor}
-      </p>
+      </div>
     </div>
   );
 }
@@ -278,7 +341,7 @@ function TemporadaFicha({
             {pieza.estilo && pieza.estilo.toUpperCase() !== "N/A" && (
               <MetaPar label="Estilo" valor={pieza.estilo} />
             )}
-            <MetaPar label="Precio" valor={formatPrecio(pieza.precio as number)} dorado />
+            <MetaPar label="Precio" valor={<Precio producto={pieza} className="text-[26px]" />} />
           </motion.div>
         </AnimatePresence>
       </motion.div>

@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useState } from 'react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, ClipboardList,
-  ArrowLeft, LogOut, Menu, X, TrendingUp, ShoppingCart, Wallet, Archive, Tag,
+  ArrowLeft, LogOut, Menu, X, TrendingUp, ShoppingCart, Wallet, Archive, Tag, Percent,
 } from 'lucide-react';
 import AdminRoute from '../components/AdminRoute';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { to: '/admin/gastos',   label: 'Gastos',             icon: Wallet,          end: false },
   { to: '/admin/inventario',label: 'Inventario',        icon: Archive,         end: false },
   { to: '/admin/precios',  label: 'Precios',            icon: Tag,             end: false },
+  { to: '/admin/promociones',label: 'Promociones',      icon: Percent,         end: false },
   { to: '/admin/auditoria',label: 'Auditoria',          icon: ClipboardList,   end: false },
 ];
 

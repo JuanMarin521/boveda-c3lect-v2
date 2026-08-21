@@ -2,13 +2,21 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Minus, Plus, ShoppingBag, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useCart, formatPrecio } from "../context/CartContext";
+import { usePromociones } from "../context/PromocionesContext";
+import { useAuth } from "../context/AuthContext";
+import { mejorDescuento, calcularPrecioFinal } from "../lib/promotions";
+import type { Producto } from "../data/types";
 import { CONFIG } from "../config";
 import { Button } from "./ds/Button";
 import { PriceTag } from "./ds/PriceTag";
 
-function buildWhatsAppMessage(items: ReturnType<typeof useCart>["items"], total: number): string {
+function buildWhatsAppMessage(
+  items: ReturnType<typeof useCart>["items"],
+  total: number,
+  precioUnitarioDe: (producto: Producto) => number,
+): string {
   const lineas = items.map((item) => {
-    const subtotal = (item.producto.precio as number) * item.cantidad;
+    const subtotal = precioUnitarioDe(item.producto) * item.cantidad;
     return `• ${item.producto.display} × ${item.cantidad} — ${formatPrecio(subtotal)}`;
   });
 
@@ -27,7 +35,12 @@ function buildWhatsAppMessage(items: ReturnType<typeof useCart>["items"], total:
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, clearCart, totalItems, totalPrice } = useCart();
+  const { promociones } = usePromociones();
+  const { autenticado } = useAuth();
   const navigate = useNavigate();
+
+  const precioUnitarioDe = (producto: Producto) =>
+    calcularPrecioFinal(producto.precio, mejorDescuento(promociones, producto, autenticado));
 
   return (
     <AnimatePresence>
@@ -154,7 +167,7 @@ export default function CartDrawer() {
 
                           <div className="flex items-center justify-between mt-auto">
                             <p className="text-sm" style={{ color: "#C9A84C" }}>
-                              {formatPrecio((item.producto.precio as number) * item.cantidad)}
+                              {formatPrecio(precioUnitarioDe(item.producto) * item.cantidad)}
                             </p>
                             <div className="flex items-center gap-2 border border-white/15">
                               <button
@@ -201,7 +214,7 @@ export default function CartDrawer() {
                     Continuar al pago
                   </Button>
                   <a
-                    href={buildWhatsAppMessage(items, totalPrice)}
+                    href={buildWhatsAppMessage(items, totalPrice, precioUnitarioDe)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={closeCart}

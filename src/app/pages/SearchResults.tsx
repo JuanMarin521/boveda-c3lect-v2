@@ -7,6 +7,7 @@ import { useProductFilter } from "../hooks/useProductFilter";
 import { BarraFiltros } from "../components/BarraFiltros";
 import { AvisoError } from "../components/AvisoError";
 import { Badge } from "../components/ds/Badge";
+import { Precio } from "../components/Precio";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -153,12 +154,6 @@ export default function SearchResults() {
 }
 
 function TarjetaProducto({ producto, index, orden }: { producto: Producto; index: number; orden: number }) {
-  const precioFormateado = new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-  }).format(producto.precio as number);
-
   const categoriaLabel =
     producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios";
 
@@ -201,9 +196,7 @@ function TarjetaProducto({ producto, index, orden }: { producto: Producto; index
           >
             {producto.display}
           </h3>
-          <p className="shrink-0 text-base md:text-[28px]" style={{ fontFamily: "var(--font-serif)", color: "#C9A84C" }}>
-            {precioFormateado}
-          </p>
+          <Precio producto={producto} className="shrink-0 text-base md:text-[28px]" />
         </div>
       </Link>
     </motion.div>

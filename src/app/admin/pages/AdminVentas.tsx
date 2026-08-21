@@ -32,7 +32,7 @@ interface Paginado {
   agregados: { totalVendido: number; pendienteCobro: number };
 }
 interface InvItem { marca: string | null; modelo: string; stock: number; }
-interface PrecioItem { marca: string | null; modelo: string; costoTotal: number; }
+interface PrecioItem { marca: string | null; modelo: string; costoTotal: number; precioCierre: number | null; }
 interface ProductoItem { nombre: string; estilo: string; }
 
 const EMPTY_FORM = {
@@ -121,6 +121,8 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
   let estilosDisponibles = [...new Set((productos ?? []).filter(p => p.nombre === nombreCompletoActual).map(p => p.estilo))];
   if (f.estilo && !estilosDisponibles.includes(f.estilo)) estilosDisponibles = [f.estilo, ...estilosDisponibles];
 
+  const precioCierreActual = precios?.find(p => p.modelo === f.modelo && (!p.marca || p.marca === f.marca))?.precioCierre ?? null;
+
   return (
     <form onSubmit={onSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
       <h2 className="text-sm font-medium text-[#C9A84C] mb-4">{title}</h2>
@@ -200,8 +202,8 @@ function VentaForm({ title, f, setF, onSubmit, onCancel, error, saving, submitLa
         <div><label className="text-xs text-white/40 mb-1 block">Precio Venta *</label>
           <input type="number" required min="0" placeholder="250000" value={f.precioVenta}
             onChange={e => setF(p => recalcEstado({ ...p, precioVenta: e.target.value }))} className={inp} /></div>
-        <div><label className="text-xs text-white/40 mb-1 block">Costo Producto</label>
-          <input type="number" readOnly tabIndex={-1} value={f.costoProducto} placeholder="Auto"
+        <div><label className="text-xs text-white/40 mb-1 block">Precio Cierre</label>
+          <input type="number" readOnly tabIndex={-1} value={precioCierreActual ?? ''} placeholder="Auto"
             className={inp + ' opacity-50 cursor-not-allowed'} /></div>
         <div><label className="text-xs text-white/40 mb-1 block">Costo Envío</label>
           <input type="number" min="0" placeholder="0" value={f.costoEnvio}

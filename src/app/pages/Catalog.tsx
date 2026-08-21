@@ -10,15 +10,16 @@
 // ============================================================
 
 import { Link, useParams, useNavigate, useSearchParams } from "react-router";
-import { useState, useMemo, type ReactNode } from "react";
-import { motion } from "motion/react";
-import { ShoppingBag, Check, ChevronDown } from "lucide-react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { ShoppingBag, Check, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import type { GeneroProducto, Producto } from "../data/types";
 import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
 import { enRango, RANGOS_VALIDOS, type RangoPrecio } from "../hooks/useProductFilter";
 import { AvisoError } from "../components/AvisoError";
 import { Badge } from "../components/ds/Badge";
+import { Precio } from "../components/Precio";
 
 type Categoria = "all" | "reloj" | "perfume" | "accesorio";
 
@@ -196,47 +197,45 @@ export default function Catalog() {
           )}
         </div>
 
-        {/* Panel de filtros — móvil, plegable */}
-        <div className="md:hidden mb-6">
-          <div className="flex items-center justify-between">
+        {/* Barra de filtros — móvil */}
+        <div className="md:hidden flex items-center justify-between py-4 mb-2">
+          <button
+            onClick={() => setFiltrosMóvilAbierto(true)}
+            className="flex items-center gap-2 text-[11px] uppercase text-white border border-white/25 rounded-full pl-3.5 pr-4 py-2 active:border-[#C9A84C] active:text-[#C9A84C] transition-colors"
+            style={{ letterSpacing: "0.16em" }}
+          >
+            <SlidersHorizontal size={13} aria-hidden="true" />
+            Filtros{hayFiltrosActivos && ` · ${cantidadFiltrosActivos}`}
+          </button>
+          {hayFiltrosActivos && (
             <button
-              onClick={() => setFiltrosMóvilAbierto((v) => !v)}
-              className="flex items-center gap-2 py-4 text-[10px] uppercase text-white/50"
-              style={{ letterSpacing: "0.24em" }}
+              onClick={limpiarFiltros}
+              className="text-[10px] uppercase text-[#C9A84C]"
+              style={{ letterSpacing: "0.22em" }}
             >
-              Filtros{hayFiltrosActivos && ` · ${cantidadFiltrosActivos}`}
-              <ChevronDown size={12} style={{ transform: filtrosMóvilAbierto ? "rotate(180deg)" : undefined, transition: "transform .3s" }} />
+              Limpiar filtros
             </button>
-            {hayFiltrosActivos && (
-              <button
-                onClick={limpiarFiltros}
-                className="text-[10px] uppercase text-[#C9A84C]"
-                style={{ letterSpacing: "0.24em" }}
-              >
-                Limpiar filtros
-              </button>
-            )}
-          </div>
-          {filtrosMóvilAbierto && (
-            <div className="flex flex-col gap-6 pb-6 border-b border-white/10">
-              <RielGrupo titulo="Disponibilidad">
-                <RielItem activo={soloDisponible} onClick={toggleDisponible} label="Disponible" />
-              </RielGrupo>
-              <RielMarcas marcas={marcasDisponibles} filtroMarcas={filtroMarcas} onToggle={(m) => toggleListParam("marca", m)} />
-              <RielGrupo titulo="Género">
-                {GENEROS.map((genero) => (
-                  <RielItem key={genero} activo={filtroGeneros.includes(genero)} onClick={() => toggleListParam("genero", genero)} label={genero} />
-                ))}
-              </RielGrupo>
-              <RielGrupo titulo="Precio">
-                {RANGOS.map((r) => (
-                  <RielItem key={r.id} activo={filtroPrecios.includes(r.id)} onClick={() => toggleListParam("precio", r.id)} label={r.label} />
-                ))}
-              </RielGrupo>
-              <RielOrden valor={criterioOrden} onSeleccionar={seleccionarOrden} />
-            </div>
           )}
         </div>
+
+        <FiltrosMovilSheet
+          abierto={filtrosMóvilAbierto}
+          onClose={() => setFiltrosMóvilAbierto(false)}
+          soloDisponible={soloDisponible}
+          onToggleDisponible={toggleDisponible}
+          marcasDisponibles={marcasDisponibles}
+          filtroMarcas={filtroMarcas}
+          onToggleMarca={(m) => toggleListParam("marca", m)}
+          filtroGeneros={filtroGeneros}
+          onToggleGenero={(g) => toggleListParam("genero", g)}
+          filtroPrecios={filtroPrecios}
+          onTogglePrecio={(p) => toggleListParam("precio", p)}
+          criterioOrden={criterioOrden}
+          onSeleccionarOrden={seleccionarOrden}
+          hayFiltrosActivos={hayFiltrosActivos}
+          onLimpiar={limpiarFiltros}
+          totalResultados={productosFiltrados.length}
+        />
 
         <div className="flex gap-12 pb-12 md:pb-20">
           {/* Riel de filtros — desktop, sticky */}
@@ -465,6 +464,162 @@ function RielItem({ activo, onClick, label }: { activo: boolean; onClick: () => 
   );
 }
 
+function SeccionFiltroMovil({ titulo, children }: { titulo: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <span className="text-[10px] uppercase text-white/35" style={{ letterSpacing: "0.26em" }}>
+        {titulo}
+      </span>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+function Chip({ activo, onClick, label }: { activo: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={
+        "px-4 py-2.5 rounded-full text-[12px] uppercase border transition-colors " +
+        (activo
+          ? "bg-[#C9A84C] border-[#C9A84C] text-[#0A0A0A]"
+          : "border-white/20 text-white/65 active:border-white/45 active:text-white")
+      }
+      style={{ letterSpacing: "0.12em" }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FiltrosMovilSheet({
+  abierto, onClose,
+  soloDisponible, onToggleDisponible,
+  marcasDisponibles, filtroMarcas, onToggleMarca,
+  filtroGeneros, onToggleGenero,
+  filtroPrecios, onTogglePrecio,
+  criterioOrden, onSeleccionarOrden,
+  hayFiltrosActivos, onLimpiar,
+  totalResultados,
+}: {
+  abierto: boolean;
+  onClose: () => void;
+  soloDisponible: boolean;
+  onToggleDisponible: () => void;
+  marcasDisponibles: string[];
+  filtroMarcas: string[];
+  onToggleMarca: (marca: string) => void;
+  filtroGeneros: GeneroProducto[];
+  onToggleGenero: (genero: GeneroProducto) => void;
+  filtroPrecios: RangoPrecio[];
+  onTogglePrecio: (rango: RangoPrecio) => void;
+  criterioOrden: OrdenId;
+  onSeleccionarOrden: (orden: OrdenId) => void;
+  hayFiltrosActivos: boolean;
+  onLimpiar: () => void;
+  totalResultados: number;
+}) {
+  useEffect(() => {
+    document.body.style.overflow = abierto ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [abierto]);
+
+  return (
+    <AnimatePresence>
+      {abierto && (
+        <>
+          <motion.div
+            key="filtros-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/60 z-50 md:hidden"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+          <motion.div
+            key="filtros-sheet"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            className="fixed left-0 right-0 bottom-0 z-50 md:hidden flex flex-col rounded-t-2xl border-t border-white/10"
+            style={{ background: "#0F0F0F", maxHeight: "85vh" }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filtros del catálogo"
+          >
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 shrink-0">
+              <h2
+                className="text-base uppercase tracking-widest text-white"
+                style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
+              >
+                Filtros
+              </h2>
+              <button onClick={onClose} className="p-1 text-white/50 active:text-white" aria-label="Cerrar filtros">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-8">
+              <SeccionFiltroMovil titulo="Disponibilidad">
+                <Chip activo={soloDisponible} onClick={onToggleDisponible} label="Solo disponibles" />
+              </SeccionFiltroMovil>
+
+              {marcasDisponibles.length > 0 && (
+                <SeccionFiltroMovil titulo="Marca">
+                  {marcasDisponibles.map((marca) => (
+                    <Chip key={marca} activo={filtroMarcas.includes(marca)} onClick={() => onToggleMarca(marca)} label={marca} />
+                  ))}
+                </SeccionFiltroMovil>
+              )}
+
+              <SeccionFiltroMovil titulo="Género">
+                {GENEROS.map((genero) => (
+                  <Chip key={genero} activo={filtroGeneros.includes(genero)} onClick={() => onToggleGenero(genero)} label={genero} />
+                ))}
+              </SeccionFiltroMovil>
+
+              <SeccionFiltroMovil titulo="Precio">
+                {RANGOS.map((r) => (
+                  <Chip key={r.id} activo={filtroPrecios.includes(r.id)} onClick={() => onTogglePrecio(r.id)} label={r.label} />
+                ))}
+              </SeccionFiltroMovil>
+
+              <SeccionFiltroMovil titulo="Ordenar por">
+                {OPCIONES_ORDEN.map((o) => (
+                  <Chip key={o.id} activo={criterioOrden === o.id} onClick={() => onSeleccionarOrden(o.id)} label={o.label} />
+                ))}
+              </SeccionFiltroMovil>
+            </div>
+
+            <div className="px-6 py-5 border-t border-white/10 shrink-0 flex items-center gap-4">
+              {hayFiltrosActivos && (
+                <button
+                  onClick={onLimpiar}
+                  className="shrink-0 text-[11px] uppercase text-white/50 active:text-white transition-colors"
+                  style={{ letterSpacing: "0.2em" }}
+                >
+                  Limpiar
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="flex-1 bg-[#C9A84C] text-[#0A0A0A] py-3.5 text-sm uppercase tracking-widest"
+              >
+                Ver {totalResultados} {totalResultados === 1 ? "pieza" : "piezas"}
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function TabMóvil({ activo, onClick, label }: { activo: boolean; onClick: () => void; label: string }) {
   return (
     <button
@@ -494,12 +649,6 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
     setAñadido(true);
     setTimeout(() => setAñadido(false), 1500);
   }
-
-  const precioFormateado = new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-  }).format(producto.precio as number);
 
   const categoriaLabel =
     producto.cat === "reloj" ? "Relojería" : producto.cat === "perfume" ? "Perfumería" : "Accesorios";
@@ -561,12 +710,10 @@ function TarjetaProducto({ producto, index }: { producto: Producto; index: numbe
               </p>
             )}
           </div>
-          <p
+          <Precio
+            producto={producto}
             className="shrink-0 text-base md:text-[28px] transition-transform duration-300 group-hover:translate-x-1"
-            style={{ fontFamily: "var(--font-serif)", color: "#C9A84C" }}
-          >
-            {precioFormateado}
-          </p>
+          />
         </div>
       </Link>
     </motion.div>

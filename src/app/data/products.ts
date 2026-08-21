@@ -38,10 +38,19 @@ function buscarStock(stockPorModelo: Map<string, number>, nombre: string, marca:
 // (costo, margen) no llegue al navegador de un visitante anónimo por default. Debe mantenerse
 // en sync con los campos que el mapeo de abajo efectivamente lee de `p`.
 const PRODUCTOS_COLUMNAS =
-  "id, nombre, estilo, display, precio, disponible, destacado, cat, marca, genero, imgs, " +
+  "id, nombre, estilo, display, precio, disponible, destacado, destacado_orden, cat, marca, genero, imgs, " +
   "spec_movimiento, spec_dimensiones, spec_caja, spec_correa, spec_cristal, spec_funciones, " +
   "spec_resistencia_agua, spec_peso, spec_bateria, spec_reserva_marcha, spec_observaciones, " +
   "notas_descripcion, notas_top, notas_corazon, notas_base";
+
+// Algunos productos (sobre todo perfumes importados de la planilla) tienen
+// "estilo" literalmente en "N/A" en vez de vacío — sin esto, "display" (armado
+// en el panel admin como "Nombre — Estilo") muestra "... — N/A" en toda la
+// tienda. Se sanea acá, en el único punto donde se leen productos, en vez de
+// en cada componente que renderiza display/estilo.
+function esEstiloVacio(estilo: string | null | undefined): boolean {
+  return !estilo || estilo.trim().toUpperCase() === "N/A";
+}
 
 export async function getProductos(): Promise<Producto[]> {
   const [{ data, error }, stockPorModelo] = await Promise.all([
@@ -56,11 +65,12 @@ export async function getProductos(): Promise<Producto[]> {
     .map((p: any) => ({
     id: p.id,
     nombre: p.nombre,
-    estilo: p.estilo,
-    display: p.display,
+    estilo: esEstiloVacio(p.estilo) ? "" : p.estilo,
+    display: esEstiloVacio(p.estilo) ? p.nombre : p.display,
     precio: p.precio,
     disponible: p.disponible,
     destacado: p.destacado ?? false,
+    destacadoOrden: p.destacado_orden ?? null,
     stock: buscarStock(stockPorModelo, p.nombre, p.marca),
     cat: p.cat,
     marca: p.marca ?? undefined,

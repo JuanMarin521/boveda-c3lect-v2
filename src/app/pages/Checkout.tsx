@@ -3,6 +3,8 @@ import { Link } from 'react-router';
 import { CreditCard, Truck, CheckCircle2 } from 'lucide-react';
 import { useCart, formatPrecio } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { usePromociones } from '../context/PromocionesContext';
+import { mejorDescuento, calcularPrecioFinal } from '../lib/promotions';
 import { api } from '../lib/api';
 import { Field, FieldArea } from '../components/ds/Field';
 import { FormError } from '../components/ds/FormError';
@@ -17,7 +19,10 @@ interface OrderResponse {
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, autenticado } = useAuth();
+  const { promociones } = usePromociones();
+  const precioUnitarioDe = (producto: (typeof items)[number]['producto']) =>
+    calcularPrecioFinal(producto.precio, mejorDescuento(promociones, producto, autenticado));
 
   const [form, setForm] = useState({
     nombreCompleto: user?.nombre ?? '',
@@ -181,7 +186,7 @@ export default function Checkout() {
                   {item.producto.display} <span className="text-white/30">× {item.cantidad}</span>
                 </span>
                 <span className="text-[#C9A84C]">
-                  {formatPrecio((item.producto.precio as number) * item.cantidad)}
+                  {formatPrecio(precioUnitarioDe(item.producto) * item.cantidad)}
                 </span>
               </div>
             ))}

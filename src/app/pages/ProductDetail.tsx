@@ -15,7 +15,7 @@ import { whatsappLink, whatsappAvisarLink } from "../config";
 import { useCart } from "../context/CartContext";
 import { AvisoError } from "../components/AvisoError";
 import { Badge } from "../components/ds/Badge";
-import { PriceTag } from "../components/ds/PriceTag";
+import { PrecioTag } from "../components/Precio";
 import { SpecRow } from "../components/ds/SpecRow";
 import { Button } from "../components/ds/Button";
 
@@ -58,14 +58,6 @@ export default function ProductDetail() {
     setAvisado(true);
     setTimeout(() => setAvisado(false), 2000);
   }
-
-  const precioFormateado = producto
-    ? new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 0,
-      }).format(producto.precio as number)
-    : "";
 
   if (cargando) {
     return (
@@ -227,11 +219,10 @@ export default function ProductDetail() {
               className={`py-7 mb-8 ${stockBajo && producto.disponible ? "border px-6" : "border-t border-b border-white/12"}`}
               style={stockBajo && producto.disponible ? { borderColor: "rgba(201,168,76,0.35)" } : undefined}
             >
-              <PriceTag
-                value={precioFormateado}
+              <PrecioTag
+                producto={producto}
                 size="lg"
                 note={producto.disponible ? "COP · Envío incluido" : "Precio del último lote"}
-                apagado={!producto.disponible}
               />
 
               {producto.disponible && producto.stock != null && (

@@ -381,7 +381,7 @@ export default function Navigation() {
                       className="block mb-4 text-lg tracking-wide uppercase text-white hover:text-[#C9A84C] transition-colors"
                       style={{ fontFamily: "var(--font-serif)" }}
                     >
-                      Mis pedidos
+                      Mi perfil
                     </Link>
                     <button
                       onClick={logout}

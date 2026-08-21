@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router';
+import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Star } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
@@ -11,25 +11,44 @@ const esIncompleto = (p: Producto) => p.precio === 0 || p.estilo === '' || p.img
 
 export default function AdminProductos() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [cargando, setCargando] = useState(true);
-  const [categoria, setCategoria] = useState('');
-  const [disponible, setDisponible] = useState('');
-  const [incompletos, setIncompletos] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [destacadosCount, setDestacadosCount] = useState<number | null>(null);
 
   const LIMIT = 20;
   const totalPages = Math.ceil(total / LIMIT);
 
+  // Los filtros viven en la URL (querystring) en vez de en estado local, así que
+  // se conservan al volver de editar un producto (ver navegación con `state.from`).
+  const page = Number(searchParams.get('page') ?? '1');
+  const categoria = searchParams.get('categoria') ?? '';
+  const disponible = searchParams.get('disponible') ?? '';
+  const destacado = searchParams.get('destacado') === 'true';
+  const incompletos = searchParams.get('incompletos') === 'true';
+  const sortOrder = searchParams.get('sortOrder') ?? '';
+
+  function updateParams(patch: Record<string, string | null>, resetPage = false) {
+    const next = new URLSearchParams(searchParams);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === '') next.delete(k);
+      else next.set(k, v);
+    }
+    if (resetPage) next.delete('page');
+    setSearchParams(next);
+  }
+
   function fetchProductos() {
     setCargando(true);
     const params: Record<string, string> = { page: String(page), limit: String(LIMIT) };
     if (categoria) params.categoria = categoria;
     if (disponible !== '') params.soloDisponibles = disponible;
+    if (destacado) params.destacado = 'true';
     if (incompletos) params.incompletos = 'true';
+    if (sortOrder) { params.sortBy = 'precio'; params.sortOrder = sortOrder; }
     api.get<Producto[]>('/products', { params })
       .then(({ data }) => {
         setProductos(Array.isArray(data) ? data : (data as { data: Producto[] }).data ?? []);
@@ -52,7 +71,7 @@ export default function AdminProductos() {
       .catch(() => setDestacadosCount(null));
   }
 
-  useEffect(() => { fetchProductos(); }, [page, categoria, disponible, incompletos]);
+  useEffect(() => { fetchProductos(); }, [page, categoria, disponible, destacado, incompletos, sortOrder]);
   useEffect(() => { fetchDestacadosCount(); }, []);
   useRefetchOnFocus(fetchProductos);
   useRefetchOnFocus(fetchDestacadosCount);
@@ -93,6 +112,7 @@ export default function AdminProductos() {
         </div>
         <Link
           to="/admin/productos/nuevo"
+          state={{ from: `${location.pathname}${location.search}` }}
           className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium text-black"
           style={{ background: '#C9A84C' }}
         >
@@ -102,10 +122,10 @@ export default function AdminProductos() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap items-center gap-3 mb-5">
         <select
           value={categoria}
-          onChange={(e) => { setCategoria(e.target.value); setPage(1); }}
+          onChange={(e) => updateParams({ categoria: e.target.value }, true)}
           className="text-sm rounded px-3 py-2 border outline-none"
           style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
         >
@@ -116,15 +136,28 @@ export default function AdminProductos() {
         </select>
         <select
           value={disponible}
-          onChange={(e) => { setDisponible(e.target.value); setPage(1); }}
+          onChange={(e) => updateParams({ disponible: e.target.value }, true)}
           className="text-sm rounded px-3 py-2 border outline-none"
           style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
         >
           <option value="">Todos</option>
           <option value="true">Disponibles</option>
+          <option value="false">No disponibles</option>
         </select>
         <button
-          onClick={() => { setIncompletos((v) => !v); setPage(1); }}
+          onClick={() => updateParams({ destacado: destacado ? null : 'true' }, true)}
+          className="flex items-center gap-1.5 text-sm rounded px-3 py-2 border transition-colors"
+          style={
+            destacado
+              ? { background: 'rgba(201,168,76,0.15)', borderColor: 'rgba(201,168,76,0.4)', color: '#C9A84C' }
+              : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
+          }
+        >
+          <Star size={13} />
+          Destacados
+        </button>
+        <button
+          onClick={() => updateParams({ incompletos: incompletos ? null : 'true' }, true)}
           className="text-sm rounded px-3 py-2 border transition-colors"
           style={
             incompletos
@@ -134,6 +167,33 @@ export default function AdminProductos() {
         >
           Pendientes por completar
         </button>
+        <div className="flex items-center gap-1 ml-auto">
+          <span className="text-xs text-white/40">Precio</span>
+          <button
+            onClick={() => updateParams({ sortOrder: sortOrder === 'asc' ? null : 'asc' }, true)}
+            title="Ordenar por precio ascendente"
+            className="p-2 rounded border transition-colors"
+            style={
+              sortOrder === 'asc'
+                ? { background: 'rgba(201,168,76,0.15)', borderColor: 'rgba(201,168,76,0.4)', color: '#C9A84C' }
+                : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
+            }
+          >
+            <ArrowUp size={14} />
+          </button>
+          <button
+            onClick={() => updateParams({ sortOrder: sortOrder === 'desc' ? null : 'desc' }, true)}
+            title="Ordenar por precio descendente"
+            className="p-2 rounded border transition-colors"
+            style={
+              sortOrder === 'desc'
+                ? { background: 'rgba(201,168,76,0.15)', borderColor: 'rgba(201,168,76,0.4)', color: '#C9A84C' }
+                : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
+            }
+          >
+            <ArrowDown size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Tabla */}
@@ -203,7 +263,7 @@ export default function AdminProductos() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => navigate(`/admin/productos/${p.id}`)}
+                          onClick={() => navigate(`/admin/productos/${p.id}`, { state: { from: `${location.pathname}${location.search}` } })}
                           className="p-1.5 text-white/40 hover:text-[#C9A84C] transition-colors"
                           title="Editar"
                         >
@@ -241,14 +301,14 @@ export default function AdminProductos() {
             <div className="flex gap-2">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
+                onClick={() => updateParams({ page: String(page - 1) })}
                 className="p-1.5 text-white/40 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => updateParams({ page: String(page + 1) })}
                 className="p-1.5 text-white/40 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronRight size={16} />
