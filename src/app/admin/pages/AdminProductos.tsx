@@ -104,6 +104,17 @@ export default function AdminProductos() {
     setProductos((prev) => prev.map((p) => p.id === id ? { ...p, disponible: !current } : p));
   }
 
+  // Al desmarcar, se limpia destacadoOrden para que si se vuelve a marcar más
+  // adelante entre al final de la cola en vez de conservar una posición vieja.
+  async function toggleDestacado(id: string, current: boolean) {
+    const payload = current ? { destacado: false, destacadoOrden: null } : { destacado: true };
+    await api.patch(`/products/${id}`, payload);
+    setProductos((prev) => prev.map((p) => p.id === id
+      ? { ...p, destacado: !current, destacadoOrden: current ? null : p.destacadoOrden }
+      : p));
+    fetchDestacadosCount();
+  }
+
   async function eliminar(id: string) {
     await api.delete(`/products/${id}`);
     setConfirmDelete(null);
@@ -312,6 +323,7 @@ export default function AdminProductos() {
                           posicion={i + 1}
                           onEditar={() => navigate(`/admin/productos/${p.id}`, { state: { from: `${location.pathname}${location.search}` } })}
                           onToggleDisponible={() => toggleDisponible(p.id, p.disponible)}
+                          onToggleDestacado={() => toggleDestacado(p.id, p.destacado)}
                           onEliminar={() => setConfirmDelete(p.id)}
                         />
                       ))}
@@ -331,6 +343,7 @@ export default function AdminProductos() {
                       p={p}
                       onEditar={() => navigate(`/admin/productos/${p.id}`, { state: { from: `${location.pathname}${location.search}` } })}
                       onToggleDisponible={() => toggleDisponible(p.id, p.disponible)}
+                      onToggleDestacado={() => toggleDestacado(p.id, p.destacado)}
                       onEliminar={() => setConfirmDelete(p.id)}
                     />
                   ))}
@@ -397,10 +410,11 @@ export default function AdminProductos() {
 
 // ── Fila de la tabla ──────────────────────────────────────────
 
-function CeldasProducto({ p, onEditar, onToggleDisponible, onEliminar }: {
+function CeldasProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, onEliminar }: {
   p: Producto;
   onEditar: () => void;
   onToggleDisponible: () => void;
+  onToggleDestacado: () => void;
   onEliminar: () => void;
 }) {
   return (
@@ -455,6 +469,14 @@ function CeldasProducto({ p, onEditar, onToggleDisponible, onEliminar }: {
           >
             {p.disponible ? <Eye size={15} /> : <EyeOff size={15} />}
           </button>
+          <button
+            onClick={onToggleDestacado}
+            className="p-1.5 transition-colors"
+            style={{ color: p.destacado ? '#C9A84C' : 'rgba(255,255,255,0.4)' }}
+            title={p.destacado ? 'Quitar de destacados' : 'Marcar como destacado en Home'}
+          >
+            <Star size={15} fill={p.destacado ? '#C9A84C' : 'none'} />
+          </button>
           <button onClick={onEliminar} className="p-1.5 text-white/40 hover:text-red-400 transition-colors" title="Eliminar">
             <Trash2 size={15} />
           </button>
@@ -464,15 +486,16 @@ function CeldasProducto({ p, onEditar, onToggleDisponible, onEliminar }: {
   );
 }
 
-function FilaProducto({ p, onEditar, onToggleDisponible, onEliminar }: {
+function FilaProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, onEliminar }: {
   p: Producto;
   onEditar: () => void;
   onToggleDisponible: () => void;
+  onToggleDestacado: () => void;
   onEliminar: () => void;
 }) {
   return (
     <tr className="hover:bg-white/3 transition-colors">
-      <CeldasProducto p={p} onEditar={onEditar} onToggleDisponible={onToggleDisponible} onEliminar={onEliminar} />
+      <CeldasProducto p={p} onEditar={onEditar} onToggleDisponible={onToggleDisponible} onToggleDestacado={onToggleDestacado} onEliminar={onEliminar} />
     </tr>
   );
 }
@@ -480,11 +503,12 @@ function FilaProducto({ p, onEditar, onToggleDisponible, onEliminar }: {
 // Fila arrastrable — solo se usa en la vista "Destacados". El handle es el
 // único elemento con los listeners de dnd-kit para que arrastrar no choque
 // con hacer click en "Editar"/"Eliminar" del resto de la fila.
-function FilaSortable({ p, posicion, onEditar, onToggleDisponible, onEliminar }: {
+function FilaSortable({ p, posicion, onEditar, onToggleDisponible, onToggleDestacado, onEliminar }: {
   p: Producto;
   posicion: number;
   onEditar: () => void;
   onToggleDisponible: () => void;
+  onToggleDestacado: () => void;
   onEliminar: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
@@ -516,7 +540,7 @@ function FilaSortable({ p, posicion, onEditar, onToggleDisponible, onEliminar }:
           <span className="text-white/40 text-xs tabular-nums">{posicion}</span>
         </div>
       </td>
-      <CeldasProducto p={p} onEditar={onEditar} onToggleDisponible={onToggleDisponible} onEliminar={onEliminar} />
+      <CeldasProducto p={p} onEditar={onEditar} onToggleDisponible={onToggleDisponible} onToggleDestacado={onToggleDestacado} onEliminar={onEliminar} />
     </tr>
   );
 }
