@@ -5,12 +5,16 @@ import Navigation from "./Navigation";
 import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
 import OfflineBanner from "./OfflineBanner";
+import { useMetaPixelRouteTracking } from "../hooks/useMetaPixelRouteTracking";
 import { CartProvider } from "../context/CartContext";
 import { ProductosProvider } from "../context/ProductosContext";
 import { PromocionesProvider } from "../context/PromocionesContext";
 
 export default function Root() {
   const location = useLocation();
+  // PageView del pixel en cada cambio de ruta. Meta no detecta por su cuenta
+  // la navegación de una SPA.
+  useMetaPixelRouteTracking();
   return (
     <PromocionesProvider>
     <CartProvider>

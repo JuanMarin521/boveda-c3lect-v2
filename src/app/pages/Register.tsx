@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { trackCompleteRegistration, setMetaUserData } from '../lib/metaPixel';
 import { Field } from '../components/ds/Field';
 import { FormError } from '../components/ds/FormError';
 import { Button } from '../components/ds/Button';
@@ -50,6 +51,17 @@ export default function Register() {
     setEnviando(true);
     try {
       await register(email, password, nombre, telefono || undefined);
+
+      // CompleteRegistration: el evento al que optimiza la campaña de
+      // lanzamiento. Va DESPUÉS del await para no contar registros fallidos.
+      setMetaUserData({
+        email,
+        phone: telefono || undefined,
+        firstName: nombre.split(' ')[0],
+        lastName: nombre.split(' ').slice(1).join(' ') || undefined,
+      });
+      trackCompleteRegistration();
+
       navigate('/catalog');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
