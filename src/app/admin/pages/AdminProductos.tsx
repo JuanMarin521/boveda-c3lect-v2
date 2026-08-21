@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router';
-import { Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Star } from 'lucide-react';
+import {
+  Plus, Pencil, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Star, GripVertical, Check,
+} from 'lucide-react';
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
@@ -8,6 +17,7 @@ import type { Producto } from '../../data/types';
 
 
 const esIncompleto = (p: Producto) => p.precio === 0 || p.estilo === '' || p.imgs.length === 0;
+const ordenDestacado = (a: Producto, b: Producto) => (a.destacadoOrden ?? Infinity) - (b.destacadoOrden ?? Infinity);
 
 export default function AdminProductos() {
   const navigate = useNavigate();
@@ -18,6 +28,10 @@ export default function AdminProductos() {
   const [cargando, setCargando] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [destacadosCount, setDestacadosCount] = useState<number | null>(null);
+  const [ordenIds, setOrdenIds] = useState<string[]>([]);
+  const [guardandoOrden, setGuardandoOrden] = useState(false);
+  const [ordenGuardado, setOrdenGuardado] = useState(false);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const LIMIT = 20;
   const totalPages = Math.ceil(total / LIMIT);
@@ -76,6 +90,15 @@ export default function AdminProductos() {
   useRefetchOnFocus(fetchProductos);
   useRefetchOnFocus(fetchDestacadosCount);
 
+  // Orden de arrastre — solo tiene sentido en la vista "Destacados", que ya
+  // trae nada más esos productos. Se resincroniza cada vez que llega una
+  // nueva lista del servidor (cambio de filtro, refetch al volver de editar).
+  useEffect(() => {
+    if (destacado) {
+      setOrdenIds([...productos].sort(ordenDestacado).map((p) => p.id));
+    }
+  }, [destacado, productos]);
+
   async function toggleDisponible(id: string, current: boolean) {
     await api.patch(`/products/${id}`, { disponible: !current });
     setProductos((prev) => prev.map((p) => p.id === id ? { ...p, disponible: !current } : p));
@@ -86,6 +109,44 @@ export default function AdminProductos() {
     setConfirmDelete(null);
     fetchProductos();
   }
+
+  async function persistirOrden(idsEnOrden: string[]) {
+    const cambios = idsEnOrden
+      .map((id, i) => ({ id, destacadoOrden: i + 1 }))
+      .filter(({ id, destacadoOrden }) => productos.find((p) => p.id === id)?.destacadoOrden !== destacadoOrden);
+
+    if (cambios.length === 0) return;
+
+    setGuardandoOrden(true);
+    setOrdenGuardado(false);
+    try {
+      await Promise.all(cambios.map(({ id, destacadoOrden }) => api.patch(`/products/${id}`, { destacadoOrden })));
+      setProductos((prev) => prev.map((p) => {
+        const posicion = idsEnOrden.indexOf(p.id);
+        return posicion === -1 ? p : { ...p, destacadoOrden: posicion + 1 };
+      }));
+      setOrdenGuardado(true);
+      setTimeout(() => setOrdenGuardado(false), 1800);
+    } finally {
+      setGuardandoOrden(false);
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setOrdenIds((prev) => {
+      const oldIndex = prev.indexOf(String(active.id));
+      const newIndex = prev.indexOf(String(over.id));
+      const next = arrayMove(prev, oldIndex, newIndex);
+      void persistirOrden(next);
+      return next;
+    });
+  }
+
+  const productosVisibles = destacado
+    ? ordenIds.map((id) => productos.find((p) => p.id === id)).filter((p): p is Producto => !!p)
+    : productos;
 
 
   return (
@@ -167,33 +228,51 @@ export default function AdminProductos() {
         >
           Pendientes por completar
         </button>
-        <div className="flex items-center gap-1 ml-auto">
-          <span className="text-xs text-white/40">Precio</span>
-          <button
-            onClick={() => updateParams({ sortOrder: sortOrder === 'asc' ? null : 'asc' }, true)}
-            title="Ordenar por precio ascendente"
-            className="p-2 rounded border transition-colors"
-            style={
-              sortOrder === 'asc'
-                ? { background: 'rgba(201,168,76,0.15)', borderColor: 'rgba(201,168,76,0.4)', color: '#C9A84C' }
-                : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
-            }
-          >
-            <ArrowUp size={14} />
-          </button>
-          <button
-            onClick={() => updateParams({ sortOrder: sortOrder === 'desc' ? null : 'desc' }, true)}
-            title="Ordenar por precio descendente"
-            className="p-2 rounded border transition-colors"
-            style={
-              sortOrder === 'desc'
-                ? { background: 'rgba(201,168,76,0.15)', borderColor: 'rgba(201,168,76,0.4)', color: '#C9A84C' }
-                : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
-            }
-          >
-            <ArrowDown size={14} />
-          </button>
-        </div>
+        {destacado ? (
+          <div className="flex items-center gap-2 ml-auto text-xs">
+            <GripVertical size={14} className="text-white/30" />
+            <span className="text-white/40">Arrastra las filas para cambiar el orden en el carrusel del Home</span>
+            {guardandoOrden && (
+              <span className="flex items-center gap-1.5 text-[#C9A84C]">
+                <span className="w-3 h-3 border-2 border-[#C9A84C]/30 border-t-[#C9A84C] rounded-full animate-spin" />
+                Guardando…
+              </span>
+            )}
+            {!guardandoOrden && ordenGuardado && (
+              <span className="flex items-center gap-1 text-[#22C55E]">
+                <Check size={13} /> Guardado
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 ml-auto">
+            <span className="text-xs text-white/40">Precio</span>
+            <button
+              onClick={() => updateParams({ sortOrder: sortOrder === 'asc' ? null : 'asc' }, true)}
+              title="Ordenar por precio ascendente"
+              className="p-2 rounded border transition-colors"
+              style={
+                sortOrder === 'asc'
+                  ? { background: 'rgba(201,168,76,0.15)', borderColor: 'rgba(201,168,76,0.4)', color: '#C9A84C' }
+                  : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
+              }
+            >
+              <ArrowUp size={14} />
+            </button>
+            <button
+              onClick={() => updateParams({ sortOrder: sortOrder === 'desc' ? null : 'desc' }, true)}
+              title="Ordenar por precio descendente"
+              className="p-2 rounded border transition-colors"
+              style={
+                sortOrder === 'desc'
+                  ? { background: 'rgba(201,168,76,0.15)', borderColor: 'rgba(201,168,76,0.4)', color: '#C9A84C' }
+                  : { background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
+              }
+            >
+              <ArrowDown size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabla */}
@@ -207,6 +286,9 @@ export default function AdminProductos() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                  {destacado && (
+                    <th className="px-2 py-3 w-14" />
+                  )}
                   {['Producto', 'Categoría', 'Marca', 'Precio', 'Estado', 'Acciones'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs text-white/40 uppercase tracking-wider">
                       {h}
@@ -214,80 +296,46 @@ export default function AdminProductos() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                {productos.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-white/30">Sin productos</td>
-                  </tr>
-                )}
-                {productos.map((p) => (
-                  <tr key={p.id} className="hover:bg-white/3 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {p.imgs[0] && (
-                          <img
-                            src={import.meta.env.BASE_URL + p.imgs[0]}
-                            alt={p.display}
-                            className="w-9 h-9 object-cover rounded shrink-0 opacity-80"
-                          />
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-white truncate max-w-[180px]">{p.display}</p>
-                          <p className="text-white/30 text-xs">{p.id}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-white/60 capitalize">{p.cat}</td>
-                    <td className="px-4 py-3 text-white/60">{p.marca ?? '—'}</td>
-                    <td className="px-4 py-3 text-white/80">{COP(p.precio)}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full"
-                        style={
-                          p.disponible
-                            ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' }
-                            : { background: 'rgba(239,68,68,0.15)', color: '#EF4444' }
-                        }
-                      >
-                        {p.disponible ? 'Disponible' : 'No disponible'}
-                      </span>
-                      {esIncompleto(p) && (
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full ml-1.5"
-                          style={{ background: 'rgba(234,179,8,0.15)', color: '#EAB308' }}
-                        >
-                          Pendiente
-                        </span>
+              {destacado ? (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={ordenIds} strategy={verticalListSortingStrategy}>
+                    <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                      {productosVisibles.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="px-4 py-10 text-center text-white/30">Sin productos</td>
+                        </tr>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => navigate(`/admin/productos/${p.id}`, { state: { from: `${location.pathname}${location.search}` } })}
-                          className="p-1.5 text-white/40 hover:text-[#C9A84C] transition-colors"
-                          title="Editar"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => toggleDisponible(p.id, p.disponible)}
-                          className="p-1.5 text-white/40 hover:text-[#C9A84C] transition-colors"
-                          title={p.disponible ? 'Deshabilitar' : 'Habilitar'}
-                        >
-                          {p.disponible ? <Eye size={15} /> : <EyeOff size={15} />}
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(p.id)}
-                          className="p-1.5 text-white/40 hover:text-red-400 transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                      {productosVisibles.map((p, i) => (
+                        <FilaSortable
+                          key={p.id}
+                          p={p}
+                          posicion={i + 1}
+                          onEditar={() => navigate(`/admin/productos/${p.id}`, { state: { from: `${location.pathname}${location.search}` } })}
+                          onToggleDisponible={() => toggleDisponible(p.id, p.disponible)}
+                          onEliminar={() => setConfirmDelete(p.id)}
+                        />
+                      ))}
+                    </tbody>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  {productosVisibles.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-white/30">Sin productos</td>
+                    </tr>
+                  )}
+                  {productosVisibles.map((p) => (
+                    <FilaProducto
+                      key={p.id}
+                      p={p}
+                      onEditar={() => navigate(`/admin/productos/${p.id}`, { state: { from: `${location.pathname}${location.search}` } })}
+                      onToggleDisponible={() => toggleDisponible(p.id, p.disponible)}
+                      onEliminar={() => setConfirmDelete(p.id)}
+                    />
+                  ))}
+                </tbody>
+              )}
             </table>
           </div>
         )}
@@ -344,5 +392,131 @@ export default function AdminProductos() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Fila de la tabla ──────────────────────────────────────────
+
+function CeldasProducto({ p, onEditar, onToggleDisponible, onEliminar }: {
+  p: Producto;
+  onEditar: () => void;
+  onToggleDisponible: () => void;
+  onEliminar: () => void;
+}) {
+  return (
+    <>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          {p.imgs[0] && (
+            <img
+              src={import.meta.env.BASE_URL + p.imgs[0]}
+              alt={p.display}
+              className="w-9 h-9 object-cover rounded shrink-0 opacity-80"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-white truncate max-w-[180px]">{p.display}</p>
+            <p className="text-white/30 text-xs">{p.id}</p>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-white/60 capitalize">{p.cat}</td>
+      <td className="px-4 py-3 text-white/60">{p.marca ?? '—'}</td>
+      <td className="px-4 py-3 text-white/80">{COP(p.precio)}</td>
+      <td className="px-4 py-3">
+        <span
+          className="text-xs px-2 py-0.5 rounded-full"
+          style={
+            p.disponible
+              ? { background: 'rgba(34,197,94,0.15)', color: '#22C55E' }
+              : { background: 'rgba(239,68,68,0.15)', color: '#EF4444' }
+          }
+        >
+          {p.disponible ? 'Disponible' : 'No disponible'}
+        </span>
+        {esIncompleto(p) && (
+          <span
+            className="text-xs px-2 py-0.5 rounded-full ml-1.5"
+            style={{ background: 'rgba(234,179,8,0.15)', color: '#EAB308' }}
+          >
+            Pendiente
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2">
+          <button onClick={onEditar} className="p-1.5 text-white/40 hover:text-[#C9A84C] transition-colors" title="Editar">
+            <Pencil size={15} />
+          </button>
+          <button
+            onClick={onToggleDisponible}
+            className="p-1.5 text-white/40 hover:text-[#C9A84C] transition-colors"
+            title={p.disponible ? 'Deshabilitar' : 'Habilitar'}
+          >
+            {p.disponible ? <Eye size={15} /> : <EyeOff size={15} />}
+          </button>
+          <button onClick={onEliminar} className="p-1.5 text-white/40 hover:text-red-400 transition-colors" title="Eliminar">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </td>
+    </>
+  );
+}
+
+function FilaProducto({ p, onEditar, onToggleDisponible, onEliminar }: {
+  p: Producto;
+  onEditar: () => void;
+  onToggleDisponible: () => void;
+  onEliminar: () => void;
+}) {
+  return (
+    <tr className="hover:bg-white/3 transition-colors">
+      <CeldasProducto p={p} onEditar={onEditar} onToggleDisponible={onToggleDisponible} onEliminar={onEliminar} />
+    </tr>
+  );
+}
+
+// Fila arrastrable — solo se usa en la vista "Destacados". El handle es el
+// único elemento con los listeners de dnd-kit para que arrastrar no choque
+// con hacer click en "Editar"/"Eliminar" del resto de la fila.
+function FilaSortable({ p, posicion, onEditar, onToggleDisponible, onEliminar }: {
+  p: Producto;
+  posicion: number;
+  onEditar: () => void;
+  onToggleDisponible: () => void;
+  onEliminar: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        background: isDragging ? 'rgba(201,168,76,0.08)' : undefined,
+        position: 'relative',
+        zIndex: isDragging ? 1 : undefined,
+      }}
+      className="hover:bg-white/3 transition-colors"
+    >
+      <td className="px-2 py-3 w-14">
+        <div className="flex items-center gap-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-1 text-white/30 hover:text-[#C9A84C] cursor-grab active:cursor-grabbing touch-none"
+            style={{ touchAction: 'none' }}
+            aria-label={`Arrastrar para reordenar ${p.display}`}
+          >
+            <GripVertical size={16} />
+          </button>
+          <span className="text-white/40 text-xs tabular-nums">{posicion}</span>
+        </div>
+      </td>
+      <CeldasProducto p={p} onEditar={onEditar} onToggleDisponible={onToggleDisponible} onEliminar={onEliminar} />
+    </tr>
   );
 }

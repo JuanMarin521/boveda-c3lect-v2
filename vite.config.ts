@@ -34,6 +34,9 @@ export default defineConfig({
           if (id.includes('@supabase')) return 'vendor-supabase'
           if (id.includes('motion')) return 'vendor-motion'
           if (id.includes('react-router')) return 'vendor-router'
+          // Solo lo usa AdminProductos (reordenar destacados por arrastre) —
+          // sin esto cae en 'vendor' y lo descarga cualquier visitante público.
+          if (id.includes('@dnd-kit')) return 'vendor-dnd'
           // react/react-dom no van en su propio chunk: varias libs del bucket
           // 'vendor' (lucide-react, axios) las requieren en tiempo de módulo,
           // y separarlas generaba un chunk circular (vendor <-> vendor-react).
