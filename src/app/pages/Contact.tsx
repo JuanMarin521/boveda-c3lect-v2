@@ -9,6 +9,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Instagram, MapPin } from "lucide-react";
 import { CONFIG, whatsappContactLink } from "../config";
+import { trackContactWhatsApp, setMetaUserData } from "../lib/metaPixel";
 import { Field, FieldArea } from "../components/ds/Field";
 import { Button } from "../components/ds/Button";
 
@@ -33,6 +34,10 @@ export default function Contact() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // El formulario de encargo ya nos dio nombre y teléfono: se los pasamos
+    // a Meta hasheados para que pueda reconocer al usuario más adelante.
+    setMetaUserData({ phone: form.whatsapp, firstName: form.nombre });
+    trackContactWhatsApp({ origen: "contacto" });
     window.open(buildEncargoWhatsAppLink(form.nombre, form.whatsapp, form.queBuscas), "_blank", "noopener,noreferrer");
   }
 
@@ -99,6 +104,7 @@ export default function Contact() {
               rel="noopener noreferrer"
               className="group flex items-start gap-4"
               aria-label="Contactar por WhatsApp"
+              onClick={() => trackContactWhatsApp({ origen: "contacto" })}
             >
               <MessageCircle size={20} className="mt-1 shrink-0 text-[#C9A84C]" aria-hidden="true" />
               <div>

@@ -6,6 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { usePromociones } from '../context/PromocionesContext';
 import { mejorDescuento, calcularPrecioFinal } from '../lib/promotions';
 import { api } from '../lib/api';
+import {
+  trackInitiateCheckout,
+  trackPurchase,
+  setMetaUserData,
+  getFbCookies,
+} from '../lib/metaPixel';
 import { Field, FieldArea } from '../components/ds/Field';
 import { FormError } from '../components/ds/FormError';
 import { Button } from '../components/ds/Button';
@@ -84,12 +90,40 @@ export default function Checkout() {
     try {
       const itemsPayload = items.map((i) => ({ productId: i.producto.id, cantidad: i.cantidad }));
 
+      // Ya tenemos los datos del cliente: se los pasamos a Meta (el navegador
+      // los hashea antes de enviarlos) para subir el Event Match Quality, que
+      // es lo que decide si Meta puede atribuir la venta al anuncio.
+      setMetaUserData({
+        email: form.email,
+        phone: form.telefono,
+        firstName: form.nombreCompleto.trim().split(' ')[0],
+        lastName: form.nombreCompleto.trim().split(' ').slice(1).join(' ') || undefined,
+        city: form.ciudad,
+        state: form.departamento,
+      });
+      trackInitiateCheckout(items, totalPrice);
+
+      // _fbp y _fbc son las cookies que atan la conversión al clic del anuncio.
+      // Viajan al backend porque el evento de servidor las necesita, y en la
+      // rama de MercadoPago ese evento se manda mucho después — cuando llega
+      // el webhook — y para entonces ya no tenemos el navegador del cliente.
+      const fb = getFbCookies();
+
       if (metodoPago === 'CONTRAENTREGA') {
         const { data: order } = await api.post<OrderResponse>('/orders', {
           metodoPago,
           items: itemsPayload,
           shippingInfo: form,
+          fbp: fb.fbp,
+          fbc: fb.fbc,
         });
+
+        // El Purchase de contraentrega va AQUÍ, y antes de clearCart(): esta
+        // rama nunca navega a /checkout/success — muestra la confirmación en
+        // esta misma página — y después de vaciar el carrito ya no habría
+        // items ni total que enviar.
+        trackPurchase({ orderNumber: order.orderNumber, items, total: totalPrice });
+
         clearCart();
         setPedidoConfirmado(order);
         return;
@@ -98,9 +132,15 @@ export default function Checkout() {
       // El pedido todavía no existe — solo se crea (ya confirmado) cuando
       // MercadoPago avise que el pago fue aprobado. Así, si el pago falla o
       // se abandona, no queda ningún pedido huérfano.
+      // En esta rama NO disparamos Purchase en el navegador: el cliente se va
+      // al dominio de MercadoPago y vuelve a /checkout/success sin datos del
+      // pedido. La fuente de verdad es el evento que manda el backend por
+      // Conversions API cuando el webhook confirma el pago.
       const { data: pago } = await api.post<{ checkoutUrl: string }>('/payments/create-pending', {
         items: itemsPayload,
         shippingInfo: form,
+        fbp: fb.fbp,
+        fbc: fb.fbc,
       });
       clearCart();
       window.location.href = pago.checkoutUrl;

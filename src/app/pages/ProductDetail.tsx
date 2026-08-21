@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, MessageCircle, ShoppingBag, Check, ZoomIn, X
 import { getProductoById } from "../data/products";
 import { useProductos } from "../context/ProductosContext";
 import { whatsappLink, whatsappAvisarLink } from "../config";
+import { trackViewContent, trackAddToCart, trackContactWhatsApp } from "../lib/metaPixel";
 import { useCart } from "../context/CartContext";
 import { AvisoError } from "../components/AvisoError";
 import { Badge } from "../components/ds/Badge";
@@ -34,6 +35,21 @@ export default function ProductDetail() {
     setImagenSeleccionada(0);
   }, [producto?.id]);
 
+  // ViewContent del pixel. Alimenta el retargeting: el público de "vieron
+  // ficha y no compraron" se construye con este evento.
+  useEffect(() => {
+    if (!producto) return;
+    trackViewContent({
+      id: producto.id,
+      display: producto.display,
+      precio: producto.precio,
+      cat: producto.cat,
+    });
+    // Solo depende del id: si dependiera del objeto entero, cada refetch del
+    // contexto de productos volvería a disparar el evento.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [producto?.id]);
+
   useEffect(() => {
     if (!zoomAbierto) return;
     const onKey = (e: KeyboardEvent) => {
@@ -48,12 +64,23 @@ export default function ProductDetail() {
   function handleAddToCart() {
     if (!producto) return;
     addItem(producto);
+    trackAddToCart({
+      id: producto.id,
+      display: producto.display,
+      precio: producto.precio,
+      cat: producto.cat,
+    });
     setAñadido(true);
     setTimeout(() => setAñadido(false), 1500);
   }
 
   function handleAvisar() {
     if (!producto) return;
+    trackContactWhatsApp({
+      origen: "aviso_reingreso",
+      productoId: producto.id,
+      productoNombre: producto.display,
+    });
     window.open(whatsappAvisarLink(producto.display), "_blank", "noopener,noreferrer");
     setAvisado(true);
     setTimeout(() => setAvisado(false), 2000);
@@ -286,6 +313,12 @@ export default function ProductDetail() {
                 <>
                   <Button as="a" href={urlWhatsApp} target="_blank" rel="noopener noreferrer" variant="block-dark"
                     aria-label={`Ordenar ${producto.display} por WhatsApp`}
+                    onClick={() => trackContactWhatsApp({
+                      origen: "ficha_producto",
+                      productoId: producto.id,
+                      productoNombre: producto.display,
+                      valor: producto.precio,
+                    })}
                   >
                     <MessageCircle size={18} aria-hidden="true" />
                     Ordenar por WhatsApp

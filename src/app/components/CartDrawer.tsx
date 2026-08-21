@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { mejorDescuento, calcularPrecioFinal } from "../lib/promotions";
 import type { Producto } from "../data/types";
 import { CONFIG } from "../config";
+import { trackContactWhatsApp } from "../lib/metaPixel";
 import { Button } from "./ds/Button";
 import { PriceTag } from "./ds/PriceTag";
 
@@ -217,7 +218,10 @@ export default function CartDrawer() {
                     href={buildWhatsAppMessage(items, totalPrice, precioUnitarioDe)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={closeCart}
+                    onClick={() => {
+                      trackContactWhatsApp({ origen: "carrito", valor: totalPrice });
+                      closeCart();
+                    }}
                     className="w-full text-white/40 hover:text-white px-6 py-2 text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
                     aria-label="Preguntar por WhatsApp"
                   >
