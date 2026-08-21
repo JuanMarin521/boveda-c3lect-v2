@@ -37,6 +37,42 @@ function esRutaExcluida(): boolean {
   return window.location.pathname.startsWith('/admin');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Deduplicación de eventos
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Guarda cuándo se envió por última vez cada evento, por clave.
+ *
+ * POR QUÉ EXISTE ESTO. Root.tsx envuelve el <Outlet/> en <AnimatePresence>.
+ * Durante los 0.22s del crossfade entre páginas, AnimatePresence mantiene
+ * montado el motion.div saliente — y ese div contiene un <Outlet/> que ya
+ * renderiza la ruta NUEVA, no la vieja. O sea: durante la transición la misma
+ * página está montada dos veces, sus useEffect corren dos veces, y el evento
+ * sale duplicado en el mismo milisegundo.
+ *
+ * Se comprobó en producción el 21/08/2026: dos ViewContent idénticos del mismo
+ * producto con marca de tiempo 17:36:15.677 los dos.
+ *
+ * Se arregla aquí y no en Root.tsx a propósito. La lógica de animación está
+ * afinada para evitar pantallas en blanco (ver el comentario largo en Root.tsx)
+ * y no vale la pena arriesgarla por un problema de medición. Además, resolverlo
+ * en esta capa protege de cualquier otra fuente de doble disparo: dobles clics,
+ * re-renders del contexto de productos, o StrictMode en desarrollo.
+ *
+ * Sin esto, cada vista de producto cuenta doble: las métricas quedan infladas
+ * al doble y los públicos de retargeting se llenan de eventos fantasma.
+ */
+const ultimoEnvio = new Map<string, number>();
+
+function esRepetido(clave: string, ventanaMs: number): boolean {
+  const ahora = Date.now();
+  const previo = ultimoEnvio.get(clave);
+  if (previo !== undefined && ahora - previo < ventanaMs) return true;
+  ultimoEnvio.set(clave, ahora);
+  return false;
+}
+
 /**
  * Carga el script base de Meta Pixel e inicializa fbq.
  * Se llama una sola vez desde src/main.tsx, ANTES de montar React.
@@ -123,6 +159,9 @@ export function normalizePhoneCO(phone: string): string {
 /** PageView en cada cambio de ruta (obligatorio en una SPA — Meta no lo detecta solo). */
 export function trackPageView(): void {
   if (!initialized || !window.fbq) return;
+  // Por ruta: dos PageView de rutas distintas seguidos son legítimos; dos de
+  // la misma ruta en menos de un segundo son un doble montaje.
+  if (esRepetido(`PageView:${window.location.pathname}`, 1000)) return;
   window.fbq('track', 'PageView');
 }
 
@@ -146,6 +185,9 @@ const CATEGORIA_META: Record<string, string> = {
 /** Ficha de producto vista — /product/:id */
 export function trackViewContent(producto: ProductForPixel): void {
   if (!initialized || !window.fbq) return;
+  // El caso que motivó toda la deduplicación: el crossfade entre páginas monta
+  // la ficha de producto dos veces y disparaba dos ViewContent idénticos.
+  if (esRepetido(`ViewContent:${producto.id}`, 2000)) return;
   window.fbq('track', 'ViewContent', {
     content_ids: [producto.id],
     content_name: producto.display,
@@ -164,6 +206,9 @@ export interface CartItemForPixel {
 /** Producto añadido al carrito */
 export function trackAddToCart(producto: ProductForPixel, cantidad = 1): void {
   if (!initialized || !window.fbq) return;
+  // Ventana corta: protege del doble clic accidental, pero deja que el cliente
+  // añada dos unidades a propósito si hace una pausa mínima entre clics.
+  if (esRepetido(`AddToCart:${producto.id}`, 700)) return;
   window.fbq('track', 'AddToCart', {
     content_ids: [producto.id],
     content_name: producto.display,
@@ -177,6 +222,7 @@ export function trackAddToCart(producto: ProductForPixel, cantidad = 1): void {
 /** Inicio de checkout — al enviar el formulario de /checkout */
 export function trackInitiateCheckout(items: CartItemForPixel[], total: number): void {
   if (!initialized || !window.fbq) return;
+  if (esRepetido('InitiateCheckout', 1500)) return;
   window.fbq('track', 'InitiateCheckout', {
     content_ids: items.map((i) => i.producto.id),
     content_type: 'product',
@@ -239,6 +285,9 @@ export function trackContactWhatsApp(contexto: {
   valor?: number;
 }): void {
   if (!initialized || !window.fbq) return;
+  // Este es el evento al que van a optimizar las campañas: un Contact inflado
+  // le enseña al algoritmo que consigue el doble de conversiones de las reales.
+  if (esRepetido(`Contact:${contexto.origen}:${contexto.productoId ?? ''}`, 1500)) return;
   window.fbq('track', 'Contact', {
     content_category: contexto.origen,
     content_ids: contexto.productoId ? [contexto.productoId] : undefined,
@@ -251,6 +300,7 @@ export function trackContactWhatsApp(contexto: {
 /** Registro completado en /register — el evento de la campaña de lanzamiento. */
 export function trackCompleteRegistration(valor?: number): void {
   if (!initialized || !window.fbq) return;
+  if (esRepetido('CompleteRegistration', 3000)) return;
   window.fbq('track', 'CompleteRegistration', {
     content_name: 'Cuenta C3LECT',
     status: true,
