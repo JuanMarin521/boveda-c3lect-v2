@@ -56,17 +56,34 @@ export default function Home() {
 
       {/* ── HERO — desktop: "Vitrina Nocturna" ──────────────────── */}
       <div ref={heroRef} className="hidden md:block relative bg-black" style={{ minHeight: 820 }}>
-        {/* Imagen de fondo — la foto real de la pieza en temporada; recortada a la altura del hero */}
+        {/* Imagen de fondo — la pieza en temporada. Las fotos de producto son
+            verticales (4:5) y el hero es panorámico, así que object-cover las
+            recortaba hasta perder el reloj/frasco completo. Ahora hay dos
+            capas: una versión difuminada a pantalla completa (solo ambiente,
+            para que no queden bordes negros vacíos) y la foto nítida completa
+            sin recortar, alineada a la derecha junto a su ficha. */}
         <div className="absolute inset-0 overflow-hidden" style={{ height: 820 }}>
           <motion.div style={{ y: imgY }} className="absolute inset-0">
             <AnimatePresence initial={false}>
               <motion.img
+                key={`bg-${piezaActual?.id ?? "default"}`}
+                src={import.meta.env.BASE_URL + (piezaActual ? piezaActual.imgs[0] : "images/homePage-C3LECT.webp")}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ filter: "blur(50px) saturate(1.15)", transform: "scale(1.15)" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.9, ease: [0.2, 0.7, 0.2, 1] }}
+              />
+              <motion.img
                 key={piezaActual?.id ?? "default"}
                 src={import.meta.env.BASE_URL + (piezaActual ? piezaActual.imgs[0] : "images/homePage-C3LECT.webp")}
                 alt={piezaActual ? piezaActual.display : "Reloj C3LECT — Curren 8467 Negro"}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-contain object-right"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.62 }}
+                animate={{ opacity: 0.92 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.9, ease: [0.2, 0.7, 0.2, 1] }}
                 loading="eager"
@@ -161,10 +178,22 @@ export default function Home() {
         <div className="relative overflow-hidden bg-[#141414]" style={{ height: 440 }}>
           <AnimatePresence initial={false}>
             <motion.img
+              key={`bg-${piezaActual?.id ?? "default"}`}
+              src={import.meta.env.BASE_URL + (piezaActual ? piezaActual.imgs[0] : "images/homePage-C3LECT.webp")}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ filter: "blur(40px) saturate(1.15)", transform: "scale(1.15)" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
+            />
+            <motion.img
               key={piezaActual?.id ?? "default"}
               src={import.meta.env.BASE_URL + (piezaActual ? piezaActual.imgs[0] : "images/homePage-C3LECT.webp")}
               alt={piezaActual ? piezaActual.display : "Selección C3LECT"}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

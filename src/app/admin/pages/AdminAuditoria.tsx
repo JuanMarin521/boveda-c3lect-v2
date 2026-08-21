@@ -18,13 +18,14 @@ interface AuditEntry {
 interface Paginado { data: AuditEntry[]; meta: { total: number; page: number; totalPages: number } }
 
 const ACCION_CONFIG: Record<string, { label: string; color: string }> = {
-  CREAR:    { label: 'Crear',   color: '#22C55E' },
-  EDITAR:   { label: 'Editar',  color: '#3B82F6' },
-  ELIMINAR: { label: 'Eliminar', color: '#EF4444' },
-  ESTADO:   { label: 'Estado',  color: '#F97316' },
+  CREAR:       { label: 'Crear',       color: '#22C55E' },
+  EDITAR:      { label: 'Editar',      color: '#3B82F6' },
+  ELIMINAR:    { label: 'Eliminar',    color: '#EF4444' },
+  ESTADO:      { label: 'Estado',      color: '#F97316' },
+  RECALCULAR:  { label: 'Recalcular',  color: '#A855F7' },
 };
 
-const ACCIONES = ['', 'CREAR', 'EDITAR', 'ELIMINAR', 'ESTADO'];
+const ACCIONES = ['', 'CREAR', 'EDITAR', 'ELIMINAR', 'ESTADO', 'RECALCULAR'];
 
 export default function AdminAuditoria() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);

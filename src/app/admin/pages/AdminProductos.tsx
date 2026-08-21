@@ -104,15 +104,23 @@ export default function AdminProductos() {
     setProductos((prev) => prev.map((p) => p.id === id ? { ...p, disponible: !current } : p));
   }
 
-  // Al desmarcar, se limpia destacadoOrden para que si se vuelve a marcar más
-  // adelante entre al final de la cola en vez de conservar una posición vieja.
-  async function toggleDestacado(id: string, current: boolean) {
-    const payload = current ? { destacado: false, destacadoOrden: null } : { destacado: true };
-    await api.patch(`/products/${id}`, payload);
+  // Optimista: se actualiza la fila al instante y el PATCH corre en segundo
+  // plano, en vez de esperar la respuesta antes de mover el ícono (que se
+  // sentía lento). Si falla, se revierte al estado anterior. Al desmarcar se
+  // limpia destacadoOrden para que si se vuelve a marcar entre al final de
+  // la cola en vez de conservar una posición vieja.
+  function toggleDestacado(id: string, current: boolean) {
+    const anterior = productos.find((p) => p.id === id);
+    if (!anterior) return;
+
     setProductos((prev) => prev.map((p) => p.id === id
       ? { ...p, destacado: !current, destacadoOrden: current ? null : p.destacadoOrden }
       : p));
-    fetchDestacadosCount();
+
+    const payload = current ? { destacado: false, destacadoOrden: null } : { destacado: true };
+    api.patch(`/products/${id}`, payload)
+      .then(() => fetchDestacadosCount())
+      .catch(() => setProductos((prev) => prev.map((p) => p.id === id ? anterior : p)));
   }
 
   async function eliminar(id: string) {
@@ -471,11 +479,13 @@ function CeldasProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, on
           </button>
           <button
             onClick={onToggleDestacado}
-            className="p-1.5 transition-colors"
-            style={{ color: p.destacado ? '#C9A84C' : 'rgba(255,255,255,0.4)' }}
+            className={
+              'p-1.5 transition-colors ' +
+              (p.destacado ? 'text-[#C9A84C] hover:text-white/60' : 'text-white/40 hover:text-[#C9A84C]')
+            }
             title={p.destacado ? 'Quitar de destacados' : 'Marcar como destacado en Home'}
           >
-            <Star size={15} fill={p.destacado ? '#C9A84C' : 'none'} />
+            <Star size={15} fill={p.destacado ? 'currentColor' : 'none'} />
           </button>
           <button onClick={onEliminar} className="p-1.5 text-white/40 hover:text-red-400 transition-colors" title="Eliminar">
             <Trash2 size={15} />
