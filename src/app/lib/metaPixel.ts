@@ -128,16 +128,54 @@ export interface UserDataForPixel {
   state?: string;
 }
 
+/**
+ * Normaliza ciudad y departamento como exige Meta:
+ * "lowercase only with no punctuation, no special characters, and no spaces".
+ *
+ * El acento importa mucho aquí. "Medellín" y "medellin" producen hashes
+ * distintos, así que si el cliente escribe con tilde el dato se pierde: Meta
+ * no encuentra a nadie con ese hash y la ciudad deja de sumar al match quality.
+ * Como en Colombia media base de clientes escribe "Medellín" y la otra media
+ * "Medellin", sin esto la mitad del dato se iría a la basura.
+ *
+ * normalize('NFD') separa cada letra de su tilde ("í" → "i" + ´) y el replace
+ * borra las tildes sueltas. La ñ pasa a n, que es justo lo que Meta espera.
+ */
+export function normalizarLugar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Normaliza nombres y apellidos: "lowercase only with no punctuation".
+ *
+ * OJO — aquí los acentos SÍ se conservan, al revés que en la ciudad. Meta
+ * acepta caracteres especiales en fn y ln siempre que vayan en UTF-8, así que
+ * "José" debe viajar como "josé", no como "jose". Quitarle la tilde sería
+ * romper el dato, no arreglarlo.
+ */
+export function normalizarNombre(texto: string): string {
+  return texto
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function setMetaUserData(user: UserDataForPixel): void {
   if (!initialized || !window.fbq || !PIXEL_ID) return;
 
   const data: Record<string, string> = {};
   if (user.email) data.em = user.email.trim().toLowerCase();
   if (user.phone) data.ph = normalizePhoneCO(user.phone);
-  if (user.firstName) data.fn = user.firstName.trim().toLowerCase();
-  if (user.lastName) data.ln = user.lastName.trim().toLowerCase();
-  if (user.city) data.ct = user.city.trim().toLowerCase().replace(/\s/g, '');
-  if (user.state) data.st = user.state.trim().toLowerCase().replace(/\s/g, '');
+  if (user.firstName) data.fn = normalizarNombre(user.firstName);
+  if (user.lastName) data.ln = normalizarNombre(user.lastName);
+  if (user.city) data.ct = normalizarLugar(user.city);
+  if (user.state) data.st = normalizarLugar(user.state);
   data.country = 'co';
 
   window.fbq('init', PIXEL_ID, data);
