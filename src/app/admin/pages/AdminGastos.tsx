@@ -95,9 +95,9 @@ export default function AdminGastos() {
       {showForm && (
         <form onSubmit={handleSubmit} className="rounded-lg border p-5 mb-5" style={{ background: '#161616', borderColor: 'rgba(201,168,76,0.2)' }}>
           <h2 className="text-sm font-medium text-[#C9A84C] mb-4">Registrar nuevo gasto</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mb-4">
             <div><label className="text-xs text-white/40 mb-1 block">Fecha *</label><input type="date" required value={form.fecha} onChange={e => setForm(f => ({...f, fecha: e.target.value}))} className={inp} /></div>
-            <div className="md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Concepto *</label><input type="text" required placeholder="Ej: Empaque, transporte..." value={form.concepto} onChange={e => setForm(f => ({...f, concepto: e.target.value}))} className={inp} /></div>
+            <div className="sm:col-span-1 md:col-span-2"><label className="text-xs text-white/40 mb-1 block">Concepto *</label><input type="text" required placeholder="Ej: Empaque, transporte..." value={form.concepto} onChange={e => setForm(f => ({...f, concepto: e.target.value}))} className={inp} /></div>
             <div><label className="text-xs text-white/40 mb-1 block">Monto *</label><input type="number" required min="0" placeholder="50000" value={form.monto} onChange={e => setForm(f => ({...f, monto: e.target.value}))} className={inp} /></div>
             <div><label className="text-xs text-white/40 mb-1 block">Estado</label>
               <select value={form.estado} onChange={e => setForm(f => ({...f, estado: e.target.value}))} className={inp + " cursor-pointer"}>
