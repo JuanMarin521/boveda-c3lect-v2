@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MapPin, Pencil, Star, Trash2, X } from "lucide-react";
 import { api } from "../lib/api";
+import { useApiQuery } from "../hooks/useApiQuery";
 import { Field } from "../components/ds/Field";
 import { FormError } from "../components/ds/FormError";
 import { Button } from "../components/ds/Button";
@@ -27,7 +28,6 @@ const FORM_VACIO = { alias: "", ciudad: "", departamento: "", direccion: "" };
 
 export default function AccountAddresses() {
   const [direcciones, setDirecciones] = useState<Direccion[]>([]);
-  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
@@ -35,15 +35,19 @@ export default function AccountAddresses() {
   const [guardando, setGuardando] = useState(false);
   const [porEliminar, setPorEliminar] = useState<string | null>(null);
 
-  function cargar() {
-    setCargando(true);
-    api.get<Direccion[]>("/account/addresses")
-      .then(({ data }) => setDirecciones(data))
-      .catch(() => setError("No pudimos cargar tus direcciones."))
-      .finally(() => setCargando(false));
-  }
+  const direccionesQuery = useApiQuery<Direccion[]>(async (signal) => {
+    const { data } = await api.get<Direccion[]>("/account/addresses", { signal });
+    return data;
+  }, []);
+  const cargando = direccionesQuery.loading;
 
-  useEffect(cargar, []);
+  useEffect(() => {
+    if (direccionesQuery.data) {
+      setDirecciones(direccionesQuery.data);
+    } else if (direccionesQuery.error) {
+      setError("No pudimos cargar tus direcciones.");
+    }
+  }, [direccionesQuery.data, direccionesQuery.error]);
 
   function set<K extends keyof typeof form>(key: K) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -78,7 +82,7 @@ export default function AccountAddresses() {
         await api.post("/account/addresses", form);
       }
       cerrarForm();
-      cargar();
+      direccionesQuery.refetch();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? "No se pudo guardar la dirección.");
@@ -89,7 +93,7 @@ export default function AccountAddresses() {
 
   async function marcarPrincipal(id: string) {
     await api.post(`/account/addresses/${id}/principal`);
-    cargar();
+    direccionesQuery.refetch();
   }
 
   async function eliminar(id: string) {
@@ -100,7 +104,7 @@ export default function AccountAddresses() {
     }
     setPorEliminar(null);
     await api.delete(`/account/addresses/${id}`);
-    cargar();
+    direccionesQuery.refetch();
   }
 
   return (

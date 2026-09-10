@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Pencil, Plus, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
@@ -134,43 +135,67 @@ export default function AdminCompras() {
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [desde, setDesde]       = useState('');
   const [hasta, setHasta]       = useState('');
-  const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState<FormState>(EMPTY_FORM);
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState('');
-  const [resumen, setResumen]   = useState<Resumen | null>(null);
-  const [marcas, setMarcas]     = useState<string[]>([]);
-  const [inventarioItems, setInventarioItems] = useState<InvItem[]>([]);
-  const [errorOpciones, setErrorOpciones] = useState(false);
   const [editId, setEditId]     = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
 
-  const cargar = useCallback((p: number) => {
-    setCargando(true);
-    const params: Record<string, string> = { page: String(p), limit: '20' };
-    if (filtroCategoria) params.categoria = filtroCategoria;
-    if (desde) params.desde = desde;
-    if (hasta) params.hasta = hasta;
-    api.get<Paginado>('/metrics/purchases', { params })
-      .then(({ data: res }) => { setData(res.data); setMeta({ total: res.meta.total, page: res.meta.page, pages: res.meta.totalPages }); })
-      .finally(() => setCargando(false));
-  }, [filtroCategoria, desde, hasta]);
+  const comprasQuery = useApiQuery<Paginado>(
+    async (signal) => {
+      const params: Record<string, string> = { page: String(page), limit: '20' };
+      if (filtroCategoria) params.categoria = filtroCategoria;
+      if (desde) params.desde = desde;
+      if (hasta) params.hasta = hasta;
+      const { data } = await api.get<Paginado>('/metrics/purchases', { params, signal });
+      return data;
+    },
+    [page, filtroCategoria, desde, hasta],
+  );
+  const cargando = comprasQuery.loading;
 
-  const cargarResumen = useCallback(() => {
-    api.get<Resumen>('/metrics/financial').then(({ data }) => setResumen(data)).catch(() => {});
-  }, []);
-
-  useEffect(() => { setPage(1); cargar(1); }, [filtroCategoria, desde, hasta, cargar]);
-  useEffect(() => { cargarResumen(); }, [cargarResumen]);
-  useRefetchOnFocus(useCallback(() => { cargar(page); cargarResumen(); }, [cargar, page, cargarResumen]));
   useEffect(() => {
-    Promise.allSettled([
-      api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)),
-      api.get<InvItem[]>('/inventario').then(({ data }) => setInventarioItems(data)),
-    ]).then((results) => setErrorOpciones(results.some((r) => r.status === 'rejected')));
+    if (comprasQuery.data) {
+      setData(comprasQuery.data.data);
+      setMeta({
+        total: comprasQuery.data.meta.total,
+        page: comprasQuery.data.meta.page,
+        pages: comprasQuery.data.meta.totalPages,
+      });
+    }
+  }, [comprasQuery.data]);
+
+  // Volver a página 1 cuando cambian los filtros — `page` ya es dependencia
+  // de la query, así que este solo evita quedar "atascado" en una página
+  // que puede no existir para el nuevo filtro.
+  useEffect(() => { setPage(1); }, [filtroCategoria, desde, hasta]);
+
+  const resumenQuery = useApiQuery<Resumen>(async (signal) => {
+    const { data } = await api.get<Resumen>('/metrics/financial', { signal });
+    return data;
   }, []);
+  const resumen = resumenQuery.data ?? null;
+
+  useRefetchOnFocus(useCallback(() => {
+    comprasQuery.refetch();
+    resumenQuery.refetch();
+  }, [comprasQuery.refetch, resumenQuery.refetch]));
+
+  const marcasQuery = useApiQuery<string[]>(async (signal) => {
+    const { data } = await api.get<string[]>('/marcas', { signal });
+    return data;
+  }, []);
+  const marcas = marcasQuery.data ?? [];
+
+  const inventarioQuery = useApiQuery<InvItem[]>(async (signal) => {
+    const { data } = await api.get<InvItem[]>('/inventario', { signal });
+    return data;
+  }, []);
+  const inventarioItems = inventarioQuery.data ?? [];
+
+  const errorOpciones = !!marcasQuery.error || !!inventarioQuery.error;
 
   const modelosPorMarca = useMemo(() => {
     const map: Record<string, string[]> = {};
@@ -183,7 +208,7 @@ export default function AdminCompras() {
     return map;
   }, [inventarioItems]);
 
-  const handlePage = (p: number) => { setPage(p); cargar(p); };
+  const handlePage = (p: number) => { setPage(p); };
 
   const costoTotalPreview     = Number(form.cantidad || 0) * Number(form.costoUnitario || 0);
   const editCostoTotalPreview = Number(editForm.cantidad || 0) * Number(editForm.costoUnitario || 0);
@@ -201,8 +226,9 @@ export default function AdminCompras() {
       });
       setShowForm(false);
       setForm(EMPTY_FORM);
-      cargar(1);
-      cargarResumen();
+      setPage(1);
+      comprasQuery.refetch();
+      resumenQuery.refetch();
     } catch (err: any) {
       setFormError(err?.response?.data?.message ?? 'Error al guardar la compra');
     } finally { setGuardando(false); }
@@ -236,8 +262,8 @@ export default function AdminCompras() {
         categoria:     editForm.categoria,
       });
       setEditId(null);
-      cargar(page);
-      cargarResumen();
+      comprasQuery.refetch();
+      resumenQuery.refetch();
     } catch (err: any) {
       setEditError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }

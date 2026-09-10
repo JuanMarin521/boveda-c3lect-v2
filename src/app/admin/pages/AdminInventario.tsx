@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 
@@ -11,19 +12,17 @@ interface Item {
 }
 
 export default function AdminInventario() {
-  const [items, setItems]   = useState<Item[]>([]);
-  const [cargando, setCargando] = useState(true);
   const [filtro, setFiltro] = useState('');
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState('');
 
-  const cargar = () => {
-    setCargando(true);
-    api.get<Item[]>('/inventario').then(({ data }) => setItems(data)).finally(() => setCargando(false));
-  };
-
-  useEffect(() => { cargar(); }, []);
-  useRefetchOnFocus(cargar);
+  const inventarioQuery = useApiQuery<Item[]>(async (signal) => {
+    const { data } = await api.get<Item[]>('/inventario', { signal });
+    return data;
+  }, []);
+  useRefetchOnFocus(inventarioQuery.refetch);
+  const items = inventarioQuery.data ?? [];
+  const cargando = inventarioQuery.loading;
 
   const handleSeed = async () => {
     setSeeding(true);
@@ -31,7 +30,7 @@ export default function AdminInventario() {
     try {
       const { data } = await api.post<{ seeded: number }>('/inventario/seed');
       setSeedMsg(`${data.seeded} modelos importados desde compras históricas.`);
-      cargar();
+      inventarioQuery.refetch();
     } catch {
       setSeedMsg('Error al poblar el inventario.');
     } finally {

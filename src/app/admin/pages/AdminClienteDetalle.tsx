@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -38,17 +38,13 @@ interface ClienteDetalle {
 
 export default function AdminClienteDetalle() {
   const { id } = useParams<{ id: string }>();
-  const [cliente, setCliente] = useState<ClienteDetalle | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!id) return;
-    api.get<ClienteDetalle>(`/users/${id}`)
-      .then(({ data }) => setCliente(data))
-      .catch(() => setError('No se pudo cargar el cliente.'))
-      .finally(() => setCargando(false));
+  const clienteQuery = useApiQuery<ClienteDetalle>(async (signal) => {
+    const { data } = await api.get<ClienteDetalle>(`/users/${id}`, { signal });
+    return data;
   }, [id]);
+  const cliente = clienteQuery.data ?? null;
+  const cargando = clienteQuery.loading;
+  const error = clienteQuery.error ? 'No se pudo cargar el cliente.' : '';
 
   if (cargando) {
     return (

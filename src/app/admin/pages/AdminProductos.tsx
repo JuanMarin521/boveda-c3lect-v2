@@ -12,6 +12,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 import type { Producto } from '../../data/types';
 
@@ -25,9 +26,7 @@ export default function AdminProductos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [total, setTotal] = useState(0);
-  const [cargando, setCargando] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [destacadosCount, setDestacadosCount] = useState<number | null>(null);
   const [ordenIds, setOrdenIds] = useState<string[]>([]);
   const [guardandoOrden, setGuardandoOrden] = useState(false);
   const [ordenGuardado, setOrdenGuardado] = useState(false);
@@ -55,40 +54,47 @@ export default function AdminProductos() {
     setSearchParams(next);
   }
 
-  function fetchProductos() {
-    setCargando(true);
-    const params: Record<string, string> = { page: String(page), limit: String(LIMIT) };
-    if (categoria) params.categoria = categoria;
-    if (disponible !== '') params.soloDisponibles = disponible;
-    if (destacado) params.destacado = 'true';
-    if (incompletos) params.incompletos = 'true';
-    if (sortOrder) { params.sortBy = 'precio'; params.sortOrder = sortOrder; }
-    api.get<Producto[]>('/products', { params })
-      .then(({ data }) => {
-        setProductos(Array.isArray(data) ? data : (data as { data: Producto[] }).data ?? []);
-        setTotal(
-          Array.isArray(data)
-            ? data.length
-            : (data as { meta?: { total: number } }).meta?.total ?? (data as Producto[]).length,
-        );
-      })
-      .catch(() => setProductos([]))
-      .finally(() => setCargando(false));
-  }
+  const productosQuery = useApiQuery<{ items: Producto[]; total: number }>(
+    async (signal) => {
+      const params: Record<string, string> = { page: String(page), limit: String(LIMIT) };
+      if (categoria) params.categoria = categoria;
+      if (disponible !== '') params.soloDisponibles = disponible;
+      if (destacado) params.destacado = 'true';
+      if (incompletos) params.incompletos = 'true';
+      if (sortOrder) { params.sortBy = 'precio'; params.sortOrder = sortOrder; }
+      const { data } = await api.get<Producto[]>('/products', { params, signal });
+      const items = Array.isArray(data) ? data : (data as { data: Producto[] }).data ?? [];
+      const total = Array.isArray(data)
+        ? data.length
+        : (data as { meta?: { total: number } }).meta?.total ?? (data as Producto[]).length;
+      return { items, total };
+    },
+    [page, categoria, disponible, destacado, incompletos, sortOrder],
+  );
+  const cargando = productosQuery.loading;
 
-  function fetchDestacadosCount() {
-    api.get('/products', { params: { destacado: 'true', limit: 100 } })
-      .then(({ data }) => {
-        const total = (data as { meta?: { total: number } })?.meta?.total;
-        setDestacadosCount(typeof total === 'number' ? total : null);
-      })
-      .catch(() => setDestacadosCount(null));
-  }
+  // El resto del componente muta `productos` de forma optimista (toggles,
+  // reordenar) antes de que el servidor confirme, así que se mantiene como
+  // estado local espejado desde la query en vez de leer `productosQuery.data`
+  // directo en cada render.
+  useEffect(() => {
+    if (productosQuery.data) {
+      setProductos(productosQuery.data.items);
+      setTotal(productosQuery.data.total);
+    } else if (productosQuery.error) {
+      setProductos([]);
+    }
+  }, [productosQuery.data, productosQuery.error]);
 
-  useEffect(() => { fetchProductos(); }, [page, categoria, disponible, destacado, incompletos, sortOrder]);
-  useEffect(() => { fetchDestacadosCount(); }, []);
-  useRefetchOnFocus(fetchProductos);
-  useRefetchOnFocus(fetchDestacadosCount);
+  const destacadosQuery = useApiQuery<number | null>(async (signal) => {
+    const { data } = await api.get('/products', { params: { destacado: 'true', limit: 100 }, signal });
+    const total = (data as { meta?: { total: number } })?.meta?.total;
+    return typeof total === 'number' ? total : null;
+  }, []);
+  const destacadosCount = destacadosQuery.data ?? null;
+
+  useRefetchOnFocus(productosQuery.refetch);
+  useRefetchOnFocus(destacadosQuery.refetch);
 
   // Orden de arrastre — solo tiene sentido en la vista "Destacados", que ya
   // trae nada más esos productos. Se resincroniza cada vez que llega una
@@ -119,14 +125,14 @@ export default function AdminProductos() {
 
     const payload = current ? { destacado: false, destacadoOrden: null } : { destacado: true };
     api.patch(`/products/${id}`, payload)
-      .then(() => fetchDestacadosCount())
+      .then(() => destacadosQuery.refetch())
       .catch(() => setProductos((prev) => prev.map((p) => p.id === id ? anterior : p)));
   }
 
   async function eliminar(id: string) {
     await api.delete(`/products/${id}`);
     setConfirmDelete(null);
-    fetchProductos();
+    productosQuery.refetch();
   }
 
   async function persistirOrden(idsEnOrden: string[]) {

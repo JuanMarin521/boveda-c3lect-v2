@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import {
   TrendingUp, TrendingDown, ShoppingBag, Package, Users,
@@ -7,6 +6,7 @@ import {
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../../lib/api';
 import { formatPrecio as COP, formatFecha } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const ESTADO_VENTA: Record<string, { label: string; color: string }> = {
@@ -107,34 +107,32 @@ function Badge({ estado }: { estado: string }) {
 const DONUT_COLORS = { reloj: '#C9A84C', perfume: '#FFFFFF', accesorio: '#555555' };
 
 export default function AdminDashboard() {
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [financial, setFinancial] = useState<Financial | null>(null);
-  const [pendientes, setPendientes] = useState<PendienteVenta[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState('');
-
-  const cargar = useCallback(() => {
-    Promise.all([
-      api.get<Summary>('/metrics/summary'),
-      api.get<Financial>('/metrics/financial'),
-      api.get<{ data: PendienteVenta[] }>('/metrics/sales', {
-        params: { estado: 'Pendiente,Abonado', limit: '200', page: '1' },
-      }),
-    ])
-      .then(([s, f, p]) => {
-        setSummary(s.data);
-        setFinancial(f.data);
-        setPendientes(p.data.data);
-      })
-      .catch((err) => {
+  const dashboardQuery = useApiQuery<{ summary: Summary; financial: Financial; pendientes: PendienteVenta[] }>(
+    async (signal) => {
+      try {
+        const [s, f, p] = await Promise.all([
+          api.get<Summary>('/metrics/summary', { signal }),
+          api.get<Financial>('/metrics/financial', { signal }),
+          api.get<{ data: PendienteVenta[] }>('/metrics/sales', {
+            params: { estado: 'Pendiente,Abonado', limit: '200', page: '1' },
+            signal,
+          }),
+        ]);
+        return { summary: s.data, financial: f.data, pendientes: p.data.data };
+      } catch (err: any) {
         console.error('[Dashboard] Error cargando métricas:', err?.response?.status, err?.response?.data ?? err?.message);
-        setError(`Error ${err?.response?.status ?? 'de red'}: No se pudo cargar el dashboard.`);
-      })
-      .finally(() => setCargando(false));
-  }, []);
+        throw new Error(`Error ${err?.response?.status ?? 'de red'}: No se pudo cargar el dashboard.`);
+      }
+    },
+    [],
+  );
+  useRefetchOnFocus(dashboardQuery.refetch);
 
-  useEffect(() => { cargar(); }, [cargar]);
-  useRefetchOnFocus(cargar);
+  const cargando = dashboardQuery.loading;
+  const error = dashboardQuery.error?.message ?? '';
+  const summary = dashboardQuery.data?.summary ?? null;
+  const financial = dashboardQuery.data?.financial ?? null;
+  const pendientes = dashboardQuery.data?.pendientes ?? [];
 
   if (cargando) {
     return (

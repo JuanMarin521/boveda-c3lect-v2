@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
 import { api } from '../../lib/api';
+import { useApiQuery } from '../../hooks/useApiQuery';
 
 interface ProductoForm {
   id: string;
@@ -88,47 +89,57 @@ export default function AdminProductoForm() {
   const volverA = (location.state as { from?: string } | null)?.from ?? '/admin/productos';
   const isEdit = !!id && id !== 'nuevo';
   const [form, setForm] = useState<ProductoForm>(EMPTY);
-  const [cargando, setCargando] = useState(isEdit);
   const [guardando, setGuardando] = useState(false);
   const [errores, setErrores] = useState<Partial<Record<keyof ProductoForm, string>>>({});
   const [errorGlobal, setErrorGlobal] = useState('');
 
+  const productoQuery = useApiQuery<ProductoForm | null>(
+    async (signal) => {
+      if (!isEdit) return null;
+      const { data }: { data: Record<string, unknown> } = await api.get(`/products/${id}`, { signal });
+      return {
+        id: String(data.id ?? ''),
+        nombre: String(data.nombre ?? ''),
+        estilo: String(data.estilo ?? ''),
+        display: String(data.display ?? ''),
+        cat: String(data.cat ?? 'reloj'),
+        marca: String(data.marca ?? ''),
+        genero: String(data.genero ?? ''),
+        precio: String(data.precio ?? ''),
+        disponible: Boolean(data.disponible ?? true),
+        destacado: Boolean(data.destacado ?? false),
+        imgsRaw: Array.isArray(data.imgs) ? (data.imgs as string[]).join(', ') : '',
+        specMovimiento: String(data.specMovimiento ?? ''),
+        specDimensiones: String(data.specDimensiones ?? ''),
+        specCaja: String(data.specCaja ?? ''),
+        specCorrea: String(data.specCorrea ?? ''),
+        specCristal: String(data.specCristal ?? ''),
+        specFunciones: String(data.specFunciones ?? ''),
+        specResistenciaAgua: String(data.specResistenciaAgua ?? ''),
+        specPeso: String(data.specPeso ?? ''),
+        specBateria: String(data.specBateria ?? ''),
+        specReservaMarcha: String(data.specReservaMarcha ?? ''),
+        specObservaciones: String(data.specObservaciones ?? ''),
+        notasDescripcion: String(data.notasDescripcion ?? ''),
+        notasTop: String(data.notasTop ?? ''),
+        notasCorazon: String(data.notasCorazon ?? ''),
+        notasBase: String(data.notasBase ?? ''),
+      };
+    },
+    [id, isEdit],
+  );
+  // Sin isEdit nunca se llega a la red (fetcher resuelve null de una): el
+  // spinner nunca debe aparecer en el formulario de "nuevo producto", igual
+  // que con el `useState(isEdit)` original.
+  const cargando = isEdit && productoQuery.loading;
+
   useEffect(() => {
-    if (!isEdit) return;
-    api.get(`/products/${id}`)
-      .then(({ data }: { data: Record<string, unknown> }) => {
-        setForm({
-          id: String(data.id ?? ''),
-          nombre: String(data.nombre ?? ''),
-          estilo: String(data.estilo ?? ''),
-          display: String(data.display ?? ''),
-          cat: String(data.cat ?? 'reloj'),
-          marca: String(data.marca ?? ''),
-          genero: String(data.genero ?? ''),
-          precio: String(data.precio ?? ''),
-          disponible: Boolean(data.disponible ?? true),
-          destacado: Boolean(data.destacado ?? false),
-          imgsRaw: Array.isArray(data.imgs) ? (data.imgs as string[]).join(', ') : '',
-          specMovimiento: String(data.specMovimiento ?? ''),
-          specDimensiones: String(data.specDimensiones ?? ''),
-          specCaja: String(data.specCaja ?? ''),
-          specCorrea: String(data.specCorrea ?? ''),
-          specCristal: String(data.specCristal ?? ''),
-          specFunciones: String(data.specFunciones ?? ''),
-          specResistenciaAgua: String(data.specResistenciaAgua ?? ''),
-          specPeso: String(data.specPeso ?? ''),
-          specBateria: String(data.specBateria ?? ''),
-          specReservaMarcha: String(data.specReservaMarcha ?? ''),
-          specObservaciones: String(data.specObservaciones ?? ''),
-          notasDescripcion: String(data.notasDescripcion ?? ''),
-          notasTop: String(data.notasTop ?? ''),
-          notasCorazon: String(data.notasCorazon ?? ''),
-          notasBase: String(data.notasBase ?? ''),
-        });
-      })
-      .catch(() => setErrorGlobal('No se pudo cargar el producto.'))
-      .finally(() => setCargando(false));
-  }, [id, isEdit]);
+    if (productoQuery.data) {
+      setForm(productoQuery.data);
+    } else if (productoQuery.error) {
+      setErrorGlobal('No se pudo cargar el producto.');
+    }
+  }, [productoQuery.data, productoQuery.error]);
 
   const set = (key: keyof ProductoForm) => (v: string | boolean) =>
     setForm((prev) => {

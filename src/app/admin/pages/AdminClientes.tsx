@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 
 
 interface Cliente {
@@ -26,23 +27,27 @@ export default function AdminClientes() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
-  const [cargando, setCargando] = useState(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function fetchClientes(q: string, p: number) {
-    setCargando(true);
-    const params: Record<string, string> = { page: String(p), limit: '20' };
-    if (q) params.search = q;
-    api.get<Paginado>('/users', { params })
-      .then(({ data }) => {
-        setClientes(data.data);
-        setMeta(data.meta);
-      })
-      .catch(() => setClientes([]))
-      .finally(() => setCargando(false));
-  }
+  const clientesQuery = useApiQuery<Paginado>(
+    async (signal) => {
+      const params: Record<string, string> = { page: String(page), limit: '20' };
+      if (query) params.search = query;
+      const { data } = await api.get<Paginado>('/users', { params, signal });
+      return data;
+    },
+    [query, page],
+  );
+  const cargando = clientesQuery.loading;
 
-  useEffect(() => { fetchClientes(query, page); }, [query, page]);
+  useEffect(() => {
+    if (clientesQuery.data) {
+      setClientes(clientesQuery.data.data);
+      setMeta(clientesQuery.data.meta);
+    } else if (clientesQuery.error) {
+      setClientes([]);
+    }
+  }, [clientesQuery.data, clientesQuery.error]);
 
   function handleSearch(val: string) {
     setSearch(val);

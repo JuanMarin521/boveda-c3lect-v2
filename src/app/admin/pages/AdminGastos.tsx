@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 interface Gasto {
@@ -15,8 +16,6 @@ const EMPTY_FORM = {
 };
 
 export default function AdminGastos() {
-  const [gastos, setGastos]   = useState<Gasto[]>([]);
-  const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]       = useState(EMPTY_FORM);
   const [guardando, setGuardando] = useState(false);
@@ -25,13 +24,13 @@ export default function AdminGastos() {
   const [editForm, setEditForm] = useState<Partial<typeof EMPTY_FORM>>({});
   const [eliminando, setEliminando] = useState<string | null>(null);
 
-  const cargar = () => {
-    setCargando(true);
-    api.get<Gasto[]>('/gastos').then(({ data }) => setGastos(data)).finally(() => setCargando(false));
-  };
-
-  useEffect(() => { cargar(); }, []);
-  useRefetchOnFocus(cargar);
+  const gastosQuery = useApiQuery<Gasto[]>(async (signal) => {
+    const { data } = await api.get<Gasto[]>('/gastos', { signal });
+    return data;
+  }, []);
+  useRefetchOnFocus(gastosQuery.refetch);
+  const gastos = gastosQuery.data ?? [];
+  const cargando = gastosQuery.loading;
 
   const total = gastos.reduce((s, g) => s + g.monto, 0);
 
@@ -48,7 +47,7 @@ export default function AdminGastos() {
       });
       setShowForm(false);
       setForm(EMPTY_FORM);
-      cargar();
+      gastosQuery.refetch();
     } catch (err: any) {
       setFormError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
@@ -64,14 +63,14 @@ export default function AdminGastos() {
     try {
       await api.put(`/gastos/${id}`, { ...editForm, monto: Number(editForm.monto) });
       setEditId(null);
-      cargar();
+      gastosQuery.refetch();
     } finally { setGuardando(false); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este gasto?')) return;
     setEliminando(id);
-    try { await api.delete(`/gastos/${id}`); cargar(); }
+    try { await api.delete(`/gastos/${id}`); gastosQuery.refetch(); }
     finally { setEliminando(null); }
   };
 

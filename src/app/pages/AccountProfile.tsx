@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { useApiQuery } from "../hooks/useApiQuery";
 import { Field } from "../components/ds/Field";
 import { FormError } from "../components/ds/FormError";
 import { Button } from "../components/ds/Button";
@@ -26,18 +27,23 @@ export default function AccountProfile() {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
-  const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [guardado, setGuardado] = useState(false);
 
-  useEffect(() => {
-    api.get<Perfil>("/account/profile").then(({ data }) => {
-      setPerfil(data);
-      setNombre(data.nombre);
-      setTelefono(data.telefono ?? "");
-    }).finally(() => setCargando(false));
+  const perfilQuery = useApiQuery<Perfil>(async (signal) => {
+    const { data } = await api.get<Perfil>("/account/profile", { signal });
+    return data;
   }, []);
+  const cargando = perfilQuery.loading;
+
+  useEffect(() => {
+    if (perfilQuery.data) {
+      setPerfil(perfilQuery.data);
+      setNombre(perfilQuery.data.nombre);
+      setTelefono(perfilQuery.data.telefono ?? "");
+    }
+  }, [perfilQuery.data]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 import { estaVigente, type Promocion } from '../../lib/promotions';
 
@@ -29,19 +30,22 @@ export default function AdminPromociones() {
   const navigate = useNavigate();
   const location = useLocation();
   const [promociones, setPromociones] = useState<Promocion[]>([]);
-  const [cargando, setCargando] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  function fetchPromociones() {
-    setCargando(true);
-    api.get<Promocion[]>('/promotions')
-      .then(({ data }) => setPromociones(data))
-      .catch(() => setPromociones([]))
-      .finally(() => setCargando(false));
-  }
+  const promocionesQuery = useApiQuery<Promocion[]>(async (signal) => {
+    const { data } = await api.get<Promocion[]>('/promotions', { signal });
+    return data;
+  }, []);
+  useRefetchOnFocus(promocionesQuery.refetch);
+  const cargando = promocionesQuery.loading;
 
-  useEffect(() => { fetchPromociones(); }, []);
-  useRefetchOnFocus(fetchPromociones);
+  useEffect(() => {
+    if (promocionesQuery.data) {
+      setPromociones(promocionesQuery.data);
+    } else if (promocionesQuery.error) {
+      setPromociones([]);
+    }
+  }, [promocionesQuery.data, promocionesQuery.error]);
 
   async function toggleActivo(id: string, current: boolean) {
     await api.patch(`/promotions/${id}`, { activo: !current });
@@ -51,7 +55,7 @@ export default function AdminPromociones() {
   async function eliminar(id: string) {
     await api.delete(`/promotions/${id}`);
     setConfirmDelete(null);
-    fetchPromociones();
+    promocionesQuery.refetch();
   }
 
   return (

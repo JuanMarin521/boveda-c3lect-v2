@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -45,22 +46,29 @@ interface Order {
 export default function AdminPedidoDetalle() {
   const { id } = useParams<{ id: string }>();
   const [pedido, setPedido] = useState<Order | null>(null);
-  const [cargando, setCargando] = useState(true);
   const [nuevoEstado, setNuevoEstado] = useState('');
   const [actualizando, setActualizando] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!id) return;
-    api.get<Order>(`/orders/${id}`)
-      .then(({ data }) => {
-        setPedido(data);
-        const options = TRANSITIONS[data.status] ?? [];
-        if (options.length > 0) setNuevoEstado(options[0]);
-      })
-      .catch(() => setError('No se pudo cargar el pedido.'))
-      .finally(() => setCargando(false));
+  const pedidoQuery = useApiQuery<Order>(async (signal) => {
+    const { data } = await api.get<Order>(`/orders/${id}`, { signal });
+    return data;
   }, [id]);
+  const cargando = pedidoQuery.loading;
+
+  // `actualizarEstado` más abajo hace su propio GET tras el PATCH (necesita
+  // el pedido fresco de inmediato para recalcular `nuevoEstado`, no le sirve
+  // un refetch en segundo plano) y sigue escribiendo `pedido` directo — este
+  // efecto solo cubre la carga inicial vía la query.
+  useEffect(() => {
+    if (pedidoQuery.data) {
+      setPedido(pedidoQuery.data);
+      const options = TRANSITIONS[pedidoQuery.data.status] ?? [];
+      if (options.length > 0) setNuevoEstado(options[0]);
+    } else if (pedidoQuery.error) {
+      setError('No se pudo cargar el pedido.');
+    }
+  }, [pedidoQuery.data, pedidoQuery.error]);
 
   async function actualizarEstado() {
     if (!pedido || !nuevoEstado) return;

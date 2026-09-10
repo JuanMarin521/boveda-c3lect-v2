@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
 import { api } from '../../lib/api';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import type { Producto } from '../../data/types';
 
 type Alcance = 'PRODUCTO' | 'CATEGORIA' | 'MARCA' | 'TODOS';
@@ -68,37 +69,47 @@ export default function AdminPromocionForm() {
   const volverA = (location.state as { from?: string } | null)?.from ?? '/admin/promociones';
   const isEdit = !!id && id !== 'nuevo';
   const [form, setForm] = useState<PromocionForm>(EMPTY);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [cargando, setCargando] = useState(isEdit);
   const [guardando, setGuardando] = useState(false);
   const [errores, setErrores] = useState<Partial<Record<keyof PromocionForm, string>>>({});
   const [errorGlobal, setErrorGlobal] = useState('');
 
-  useEffect(() => {
-    api.get<Producto[]>('/products').then(({ data }) => setProductos(Array.isArray(data) ? data : []));
+  const productosQuery = useApiQuery<Producto[]>(async (signal) => {
+    const { data } = await api.get<Producto[]>('/products', { signal });
+    return Array.isArray(data) ? data : [];
   }, []);
+  const productos = productosQuery.data ?? [];
+
+  const promocionQuery = useApiQuery<PromocionForm | null>(
+    async (signal) => {
+      if (!isEdit) return null;
+      const { data }: { data: Record<string, unknown> } = await api.get(`/promotions/${id}`, { signal });
+      return {
+        nombre: String(data.nombre ?? ''),
+        alcance: (data.alcance as Alcance) ?? 'TODOS',
+        porcentaje: String(data.porcentaje ?? ''),
+        productosIncluidos: Array.isArray(data.productosIncluidos) ? data.productosIncluidos as string[] : [],
+        categoria: String(data.categoria ?? ''),
+        marca: String(data.marca ?? ''),
+        excluidos: Array.isArray(data.excluidos) ? data.excluidos as string[] : [],
+        soloCuentaActiva: Boolean(data.soloCuentaActiva ?? false),
+        fechaInicio: toDatetimeLocal(String(data.fechaInicio)),
+        fechaFin: toDatetimeLocal(String(data.fechaFin)),
+        activo: Boolean(data.activo ?? true),
+      };
+    },
+    [id, isEdit],
+  );
+  // Igual que en AdminProductoForm: sin isEdit el fetcher nunca toca la red,
+  // así que el spinner no debe aparecer en "nueva promoción".
+  const cargando = isEdit && promocionQuery.loading;
 
   useEffect(() => {
-    if (!isEdit) return;
-    api.get(`/promotions/${id}`)
-      .then(({ data }: { data: Record<string, unknown> }) => {
-        setForm({
-          nombre: String(data.nombre ?? ''),
-          alcance: (data.alcance as Alcance) ?? 'TODOS',
-          porcentaje: String(data.porcentaje ?? ''),
-          productosIncluidos: Array.isArray(data.productosIncluidos) ? data.productosIncluidos as string[] : [],
-          categoria: String(data.categoria ?? ''),
-          marca: String(data.marca ?? ''),
-          excluidos: Array.isArray(data.excluidos) ? data.excluidos as string[] : [],
-          soloCuentaActiva: Boolean(data.soloCuentaActiva ?? false),
-          fechaInicio: toDatetimeLocal(String(data.fechaInicio)),
-          fechaFin: toDatetimeLocal(String(data.fechaFin)),
-          activo: Boolean(data.activo ?? true),
-        });
-      })
-      .catch(() => setErrorGlobal('No se pudo cargar la promoción.'))
-      .finally(() => setCargando(false));
-  }, [id, isEdit]);
+    if (promocionQuery.data) {
+      setForm(promocionQuery.data);
+    } else if (promocionQuery.error) {
+      setErrorGlobal('No se pudo cargar la promoción.');
+    }
+  }, [promocionQuery.data, promocionQuery.error]);
 
   const set = <K extends keyof PromocionForm>(key: K) => (v: PromocionForm[K]) =>
     setForm((prev) => ({ ...prev, [key]: v }));

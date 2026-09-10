@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -38,24 +39,28 @@ export default function AdminPedidos() {
   const [status, setStatus] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
-  const [cargando, setCargando] = useState(true);
 
-  function fetchPedidos() {
-    setCargando(true);
-    const params: Record<string, string> = { page: String(page), limit: '20' };
-    if (status) params.status = status;
-    if (fechaDesde) params.fechaDesde = fechaDesde;
-    if (fechaHasta) params.fechaHasta = fechaHasta;
-    api.get<Paginado>('/orders', { params })
-      .then(({ data }) => {
-        setPedidos(data.data);
-        setMeta(data.meta);
-      })
-      .catch(() => setPedidos([]))
-      .finally(() => setCargando(false));
-  }
+  const pedidosQuery = useApiQuery<Paginado>(
+    async (signal) => {
+      const params: Record<string, string> = { page: String(page), limit: '20' };
+      if (status) params.status = status;
+      if (fechaDesde) params.fechaDesde = fechaDesde;
+      if (fechaHasta) params.fechaHasta = fechaHasta;
+      const { data } = await api.get<Paginado>('/orders', { params, signal });
+      return data;
+    },
+    [page, status, fechaDesde, fechaHasta],
+  );
+  const cargando = pedidosQuery.loading;
 
-  useEffect(() => { fetchPedidos(); }, [page, status, fechaDesde, fechaHasta]);
+  useEffect(() => {
+    if (pedidosQuery.data) {
+      setPedidos(pedidosQuery.data.data);
+      setMeta(pedidosQuery.data.meta);
+    } else if (pedidosQuery.error) {
+      setPedidos([]);
+    }
+  }, [pedidosQuery.data, pedidosQuery.error]);
 
   return (
     <div>

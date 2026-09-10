@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api } from '../../lib/api';
+import { useApiQuery } from '../../hooks/useApiQuery';
 
 interface AuditEntry {
   id: string;
@@ -34,24 +35,28 @@ export default function AdminAuditoria() {
   const [accion, setAccion] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
-  const [cargando, setCargando] = useState(true);
 
-  function fetchAudit() {
-    setCargando(true);
-    const params: Record<string, string> = { page: String(page), limit: '30' };
-    if (accion) params.accion = accion;
-    if (fechaDesde) params.fechaDesde = fechaDesde;
-    if (fechaHasta) params.fechaHasta = fechaHasta;
-    api.get<Paginado>('/audit', { params })
-      .then(({ data }) => {
-        setEntries(data.data);
-        setMeta(data.meta);
-      })
-      .catch(() => setEntries([]))
-      .finally(() => setCargando(false));
-  }
+  const auditQuery = useApiQuery<Paginado>(
+    async (signal) => {
+      const params: Record<string, string> = { page: String(page), limit: '30' };
+      if (accion) params.accion = accion;
+      if (fechaDesde) params.fechaDesde = fechaDesde;
+      if (fechaHasta) params.fechaHasta = fechaHasta;
+      const { data } = await api.get<Paginado>('/audit', { params, signal });
+      return data;
+    },
+    [page, accion, fechaDesde, fechaHasta],
+  );
+  const cargando = auditQuery.loading;
 
-  useEffect(() => { fetchAudit(); }, [page, accion, fechaDesde, fechaHasta]);
+  useEffect(() => {
+    if (auditQuery.data) {
+      setEntries(auditQuery.data.data);
+      setMeta(auditQuery.data.meta);
+    } else if (auditQuery.error) {
+      setEntries([]);
+    }
+  }, [auditQuery.data, auditQuery.error]);
 
   return (
     <div>

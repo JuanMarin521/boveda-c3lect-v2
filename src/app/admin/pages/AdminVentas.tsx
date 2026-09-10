@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Check, Download, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
@@ -247,7 +248,6 @@ export default function AdminVentas() {
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [desde, setDesde]       = useState('');
   const [hasta, setHasta]       = useState('');
-  const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState<FormState>(EMPTY_FORM);
   const [guardando, setGuardando] = useState(false);
@@ -258,41 +258,67 @@ export default function AdminVentas() {
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
   const [eliminando, setEliminando] = useState<string | null>(null);
-  const [inventario, setInventario] = useState<InvItem[]>([]);
-  const [precios, setPrecios]       = useState<PrecioItem[]>([]);
-  const [productos, setProductos]   = useState<ProductoItem[]>([]);
-  const [marcas, setMarcas]         = useState<string[]>([]);
-  const [errorOpciones, setErrorOpciones] = useState(false);
 
-  const cargar = useCallback((p: number) => {
-    setCargando(true);
-    const params: Record<string, string> = { page: String(p), limit: '20' };
-    if (filtroEstado) params.estado = filtroEstado;
-    if (filtroFuente) params.fuente = filtroFuente;
-    if (filtroCategoria) params.categoria = filtroCategoria;
-    if (desde) params.desde = desde;
-    if (hasta) params.hasta = hasta;
-    api.get<Paginado>('/metrics/sales', { params })
-      .then(({ data: res }) => {
-        setData(res.data);
-        setMeta({ total: res.meta.total, page: res.meta.page, pages: res.meta.totalPages });
-        setResumen(res.agregados);
-      })
-      .finally(() => setCargando(false));
-  }, [filtroEstado, filtroFuente, filtroCategoria, desde, hasta]);
+  const ventasQuery = useApiQuery<Paginado>(
+    async (signal) => {
+      const params: Record<string, string> = { page: String(page), limit: '20' };
+      if (filtroEstado) params.estado = filtroEstado;
+      if (filtroFuente) params.fuente = filtroFuente;
+      if (filtroCategoria) params.categoria = filtroCategoria;
+      if (desde) params.desde = desde;
+      if (hasta) params.hasta = hasta;
+      const { data } = await api.get<Paginado>('/metrics/sales', { params, signal });
+      return data;
+    },
+    [page, filtroEstado, filtroFuente, filtroCategoria, desde, hasta],
+  );
+  const cargando = ventasQuery.loading;
 
-  useEffect(() => { setPage(1); cargar(1); }, [filtroEstado, filtroFuente, filtroCategoria, desde, hasta, cargar]);
-  useRefetchOnFocus(useCallback(() => cargar(page), [cargar, page]));
   useEffect(() => {
-    Promise.allSettled([
-      api.get<InvItem[]>('/inventario').then(({ data }) => setInventario(data)),
-      api.get<PrecioItem[]>('/precios').then(({ data }) => setPrecios(data)),
-      api.get<ProductoItem[]>('/products').then(({ data }) => setProductos(data)),
-      api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)),
-    ]).then((results) => setErrorOpciones(results.some((r) => r.status === 'rejected')));
-  }, []);
+    if (ventasQuery.data) {
+      setData(ventasQuery.data.data);
+      setMeta({
+        total: ventasQuery.data.meta.total,
+        page: ventasQuery.data.meta.page,
+        pages: ventasQuery.data.meta.totalPages,
+      });
+      setResumen(ventasQuery.data.agregados);
+    }
+  }, [ventasQuery.data]);
 
-  const handlePage = (p: number) => { setPage(p); cargar(p); };
+  // Volver a página 1 cuando cambian los filtros — igual criterio que en AdminCompras.
+  useEffect(() => { setPage(1); }, [filtroEstado, filtroFuente, filtroCategoria, desde, hasta]);
+
+  useRefetchOnFocus(useCallback(() => ventasQuery.refetch(), [ventasQuery.refetch]));
+
+  const inventarioQuery = useApiQuery<InvItem[]>(async (signal) => {
+    const { data } = await api.get<InvItem[]>('/inventario', { signal });
+    return data;
+  }, []);
+  const inventario = inventarioQuery.data ?? [];
+
+  const preciosQuery = useApiQuery<PrecioItem[]>(async (signal) => {
+    const { data } = await api.get<PrecioItem[]>('/precios', { signal });
+    return data;
+  }, []);
+  const precios = preciosQuery.data ?? [];
+
+  const productosQuery = useApiQuery<ProductoItem[]>(async (signal) => {
+    const { data } = await api.get<ProductoItem[]>('/products', { signal });
+    return data;
+  }, []);
+  const productos = productosQuery.data ?? [];
+
+  const marcasQuery = useApiQuery<string[]>(async (signal) => {
+    const { data } = await api.get<string[]>('/marcas', { signal });
+    return data;
+  }, []);
+  const marcas = marcasQuery.data ?? [];
+
+  const errorOpciones =
+    !!inventarioQuery.error || !!preciosQuery.error || !!productosQuery.error || !!marcasQuery.error;
+
+  const handlePage = (p: number) => { setPage(p); };
 
   const handleExport = async () => {
     setExportando(true);
@@ -320,7 +346,8 @@ export default function AdminVentas() {
       });
       setShowForm(false);
       setForm(EMPTY_FORM);
-      cargar(1);
+      setPage(1);
+      ventasQuery.refetch();
     } catch (err: any) {
       setFormError(err?.response?.data?.message ?? 'Error al guardar la venta');
     } finally { setGuardando(false); }
@@ -365,7 +392,7 @@ export default function AdminVentas() {
         estado:        editForm.estado,
       });
       setEditId(null);
-      cargar(page);
+      ventasQuery.refetch();
     } catch (err: any) {
       setEditError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
@@ -376,7 +403,7 @@ export default function AdminVentas() {
     setEliminando(id);
     try {
       await api.delete(`/ventas/${id}`);
-      cargar(page);
+      ventasQuery.refetch();
     } finally { setEliminando(null); }
   };
 

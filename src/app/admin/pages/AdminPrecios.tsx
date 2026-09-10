@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Pencil, Check, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatPrecio as COP } from '../../lib/format';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
 
@@ -18,10 +19,6 @@ const EMPTY_FORM = {
 };
 
 export default function AdminPrecios() {
-  const [items, setItems]   = useState<Precio[]>([]);
-  const [marcas, setMarcas] = useState<string[]>([]);
-  const [inventarioItems, setInventarioItems] = useState<InvItem[]>([]);
-  const [cargando, setCargando] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]     = useState(EMPTY_FORM);
   const [guardando, setGuardando] = useState(false);
@@ -29,17 +26,25 @@ export default function AdminPrecios() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
 
-  const cargar = () => {
-    setCargando(true);
-    api.get<Precio[]>('/precios').then(({ data }) => setItems(data)).finally(() => setCargando(false));
-  };
-
-  useEffect(() => { cargar(); }, []);
-  useRefetchOnFocus(cargar);
-  useEffect(() => {
-    api.get<string[]>('/marcas').then(({ data }) => setMarcas(data)).catch(() => {});
-    api.get<InvItem[]>('/inventario').then(({ data }) => setInventarioItems(data)).catch(() => {});
+  const preciosQuery = useApiQuery<Precio[]>(async (signal) => {
+    const { data } = await api.get<Precio[]>('/precios', { signal });
+    return data;
   }, []);
+  useRefetchOnFocus(preciosQuery.refetch);
+  const items = preciosQuery.data ?? [];
+  const cargando = preciosQuery.loading;
+
+  const marcasQuery = useApiQuery<string[]>(async (signal) => {
+    const { data } = await api.get<string[]>('/marcas', { signal });
+    return data;
+  }, []);
+  const marcas = marcasQuery.data ?? [];
+
+  const inventarioQuery = useApiQuery<InvItem[]>(async (signal) => {
+    const { data } = await api.get<InvItem[]>('/inventario', { signal });
+    return data;
+  }, []);
+  const inventarioItems = inventarioQuery.data ?? [];
 
   const modelosPorMarca: Record<string, string[]> = {};
   for (const item of inventarioItems) {
@@ -93,7 +98,7 @@ export default function AdminPrecios() {
       setForm(EMPTY_FORM);
       setModoMarcaNueva(false);
       setModoModeloNuevo(false);
-      cargar();
+      preciosQuery.refetch();
     } catch (err: any) {
       setFormError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
@@ -122,7 +127,7 @@ export default function AdminPrecios() {
         precioCierre: editForm.precioCierre ? Number(editForm.precioCierre) : undefined,
       });
       setEditId(null);
-      cargar();
+      preciosQuery.refetch();
     } catch (err: any) {
       setEditError(err?.response?.data?.message ?? 'Error al guardar');
     } finally { setGuardando(false); }
