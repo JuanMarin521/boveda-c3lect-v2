@@ -9,18 +9,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../lib/api";
+import { accountApi, type Perfil } from "../api/account";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { Field } from "../components/ds/Field";
 import { FormError } from "../components/ds/FormError";
 import { Button } from "../components/ds/Button";
-
-interface Perfil {
-  id: string;
-  nombre: string;
-  email: string;
-  telefono: string | null;
-}
 
 export default function AccountProfile() {
   const { refrescarUsuario } = useAuth();
@@ -32,8 +25,7 @@ export default function AccountProfile() {
   const [guardado, setGuardado] = useState(false);
 
   const perfilQuery = useApiQuery<Perfil>(async (signal) => {
-    const { data } = await api.get<Perfil>("/account/profile", { signal });
-    return data;
+    return accountApi.perfil(signal);
   }, []);
   const cargando = perfilQuery.loading;
 
@@ -50,7 +42,7 @@ export default function AccountProfile() {
     setError("");
     setGuardando(true);
     try {
-      const { data } = await api.patch<Perfil>("/account/profile", { nombre, telefono });
+      const data = await accountApi.actualizarPerfil({ nombre, telefono });
       setPerfil(data);
       await refrescarUsuario();
       setGuardado(true);

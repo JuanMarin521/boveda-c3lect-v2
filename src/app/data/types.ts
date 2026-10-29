@@ -37,4 +37,14 @@ export interface Producto {
   imgs: string[];       // Rutas relativas desde public/, ej: ["images/relojes/..."]
   notas?: NotasPerfume;          // Solo para perfumes
   specs?: EspecificacionesReloj; // Solo para relojes
+  // Precio con la mejor promoción vigente, ya resuelto por la vista
+  // catalogo_publico. Depende de si el comprador tiene sesión (hay
+  // promociones solo para cuentas). Solo para mostrar: el cobro real lo
+  // recalcula el backend al crear el pedido.
+  precios: { invitado: PrecioPublicado; cuenta: PrecioPublicado };
+}
+
+export interface PrecioPublicado {
+  final: number;
+  descuento: number; // porcentaje 0-100
 }

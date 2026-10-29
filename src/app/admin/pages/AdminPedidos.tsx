@@ -3,51 +3,27 @@ import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { api } from '../../lib/api';
+import { ordersApi, type EstadoPedido, type Pedido } from '../../api/orders';
+import type { Paginado } from '../../api/common';
+import { ESTADO_PEDIDO, ESTADOS_PEDIDO } from '../estado-pedido';
 import { formatPrecio as COP } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  PENDIENTE:  { label: 'Pendiente',  color: '#EAB308' },
-  CONFIRMADO: { label: 'Confirmado', color: '#3B82F6' },
-  EN_CAMINO:  { label: 'En camino',  color: '#F97316' },
-  ENTREGADO:  { label: 'Entregado',  color: '#22C55E' },
-  CANCELADO:  { label: 'Cancelado',  color: '#EF4444' },
-};
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: string;
-  total: number;
-  createdAt: string;
-  items: { nombre: string; cantidad: number }[];
-  shippingInfo: { nombreCompleto: string } | null;
-  user: { nombre: string } | null;
-}
-
-interface Paginado { data: Order[]; meta: { total: number; page: number; totalPages: number } }
-
-const ESTADOS = ['', 'PENDIENTE', 'CONFIRMADO', 'EN_CAMINO', 'ENTREGADO', 'CANCELADO'];
+const ESTADOS: (EstadoPedido | '')[] = ['', ...ESTADOS_PEDIDO];
 
 export default function AdminPedidos() {
   const navigate = useNavigate();
-  const [pedidos, setPedidos] = useState<Order[]>([]);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 1 });
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState<EstadoPedido | ''>('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
-  const pedidosQuery = useApiQuery<Paginado>(
+  const pedidosQuery = useApiQuery<Paginado<Pedido>>(
     async (signal) => {
-      const params: Record<string, string> = { page: String(page), limit: '20' };
-      if (status) params.status = status;
-      if (fechaDesde) params.fechaDesde = fechaDesde;
-      if (fechaHasta) params.fechaHasta = fechaHasta;
-      const { data } = await api.get<Paginado>('/orders', { params, signal });
-      return data;
+      return ordersApi.listar({ page, limit: 20, status, fechaDesde, fechaHasta }, signal);
     },
     [page, status, fechaDesde, fechaHasta],
   );
@@ -73,12 +49,12 @@ export default function AdminPedidos() {
       <div className="flex flex-wrap gap-3 mb-5">
         <select
           value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+          onChange={(e) => { setStatus(e.target.value as EstadoPedido | ''); setPage(1); }}
           className="text-sm rounded px-3 py-2 border outline-none"
           style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
         >
           {ESTADOS.map((s) => (
-            <option key={s} value={s}>{s ? STATUS_CONFIG[s]?.label : 'Todos los estados'}</option>
+            <option key={s} value={s}>{s ? ESTADO_PEDIDO[s]?.label : 'Todos los estados'}</option>
           ))}
         </select>
         <div className="flex flex-wrap items-center gap-2">
@@ -127,7 +103,7 @@ export default function AdminPedidos() {
                   </tr>
                 )}
                 {pedidos.map((o) => {
-                  const st = STATUS_CONFIG[o.status] ?? { label: o.status, color: '#fff' };
+                  const st = ESTADO_PEDIDO[o.status] ?? { label: o.status, color: '#fff' };
                   const cliente = o.shippingInfo?.nombreCompleto ?? o.user?.nombre ?? 'Invitado';
                   const primerItem = o.items[0]?.nombre ?? '—';
                   const totalItems = o.items.reduce((s, i) => s + i.cantidad, 0);

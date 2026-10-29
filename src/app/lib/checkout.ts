@@ -1,5 +1,6 @@
 import type { CartItem } from '../context/CartContext';
-import { api } from './api';
+import { ordersApi, type MetodoPago } from '../api/orders';
+import { paymentsApi } from '../api/payments';
 import {
   trackInitiateCheckout,
   trackPurchase,
@@ -7,7 +8,7 @@ import {
   getFbCookies,
 } from './metaPixel';
 
-export type MetodoPago = 'MERCADOPAGO' | 'CONTRAENTREGA';
+export type { MetodoPago };
 
 export interface ShippingForm {
   nombreCompleto: string;
@@ -61,7 +62,7 @@ export async function submitCheckout(params: {
   const fb = getFbCookies();
 
   if (metodoPago === 'CONTRAENTREGA') {
-    const { data: order } = await api.post<OrderResponse>('/orders', {
+    const order = await ordersApi.crear({
       metodoPago,
       items: itemsPayload,
       shippingInfo: form,
@@ -84,7 +85,7 @@ export async function submitCheckout(params: {
   // al dominio de MercadoPago y vuelve a /checkout/success sin datos del
   // pedido. La fuente de verdad es el evento que manda el backend por
   // Conversions API cuando el webhook confirma el pago.
-  const { data: pago } = await api.post<{ checkoutUrl: string }>('/payments/create-pending', {
+  const pago = await paymentsApi.crearPendiente({
     items: itemsPayload,
     shippingInfo: form,
     fbp: fb.fbp,

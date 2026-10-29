@@ -3,22 +3,11 @@ import { useNavigate } from 'react-router';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { api } from '../../lib/api';
+import { usersApi, type Cliente } from '../../api/users';
+import type { Paginado } from '../../api/common';
 import { formatPrecio as COP } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 
-
-interface Cliente {
-  id: string;
-  nombre: string;
-  email: string;
-  rol: string;
-  createdAt: string;
-  totalPedidos: number;
-  totalGastado: number;
-}
-
-interface Paginado { data: Cliente[]; meta: { total: number; page: number; totalPages: number } }
 
 export default function AdminClientes() {
   const navigate = useNavigate();
@@ -29,12 +18,9 @@ export default function AdminClientes() {
   const [query, setQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clientesQuery = useApiQuery<Paginado>(
+  const clientesQuery = useApiQuery<Paginado<Cliente>>(
     async (signal) => {
-      const params: Record<string, string> = { page: String(page), limit: '20' };
-      if (query) params.search = query;
-      const { data } = await api.get<Paginado>('/users', { params, signal });
-      return data;
+      return usersApi.listar({ page, limit: 20, search: query }, signal);
     },
     [query, page],
   );

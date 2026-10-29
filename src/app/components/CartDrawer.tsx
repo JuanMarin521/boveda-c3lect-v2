@@ -2,9 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Minus, Plus, ShoppingBag, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useCart, formatPrecio } from "../context/CartContext";
-import { usePromociones } from "../context/PromocionesContext";
-import { useAuth } from "../context/AuthContext";
-import { mejorDescuento, calcularPrecioFinal } from "../lib/promotions";
+import { usePrecioDe } from "../hooks/usePrecio";
 import type { Producto } from "../data/types";
 import { CONFIG } from "../config";
 import { trackContactWhatsApp } from "../lib/metaPixel";
@@ -36,12 +34,11 @@ function buildWhatsAppMessage(
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, clearCart, totalItems, totalPrice } = useCart();
-  const { promociones } = usePromociones();
-  const { autenticado } = useAuth();
+  const precioDe = usePrecioDe();
   const navigate = useNavigate();
 
   const precioUnitarioDe = (producto: Producto) =>
-    calcularPrecioFinal(producto.precio, mejorDescuento(promociones, producto, autenticado));
+    precioDe(producto).precioFinal;
 
   return (
     <AnimatePresence>

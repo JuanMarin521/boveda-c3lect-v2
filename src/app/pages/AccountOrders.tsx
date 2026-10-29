@@ -12,36 +12,13 @@ import { Link } from "react-router";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { useProductos } from "../context/ProductosContext";
-import { api } from "../lib/api";
+import { ordersApi, type EstadoPedido, type Pedido } from "../api/orders";
+import type { PaginaMeta } from "../api/common";
 import { formatPrecio, formatFecha } from "../lib/format";
 import { AvisoError } from "../components/AvisoError";
 import { Button } from "../components/ds/Button";
 
-type EstadoPedido = "PENDIENTE" | "CONFIRMADO" | "EN_CAMINO" | "ENTREGADO" | "CANCELADO";
-
-interface OrderItem {
-  id: string;
-  productId: string;
-  nombre: string;
-  precioUnitario: number;
-  cantidad: number;
-  subtotal: number;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: EstadoPedido;
-  total: number;
-  createdAt: string;
-  items: OrderItem[];
-}
-
-interface OrdersResponse {
-  data: Order[];
-  meta: { total: number; page: number; limit: number; totalPages: number };
-}
-
+// Presentación propia de la tienda (el panel admin usa colores en vez de dorado).
 const ESTADO: Record<EstadoPedido, { label: string; dorado: boolean }> = {
   PENDIENTE:  { label: "Pendiente",  dorado: false },
   CONFIRMADO: { label: "Confirmado", dorado: true },
@@ -55,8 +32,8 @@ const LIMIT = 10;
 export default function AccountOrders() {
   const { productos } = useProductos();
 
-  const [pedidos, setPedidos] = useState<Order[]>([]);
-  const [meta, setMeta] = useState<OrdersResponse["meta"] | null>(null);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [meta, setMeta] = useState<PaginaMeta | null>(null);
   const [page, setPage] = useState(1);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
@@ -64,9 +41,9 @@ export default function AccountOrders() {
   const cargarPedidos = useCallback(() => {
     setCargando(true);
     setError(false);
-    api
-      .get<OrdersResponse>("/orders", { params: { page, limit: LIMIT } })
-      .then(({ data }) => {
+    ordersApi
+      .listar({ page, limit: LIMIT })
+      .then((data) => {
         setPedidos(data.data);
         setMeta(data.meta);
       })
@@ -76,7 +53,7 @@ export default function AccountOrders() {
 
   useEffect(() => { cargarPedidos(); }, [cargarPedidos]);
 
-  // Miniatura por producto — no viene en OrderItem (solo guarda nombre/precio),
+  // Miniatura por producto — no viene en la línea del pedido (solo guarda nombre/precio),
   // así que se resuelve del catálogo ya cargado en memoria (sin pedir de más).
   const imagenPorProducto = useMemo(() => {
     const m = new Map<string, string>();

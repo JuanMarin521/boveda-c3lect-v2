@@ -9,20 +9,11 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MapPin, Pencil, Star, Trash2, X } from "lucide-react";
-import { api } from "../lib/api";
+import { accountApi, type Direccion } from "../api/account";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { Field } from "../components/ds/Field";
 import { FormError } from "../components/ds/FormError";
 import { Button } from "../components/ds/Button";
-
-interface Direccion {
-  id: string;
-  alias: string | null;
-  ciudad: string;
-  departamento: string;
-  direccion: string;
-  esPrincipal: boolean;
-}
 
 const FORM_VACIO = { alias: "", ciudad: "", departamento: "", direccion: "" };
 
@@ -36,8 +27,7 @@ export default function AccountAddresses() {
   const [porEliminar, setPorEliminar] = useState<string | null>(null);
 
   const direccionesQuery = useApiQuery<Direccion[]>(async (signal) => {
-    const { data } = await api.get<Direccion[]>("/account/addresses", { signal });
-    return data;
+    return accountApi.direcciones(signal);
   }, []);
   const cargando = direccionesQuery.loading;
 
@@ -77,9 +67,9 @@ export default function AccountAddresses() {
     setGuardando(true);
     try {
       if (editandoId) {
-        await api.patch(`/account/addresses/${editandoId}`, form);
+        await accountApi.actualizarDireccion(editandoId, form);
       } else {
-        await api.post("/account/addresses", form);
+        await accountApi.crearDireccion(form);
       }
       cerrarForm();
       direccionesQuery.refetch();
@@ -92,7 +82,7 @@ export default function AccountAddresses() {
   }
 
   async function marcarPrincipal(id: string) {
-    await api.post(`/account/addresses/${id}/principal`);
+    await accountApi.marcarPrincipal(id);
     direccionesQuery.refetch();
   }
 
@@ -103,7 +93,7 @@ export default function AccountAddresses() {
       return;
     }
     setPorEliminar(null);
-    await api.delete(`/account/addresses/${id}`);
+    await accountApi.eliminarDireccion(id);
     direccionesQuery.refetch();
   }
 

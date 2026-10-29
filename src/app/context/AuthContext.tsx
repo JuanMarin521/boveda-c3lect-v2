@@ -1,12 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api } from '../lib/api';
+import { authApi, type UsuarioSesion } from '../api/auth';
 
-interface AuthUser {
-  id: string;
-  email: string;
-  nombre: string;
-  rol: string;
-}
+type AuthUser = UsuarioSesion;
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -48,8 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    api.get<AuthUser>('/auth/me')
-      .then(({ data }) => {
+    authApi.yo()
+      .then((data) => {
         setUser(data);
         setAccessToken(storedToken);
       })
@@ -71,23 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const { data } = await api.post<{
-      accessToken: string;
-      refreshToken: string;
-      user: AuthUser;
-    }>('/auth/login', { email, password });
+    const data = await authApi.login(email, password);
     saveSession(data.accessToken, data.refreshToken, data.user);
     setAccessToken(data.accessToken);
     setUser(data.user);
   }
 
   async function loginConOtp(email: string, code: string) {
-    const { data } = await api.post<{
-      accessToken?: string;
-      refreshToken?: string;
-      user?: AuthUser;
-      requiresRegistration?: boolean;
-    }>('/auth/verify-otp', { email, code });
+    const data = await authApi.verificarOtp(email, code);
     if (data.accessToken && data.user) {
       saveSession(data.accessToken, data.refreshToken!, data.user);
       setAccessToken(data.accessToken);
@@ -97,11 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function register(email: string, password: string, nombre: string, telefono?: string) {
-    const { data } = await api.post<{
-      accessToken: string;
-      refreshToken: string;
-      user: AuthUser;
-    }>('/auth/register', { email, password, nombre, telefono });
+    const data = await authApi.registrar({ email, password, nombre, telefono });
     saveSession(data.accessToken, data.refreshToken, data.user);
     setAccessToken(data.accessToken);
     setUser(data.user);
@@ -109,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     try {
-      await api.post('/auth/logout');
+      await authApi.logout();
     } catch {
       // ignorar error — el token puede estar expirado
     }
@@ -119,17 +101,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function requestOtp(email: string) {
-    await api.post('/auth/request-otp', { email });
+    await authApi.solicitarOtp(email);
   }
 
   async function requestPasswordReset(email: string) {
-    await api.post('/auth/request-password-reset', { email });
+    await authApi.solicitarRestablecimiento(email);
   }
 
   // Vuelve a leer /auth/me — se usa tras editar el perfil (nombre/teléfono)
   // para que el nombre en el nav y el resto de la app queden al día.
   async function refrescarUsuario() {
-    const { data } = await api.get<AuthUser>('/auth/me');
+    const data = await authApi.yo();
     setUser(data);
     sessionStorage.setItem('authUser', JSON.stringify(data));
   }

@@ -10,21 +10,20 @@ import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { api } from '../../lib/api';
+import { productsApi, type ProductoAdmin } from '../../api/products';
 import { formatPrecio as COP } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
-import type { Producto } from '../../data/types';
 
 
-const esIncompleto = (p: Producto) => p.precio === 0 || p.estilo === '' || p.imgs.length === 0;
-const ordenDestacado = (a: Producto, b: Producto) => (a.destacadoOrden ?? Infinity) - (b.destacadoOrden ?? Infinity);
+
+const ordenDestacado = (a: ProductoAdmin, b: ProductoAdmin) => (a.destacadoOrden ?? Infinity) - (b.destacadoOrden ?? Infinity);
 
 export default function AdminProductos() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<ProductoAdmin[]>([]);
   const [total, setTotal] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [ordenIds, setOrdenIds] = useState<string[]>([]);
@@ -54,20 +53,23 @@ export default function AdminProductos() {
     setSearchParams(next);
   }
 
-  const productosQuery = useApiQuery<{ items: Producto[]; total: number }>(
+  const productosQuery = useApiQuery<{ items: ProductoAdmin[]; total: number }>(
     async (signal) => {
-      const params: Record<string, string> = { page: String(page), limit: String(LIMIT) };
-      if (categoria) params.categoria = categoria;
-      if (disponible !== '') params.soloDisponibles = disponible;
-      if (destacado) params.destacado = 'true';
-      if (incompletos) params.incompletos = 'true';
-      if (sortOrder) { params.sortBy = 'precio'; params.sortOrder = sortOrder; }
-      const { data } = await api.get<Producto[]>('/products', { params, signal });
-      const items = Array.isArray(data) ? data : (data as { data: Producto[] }).data ?? [];
-      const total = Array.isArray(data)
-        ? data.length
-        : (data as { meta?: { total: number } }).meta?.total ?? (data as Producto[]).length;
-      return { items, total };
+      const { data, meta } = await productsApi.listarPaginado(
+        {
+          page,
+          limit: LIMIT,
+          categoria,
+          soloDisponibles: disponible,
+          destacado: destacado || undefined,
+          incompletos: incompletos || undefined,
+          ...(sortOrder
+            ? { sortBy: 'precio' as const, sortOrder: sortOrder as 'asc' | 'desc' }
+            : {}),
+        },
+        signal,
+      );
+      return { items: data, total: meta.total };
     },
     [page, categoria, disponible, destacado, incompletos, sortOrder],
   );
@@ -87,9 +89,11 @@ export default function AdminProductos() {
   }, [productosQuery.data, productosQuery.error]);
 
   const destacadosQuery = useApiQuery<number | null>(async (signal) => {
-    const { data } = await api.get('/products', { params: { destacado: 'true', limit: 100 }, signal });
-    const total = (data as { meta?: { total: number } })?.meta?.total;
-    return typeof total === 'number' ? total : null;
+    const { meta } = await productsApi.listarPaginado(
+      { destacado: true, page: 1, limit: 100 },
+      signal,
+    );
+    return meta.total;
   }, []);
   const destacadosCount = destacadosQuery.data ?? null;
 
@@ -106,7 +110,7 @@ export default function AdminProductos() {
   }, [destacado, productos]);
 
   async function toggleDisponible(id: string, current: boolean) {
-    await api.patch(`/products/${id}`, { disponible: !current });
+    await productsApi.actualizar(id, { disponible: !current });
     setProductos((prev) => prev.map((p) => p.id === id ? { ...p, disponible: !current } : p));
   }
 
@@ -124,13 +128,13 @@ export default function AdminProductos() {
       : p));
 
     const payload = current ? { destacado: false, destacadoOrden: null } : { destacado: true };
-    api.patch(`/products/${id}`, payload)
+    productsApi.actualizar(id, payload)
       .then(() => destacadosQuery.refetch())
       .catch(() => setProductos((prev) => prev.map((p) => p.id === id ? anterior : p)));
   }
 
   async function eliminar(id: string) {
-    await api.delete(`/products/${id}`);
+    await productsApi.eliminar(id);
     setConfirmDelete(null);
     productosQuery.refetch();
   }
@@ -145,7 +149,7 @@ export default function AdminProductos() {
     setGuardandoOrden(true);
     setOrdenGuardado(false);
     try {
-      await Promise.all(cambios.map(({ id, destacadoOrden }) => api.patch(`/products/${id}`, { destacadoOrden })));
+      await Promise.all(cambios.map(({ id, destacadoOrden }) => productsApi.actualizar(id, { destacadoOrden })));
       setProductos((prev) => prev.map((p) => {
         const posicion = idsEnOrden.indexOf(p.id);
         return posicion === -1 ? p : { ...p, destacadoOrden: posicion + 1 };
@@ -170,7 +174,7 @@ export default function AdminProductos() {
   }
 
   const productosVisibles = destacado
-    ? ordenIds.map((id) => productos.find((p) => p.id === id)).filter((p): p is Producto => !!p)
+    ? ordenIds.map((id) => productos.find((p) => p.id === id)).filter((p): p is ProductoAdmin => !!p)
     : productos;
 
 
@@ -314,7 +318,7 @@ export default function AdminProductos() {
                   {destacado && (
                     <th className="px-2 py-3 w-14" />
                   )}
-                  {['Producto', 'Categoría', 'Marca', 'Precio', 'Estado', 'Acciones'].map((h) => (
+                  {['ProductoAdmin', 'Categoría', 'Marca', 'Precio', 'Estado', 'Acciones'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs text-white/40 uppercase tracking-wider">
                       {h}
                     </th>
@@ -425,7 +429,7 @@ export default function AdminProductos() {
 // ── Fila de la tabla ──────────────────────────────────────────
 
 function CeldasProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, onEliminar }: {
-  p: Producto;
+  p: ProductoAdmin;
   onEditar: () => void;
   onToggleDisponible: () => void;
   onToggleDestacado: () => void;
@@ -462,7 +466,7 @@ function CeldasProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, on
         >
           {p.disponible ? 'Disponible' : 'No disponible'}
         </span>
-        {esIncompleto(p) && (
+        {p.incompleto && (
           <span
             className="text-xs px-2 py-0.5 rounded-full ml-1.5"
             style={{ background: 'rgba(234,179,8,0.15)', color: '#EAB308' }}
@@ -503,7 +507,7 @@ function CeldasProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, on
 }
 
 function FilaProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, onEliminar }: {
-  p: Producto;
+  p: ProductoAdmin;
   onEditar: () => void;
   onToggleDisponible: () => void;
   onToggleDestacado: () => void;
@@ -520,7 +524,7 @@ function FilaProducto({ p, onEditar, onToggleDisponible, onToggleDestacado, onEl
 // único elemento con los listeners de dnd-kit para que arrastrar no choque
 // con hacer click en "Editar"/"Eliminar" del resto de la fila.
 function FilaSortable({ p, posicion, onEditar, onToggleDisponible, onToggleDestacado, onEliminar }: {
-  p: Producto;
+  p: ProductoAdmin;
   posicion: number;
   onEditar: () => void;
   onToggleDisponible: () => void;

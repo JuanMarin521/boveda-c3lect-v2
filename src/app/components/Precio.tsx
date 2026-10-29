@@ -1,4 +1,4 @@
-import { usePrecioEfectivo } from "../context/PromocionesContext";
+import { usePrecioEfectivo } from "../hooks/usePrecio";
 import { formatPrecio } from "../lib/format";
 import { PriceTag } from "./ds/PriceTag";
 import type { Producto } from "../data/types";
