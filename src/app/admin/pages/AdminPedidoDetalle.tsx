@@ -3,57 +3,23 @@ import { Link, useParams } from 'react-router';
 import { ArrowLeft, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { api } from '../../lib/api';
+import { ordersApi, type EstadoPedido, type PedidoDetalle } from '../../api/orders';
+import { ESTADO_PEDIDO } from '../estado-pedido';
 import { formatPrecio as COP } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  PENDIENTE:  { label: 'Pendiente',  color: '#EAB308' },
-  CONFIRMADO: { label: 'Confirmado', color: '#3B82F6' },
-  EN_CAMINO:  { label: 'En camino',  color: '#F97316' },
-  ENTREGADO:  { label: 'Entregado',  color: '#22C55E' },
-  CANCELADO:  { label: 'Cancelado',  color: '#EF4444' },
-};
-
-const TRANSITIONS: Record<string, string[]> = {
-  PENDIENTE:  ['CONFIRMADO', 'CANCELADO'],
-  CONFIRMADO: ['EN_CAMINO', 'CANCELADO'],
-  EN_CAMINO:  ['ENTREGADO', 'CANCELADO'],
-  ENTREGADO:  [],
-  CANCELADO:  [],
-};
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: string;
-  total: number;
-  subtotal: number;
-  paymentMethod: string;
-  createdAt: string;
-  user: { nombre: string; email: string } | null;
-  items: { id: string; nombre: string; precioUnitario: number; cantidad: number; subtotal: number }[];
-  shippingInfo: {
-    nombreCompleto: string; email: string; telefono: string;
-    ciudad: string; departamento: string; direccion: string; notas?: string;
-  } | null;
-  statusHistory: {
-    id: string; statusAnterior: string | null; statusNuevo: string; createdAt: string;
-  }[];
-}
-
 export default function AdminPedidoDetalle() {
   const { id } = useParams<{ id: string }>();
-  const [pedido, setPedido] = useState<Order | null>(null);
-  const [nuevoEstado, setNuevoEstado] = useState('');
+  const [pedido, setPedido] = useState<PedidoDetalle | null>(null);
+  const [nuevoEstado, setNuevoEstado] = useState<EstadoPedido | ''>('');
   const [actualizando, setActualizando] = useState(false);
   const [error, setError] = useState('');
 
-  const pedidoQuery = useApiQuery<Order>(async (signal) => {
-    const { data } = await api.get<Order>(`/orders/${id}`, { signal });
-    return data;
-  }, [id]);
+  const pedidoQuery = useApiQuery<PedidoDetalle>(
+    (signal) => ordersApi.obtener(id!, signal),
+    [id],
+  );
   const cargando = pedidoQuery.loading;
 
   // `actualizarEstado` más abajo hace su propio GET tras el PATCH (necesita
@@ -63,7 +29,7 @@ export default function AdminPedidoDetalle() {
   useEffect(() => {
     if (pedidoQuery.data) {
       setPedido(pedidoQuery.data);
-      const options = TRANSITIONS[pedidoQuery.data.status] ?? [];
+      const options = pedidoQuery.data.transicionesPermitidas;
       if (options.length > 0) setNuevoEstado(options[0]);
     } else if (pedidoQuery.error) {
       setError('No se pudo cargar el pedido.');
@@ -75,10 +41,10 @@ export default function AdminPedidoDetalle() {
     setActualizando(true);
     setError('');
     try {
-      await api.patch(`/orders/${id}/status`, { status: nuevoEstado });
-      const { data } = await api.get<Order>(`/orders/${id}`);
+      await ordersApi.cambiarEstado(id!, nuevoEstado);
+      const data = await ordersApi.obtener(id!);
       setPedido(data);
-      const options = TRANSITIONS[data.status] ?? [];
+      const options = data.transicionesPermitidas;
       setNuevoEstado(options[0] ?? '');
     } catch {
       setError('No se pudo actualizar el estado.');
@@ -104,8 +70,9 @@ export default function AdminPedidoDetalle() {
     );
   }
 
-  const st = STATUS_CONFIG[pedido.status] ?? { label: pedido.status, color: '#fff' };
-  const opciones = TRANSITIONS[pedido.status] ?? [];
+  const st = ESTADO_PEDIDO[pedido.status] ?? { label: pedido.status, color: '#fff' };
+  // Las transiciones válidas las decide el backend (máquina de estados de orders).
+  const opciones = pedido.transicionesPermitidas;
 
   return (
     <div className="max-w-3xl">
@@ -190,7 +157,7 @@ export default function AdminPedidoDetalle() {
             <div className="absolute left-1.5 top-0 bottom-0 w-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
             <div className="space-y-4">
               {pedido.statusHistory.map((h) => {
-                const s = STATUS_CONFIG[h.statusNuevo] ?? { label: h.statusNuevo, color: '#fff' };
+                const s = ESTADO_PEDIDO[h.statusNuevo] ?? { label: h.statusNuevo, color: '#fff' };
                 return (
                   <div key={h.id} className="relative flex items-start gap-3">
                     <div
@@ -201,7 +168,7 @@ export default function AdminPedidoDetalle() {
                       <p className="text-sm text-white">{s.label}</p>
                       {h.statusAnterior && (
                         <p className="text-xs text-white/30">
-                          desde {STATUS_CONFIG[h.statusAnterior]?.label ?? h.statusAnterior}
+                          desde {ESTADO_PEDIDO[h.statusAnterior]?.label ?? h.statusAnterior}
                         </p>
                       )}
                       <p className="text-xs text-white/30 mt-0.5">
@@ -222,12 +189,12 @@ export default function AdminPedidoDetalle() {
             <div className="flex gap-3">
               <select
                 value={nuevoEstado}
-                onChange={(e) => setNuevoEstado(e.target.value)}
+                onChange={(e) => setNuevoEstado(e.target.value as EstadoPedido)}
                 className="flex-1 text-sm rounded px-3 py-2 border outline-none"
                 style={{ background: '#1A1A1A', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
               >
                 {opciones.map((s) => (
-                  <option key={s} value={s}>{STATUS_CONFIG[s]?.label ?? s}</option>
+                  <option key={s} value={s}>{ESTADO_PEDIDO[s]?.label ?? s}</option>
                 ))}
               </select>
               <button

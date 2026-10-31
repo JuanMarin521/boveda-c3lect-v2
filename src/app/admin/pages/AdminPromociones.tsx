@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
-import { api } from '../../lib/api';
+import { promotionsApi, type Promocion } from '../../api/promotions';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
-import { estaVigente, type Promocion } from '../../lib/promotions';
 
 const ALCANCE_LABEL: Record<Promocion['alcance'], string> = {
   TODOS: 'Todos los productos',
@@ -33,8 +32,7 @@ export default function AdminPromociones() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const promocionesQuery = useApiQuery<Promocion[]>(async (signal) => {
-    const { data } = await api.get<Promocion[]>('/promotions', { signal });
-    return data;
+    return promotionsApi.listar(signal);
   }, []);
   useRefetchOnFocus(promocionesQuery.refetch);
   const cargando = promocionesQuery.loading;
@@ -48,12 +46,12 @@ export default function AdminPromociones() {
   }, [promocionesQuery.data, promocionesQuery.error]);
 
   async function toggleActivo(id: string, current: boolean) {
-    await api.patch(`/promotions/${id}`, { activo: !current });
+    await promotionsApi.actualizar(id, { activo: !current });
     setPromociones((prev) => prev.map((p) => p.id === id ? { ...p, activo: !current } : p));
   }
 
   async function eliminar(id: string) {
-    await api.delete(`/promotions/${id}`);
+    await promotionsApi.eliminar(id);
     setConfirmDelete(null);
     promocionesQuery.refetch();
   }
@@ -100,7 +98,7 @@ export default function AdminPromociones() {
                   </tr>
                 )}
                 {promociones.map((p) => {
-                  const vigente = estaVigente(p);
+                  const vigente = p.vigente; // la calcula el backend
                   return (
                     <tr key={p.id} className="hover:bg-white/3 transition-colors">
                       <td className="px-4 py-3">

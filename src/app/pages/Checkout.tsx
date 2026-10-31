@@ -3,8 +3,7 @@ import { Link } from 'react-router';
 import { CreditCard, Truck, CheckCircle2 } from 'lucide-react';
 import { useCart, formatPrecio } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { usePromociones } from '../context/PromocionesContext';
-import { mejorDescuento, calcularPrecioFinal } from '../lib/promotions';
+import { usePrecioDe } from '../hooks/usePrecio';
 import { submitCheckout, type MetodoPago, type OrderResponse } from '../lib/checkout';
 import { Field, FieldArea } from '../components/ds/Field';
 import { FormError } from '../components/ds/FormError';
@@ -12,10 +11,10 @@ import { Button } from '../components/ds/Button';
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user, autenticado } = useAuth();
-  const { promociones } = usePromociones();
+  const { user } = useAuth();
+  const precioDe = usePrecioDe();
   const precioUnitarioDe = (producto: (typeof items)[number]['producto']) =>
-    calcularPrecioFinal(producto.precio, mejorDescuento(promociones, producto, autenticado));
+    precioDe(producto).precioFinal;
 
   const [form, setForm] = useState({
     nombreCompleto: user?.nombre ?? '',

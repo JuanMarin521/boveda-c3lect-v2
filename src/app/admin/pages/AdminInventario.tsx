@@ -1,24 +1,19 @@
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { api } from '../../lib/api';
+import { inventarioApi, type ItemInventario } from '../../api/inventario';
 import { formatPrecio as COP } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 
-interface Item {
-  id: string; marca: string | null; modelo: string; stock: number; costoUnitario: number;
-  categoria: string; capitalItem: number;
-}
 
 export default function AdminInventario() {
   const [filtro, setFiltro] = useState('');
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState('');
 
-  const inventarioQuery = useApiQuery<Item[]>(async (signal) => {
-    const { data } = await api.get<Item[]>('/inventario', { signal });
-    return data;
+  const inventarioQuery = useApiQuery<ItemInventario[]>(async (signal) => {
+    return inventarioApi.listar(signal);
   }, []);
   useRefetchOnFocus(inventarioQuery.refetch);
   const items = inventarioQuery.data ?? [];
@@ -28,7 +23,7 @@ export default function AdminInventario() {
     setSeeding(true);
     setSeedMsg('');
     try {
-      const { data } = await api.post<{ seeded: number }>('/inventario/seed');
+      const data = await inventarioApi.recalcular();
       setSeedMsg(`${data.seeded} modelos importados desde compras históricas.`);
       inventarioQuery.refetch();
     } catch {

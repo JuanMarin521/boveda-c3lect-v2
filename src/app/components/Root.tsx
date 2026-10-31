@@ -8,7 +8,6 @@ import OfflineBanner from "./OfflineBanner";
 import { useMetaPixelRouteTracking } from "../hooks/useMetaPixelRouteTracking";
 import { CartProvider } from "../context/CartContext";
 import { ProductosProvider } from "../context/ProductosContext";
-import { PromocionesProvider } from "../context/PromocionesContext";
 
 export default function Root() {
   const location = useLocation();
@@ -16,9 +15,8 @@ export default function Root() {
   // la navegación de una SPA.
   useMetaPixelRouteTracking();
   return (
-    <PromocionesProvider>
-    <CartProvider>
-      <ProductosProvider>
+    <ProductosProvider>
+      <CartProvider>
         <div className="min-h-screen flex flex-col bg-[#0A0A0A]">
           <OfflineBanner />
           <ScrollRestoration />
@@ -53,8 +51,7 @@ export default function Root() {
           <Footer />
           <CartDrawer />
         </div>
-      </ProductosProvider>
-    </CartProvider>
-    </PromocionesProvider>
+      </CartProvider>
+    </ProductosProvider>
   );
 }

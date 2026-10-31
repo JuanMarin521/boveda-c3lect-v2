@@ -4,71 +4,13 @@ import {
   DollarSign, BarChart2, Clock,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { api } from '../../lib/api';
+import { metricsApi, type Financiero, type Resumen } from '../../api/metrics';
+import type { Venta } from '../../api/ventas';
+import { ESTADO_PEDIDO } from '../estado-pedido';
+import { ESTADO_VENTA } from '../ventas/venta-form';
 import { formatPrecio as COP, formatFecha } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
-
-const ESTADO_VENTA: Record<string, { label: string; color: string }> = {
-  Pagado:         { label: 'Pagado',        color: '#22C55E' },
-  Abonado:        { label: 'Abonado',       color: '#EAB308' },
-  Pendiente:      { label: 'Pendiente',     color: '#EF4444' },
-  'Uso Personal': { label: 'Uso Personal',  color: '#6B7280' },
-};
-
-const ESTADO_PEDIDO: Record<string, { label: string; color: string }> = {
-  PENDIENTE:  { label: 'Pendiente',  color: '#EAB308' },
-  CONFIRMADO: { label: 'Confirmado', color: '#3B82F6' },
-  EN_CAMINO:  { label: 'En camino',  color: '#F97316' },
-  ENTREGADO:  { label: 'Entregado',  color: '#22C55E' },
-  CANCELADO:  { label: 'Cancelado',  color: '#EF4444' },
-};
-
-interface HistoricalSale {
-  id: string; fecha: string; cliente: string; modelo: string;
-  precioVenta: number; estado: string;
-}
-
-interface PendienteVenta {
-  id: string; fecha: string; cliente: string; modelo: string;
-  abono: number; saldoPendiente: number; estado: string;
-}
-
-interface Order {
-  id: string; orderNumber: string; status: string; total: number;
-  shippingInfo: { nombreCompleto: string } | null;
-  user: { nombre: string } | null;
-}
-
-interface Summary {
-  totalVendido: number;
-  ventasMes: number;
-  ventasMesAnterior: number;
-  pedidosActivos: number;
-  totalPedidosHistoricos: number;
-  productosDisponibles: number;
-  clientesRegistrados: number;
-  totalClientesHistoricos: number;
-  totalCompras: number;
-  totalGastos: number;
-  capitalInventario: number;
-  gananciaNeta: number;
-  pendienteCobro: number;
-  ultimosPedidos: Order[];
-  ultimasVentas: HistoricalSale[];
-  ventasPorCategoria: { reloj: number; perfume: number; accesorio: number };
-  topProductos: { modelo: string; cantidad: number; total: number }[];
-}
-
-interface Financial {
-  totalVendido: number;
-  gananciaNetaVentas: number;
-  pendienteCobro: number;
-  totalCompras: number;
-  capitalInventario: number;
-  totalGastos: number;
-  gananciaNeta: number;
-}
 
 function StatCard({
   label, value, icon: Icon, sub, badge,
@@ -107,18 +49,15 @@ function Badge({ estado }: { estado: string }) {
 const DONUT_COLORS = { reloj: '#C9A84C', perfume: '#FFFFFF', accesorio: '#555555' };
 
 export default function AdminDashboard() {
-  const dashboardQuery = useApiQuery<{ summary: Summary; financial: Financial; pendientes: PendienteVenta[] }>(
+  const dashboardQuery = useApiQuery<{ summary: Resumen; financial: Financiero; pendientes: Venta[] }>(
     async (signal) => {
       try {
         const [s, f, p] = await Promise.all([
-          api.get<Summary>('/metrics/summary', { signal }),
-          api.get<Financial>('/metrics/financial', { signal }),
-          api.get<{ data: PendienteVenta[] }>('/metrics/sales', {
-            params: { estado: 'Pendiente,Abonado', limit: '200', page: '1' },
-            signal,
-          }),
+          metricsApi.resumen(signal),
+          metricsApi.financiero(signal),
+          metricsApi.ventas({ estado: 'Pendiente,Abonado', limit: 200, page: 1 }, signal),
         ]);
-        return { summary: s.data, financial: f.data, pendientes: p.data.data };
+        return { summary: s, financial: f, pendientes: p.data };
       } catch (err: any) {
         console.error('[Dashboard] Error cargando métricas:', err?.response?.status, err?.response?.data ?? err?.message);
         throw new Error(`Error ${err?.response?.status ?? 'de red'}: No se pudo cargar el dashboard.`);

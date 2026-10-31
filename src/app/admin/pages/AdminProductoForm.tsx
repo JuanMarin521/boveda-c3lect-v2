@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { api } from '../../lib/api';
+import { productsApi, type DatosProducto } from '../../api/products';
 import { useApiQuery } from '../../hooks/useApiQuery';
 
 interface ProductoForm {
@@ -96,19 +96,19 @@ export default function AdminProductoForm() {
   const productoQuery = useApiQuery<ProductoForm | null>(
     async (signal) => {
       if (!isEdit) return null;
-      const { data }: { data: Record<string, unknown> } = await api.get(`/products/${id}`, { signal });
+      const data = await productsApi.obtener(id!, signal);
       return {
         id: String(data.id ?? ''),
         nombre: String(data.nombre ?? ''),
         estilo: String(data.estilo ?? ''),
         display: String(data.display ?? ''),
-        cat: String(data.cat ?? 'reloj'),
+        cat: data.cat ?? 'reloj',
         marca: String(data.marca ?? ''),
         genero: String(data.genero ?? ''),
         precio: String(data.precio ?? ''),
         disponible: Boolean(data.disponible ?? true),
         destacado: Boolean(data.destacado ?? false),
-        imgsRaw: Array.isArray(data.imgs) ? (data.imgs as string[]).join(', ') : '',
+        imgsRaw: data.imgs.join(', '),
         specMovimiento: String(data.specMovimiento ?? ''),
         specDimensiones: String(data.specDimensiones ?? ''),
         specCaja: String(data.specCaja ?? ''),
@@ -169,11 +169,11 @@ export default function AdminProductoForm() {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const payload: Record<string, unknown> = {
+    const payload: DatosProducto = {
       nombre: form.nombre,
       estilo: form.estilo,
       display: form.display || `${form.nombre}${form.estilo ? ' — ' + form.estilo : ''}`,
-      cat: form.cat,
+      cat: form.cat as DatosProducto['cat'],
       precio: Number(form.precio),
       disponible: form.disponible,
       destacado: form.destacado,
@@ -205,10 +205,9 @@ export default function AdminProductoForm() {
 
     try {
       if (isEdit) {
-        await api.patch(`/products/${id}`, payload);
+        await productsApi.actualizar(id!, payload);
       } else {
-        payload.id = form.id;
-        await api.post('/products', payload);
+        await productsApi.crear({ ...payload, id: form.id });
       }
       navigate(volverA);
     } catch (err: unknown) {

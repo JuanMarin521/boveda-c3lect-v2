@@ -1,20 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Pencil, Check, X } from 'lucide-react';
-import { api } from '../../lib/api';
+import { preciosApi, type Precio } from '../../api/precios';
+import { inventarioApi, type ItemInventario } from '../../api/inventario';
+import { marcasApi } from '../../api/marcas';
 import { formatPrecio as COP } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
 
-interface Precio {
-  id: string; marca: string; modelo: string; costoUnitario: number; costoAdicional: number;
-  costoTotal: number; precioPublico: number | null; precioCierre: number | null;
-  gananciaMinima: number | null;
-}
-interface InvItem { marca: string | null; modelo: string }
 
 const EMPTY_FORM = {
-  marca: '', modelo: '', costoUnitario: '', costoAdicional: '25028',
+  marca: '', modelo: '', costoUnitario: '', costoAdicional: '',
   precioPublico: '', precioCierre: '',
 };
 
@@ -27,22 +23,31 @@ export default function AdminPrecios() {
   const [editForm, setEditForm] = useState<Record<string, string>>({});
 
   const preciosQuery = useApiQuery<Precio[]>(async (signal) => {
-    const { data } = await api.get<Precio[]>('/precios', { signal });
-    return data;
+    return preciosApi.listar(signal);
   }, []);
   useRefetchOnFocus(preciosQuery.refetch);
   const items = preciosQuery.data ?? [];
   const cargando = preciosQuery.loading;
 
+  // El costo adicional por defecto es regla de precios (backend): el
+  // formulario solo lo prellena con lo que el backend informa.
+  const defaultsQuery = useApiQuery((signal) => preciosApi.valoresPorDefecto(signal), []);
+  const costoAdicionalPorDefecto = defaultsQuery.data
+    ? String(defaultsQuery.data.costoAdicional)
+    : '';
+  useEffect(() => {
+    if (costoAdicionalPorDefecto) {
+      setForm(f => (f.costoAdicional ? f : { ...f, costoAdicional: costoAdicionalPorDefecto }));
+    }
+  }, [costoAdicionalPorDefecto]);
+
   const marcasQuery = useApiQuery<string[]>(async (signal) => {
-    const { data } = await api.get<string[]>('/marcas', { signal });
-    return data;
+    return marcasApi.listar(signal);
   }, []);
   const marcas = marcasQuery.data ?? [];
 
-  const inventarioQuery = useApiQuery<InvItem[]>(async (signal) => {
-    const { data } = await api.get<InvItem[]>('/inventario', { signal });
-    return data;
+  const inventarioQuery = useApiQuery<ItemInventario[]>(async (signal) => {
+    return inventarioApi.listar(signal);
   }, []);
   const inventarioItems = inventarioQuery.data ?? [];
 
@@ -86,16 +91,16 @@ export default function AdminPrecios() {
     setFormError('');
     setGuardando(true);
     try {
-      await api.post('/precios', {
+      await preciosApi.crear({
         marca: form.marca,
         modelo: form.modelo,
         costoUnitario: Number(form.costoUnitario),
-        costoAdicional: Number(form.costoAdicional),
+        costoAdicional: form.costoAdicional ? Number(form.costoAdicional) : undefined,
         precioPublico: form.precioPublico ? Number(form.precioPublico) : undefined,
         precioCierre: form.precioCierre ? Number(form.precioCierre) : undefined,
       });
       setShowForm(false);
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, costoAdicional: costoAdicionalPorDefecto });
       setModoMarcaNueva(false);
       setModoModeloNuevo(false);
       preciosQuery.refetch();
@@ -120,7 +125,7 @@ export default function AdminPrecios() {
     setGuardando(true);
     setEditError('');
     try {
-      await api.put(`/precios/${id}`, {
+      await preciosApi.actualizar(id, {
         costoUnitario: editForm.costoUnitario ? Number(editForm.costoUnitario) : undefined,
         costoAdicional: editForm.costoAdicional ? Number(editForm.costoAdicional) : undefined,
         precioPublico: editForm.precioPublico ? Number(editForm.precioPublico) : undefined,

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { api } from '../../lib/api';
+import { productsApi, type ProductoAdmin } from '../../api/products';
+import { promotionsApi, type AlcancePromocion, type DatosPromocion } from '../../api/promotions';
 import { useApiQuery } from '../../hooks/useApiQuery';
-import type { Producto } from '../../data/types';
 
-type Alcance = 'PRODUCTO' | 'CATEGORIA' | 'MARCA' | 'TODOS';
+type Alcance = AlcancePromocion;
 
 interface PromocionForm {
   nombre: string;
@@ -73,28 +73,28 @@ export default function AdminPromocionForm() {
   const [errores, setErrores] = useState<Partial<Record<keyof PromocionForm, string>>>({});
   const [errorGlobal, setErrorGlobal] = useState('');
 
-  const productosQuery = useApiQuery<Producto[]>(async (signal) => {
-    const { data } = await api.get<Producto[]>('/products', { signal });
-    return Array.isArray(data) ? data : [];
-  }, []);
+  const productosQuery = useApiQuery<ProductoAdmin[]>(
+    (signal) => productsApi.listar({}, signal),
+    [],
+  );
   const productos = productosQuery.data ?? [];
 
   const promocionQuery = useApiQuery<PromocionForm | null>(
     async (signal) => {
       if (!isEdit) return null;
-      const { data }: { data: Record<string, unknown> } = await api.get(`/promotions/${id}`, { signal });
+      const data = await promotionsApi.obtener(id!, signal);
       return {
         nombre: String(data.nombre ?? ''),
-        alcance: (data.alcance as Alcance) ?? 'TODOS',
+        alcance: data.alcance,
         porcentaje: String(data.porcentaje ?? ''),
-        productosIncluidos: Array.isArray(data.productosIncluidos) ? data.productosIncluidos as string[] : [],
+        productosIncluidos: data.productosIncluidos,
         categoria: String(data.categoria ?? ''),
         marca: String(data.marca ?? ''),
-        excluidos: Array.isArray(data.excluidos) ? data.excluidos as string[] : [],
-        soloCuentaActiva: Boolean(data.soloCuentaActiva ?? false),
-        fechaInicio: toDatetimeLocal(String(data.fechaInicio)),
-        fechaFin: toDatetimeLocal(String(data.fechaFin)),
-        activo: Boolean(data.activo ?? true),
+        excluidos: data.excluidos,
+        soloCuentaActiva: data.soloCuentaActiva,
+        fechaInicio: toDatetimeLocal(data.fechaInicio),
+        fechaFin: toDatetimeLocal(data.fechaFin),
+        activo: data.activo,
       };
     },
     [id, isEdit],
@@ -146,7 +146,7 @@ export default function AdminPromocionForm() {
     setGuardando(true);
     setErrorGlobal('');
 
-    const payload: Record<string, unknown> = {
+    const payload: DatosPromocion = {
       nombre: form.nombre,
       alcance: form.alcance,
       porcentaje: Number(form.porcentaje),
@@ -162,9 +162,9 @@ export default function AdminPromocionForm() {
 
     try {
       if (isEdit) {
-        await api.patch(`/promotions/${id}`, payload);
+        await promotionsApi.actualizar(id!, payload);
       } else {
-        await api.post('/promotions', payload);
+        await promotionsApi.crear(payload);
       }
       navigate(volverA);
     } catch (err: unknown) {

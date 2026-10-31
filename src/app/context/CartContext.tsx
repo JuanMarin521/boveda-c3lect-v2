@@ -1,8 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, type ReactNode } from "react";
 import type { Producto } from "../data/types";
-import { usePromociones } from "./PromocionesContext";
-import { useAuth } from "./AuthContext";
-import { mejorDescuento, calcularPrecioFinal } from "../lib/promotions";
+import { usePrecioDe } from "../hooks/usePrecio";
 
 export interface CartItem {
   producto: Producto;
@@ -104,8 +102,7 @@ function loadCart(): CartItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: loadCart(), isOpen: false });
-  const { promociones } = usePromociones();
-  const { autenticado } = useAuth();
+  const precioDe = usePrecioDe();
 
   useEffect(() => {
     try {
@@ -114,13 +111,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state.items]);
 
   const totalItems = state.items.reduce((acc, i) => acc + i.cantidad, 0);
-  // Precio de línea recalculado en cada render (nunca guardado en localStorage)
-  // para reflejar promociones que cambien/expiren mientras el producto sigue
-  // en el carrito. El cobro real siempre se recalcula server-side igual.
-  const totalPrice = state.items.reduce((acc, i) => {
-    const descuento = mejorDescuento(promociones, i.producto, autenticado);
-    return acc + calcularPrecioFinal(i.producto.precio, descuento) * i.cantidad;
-  }, 0);
+  // Precio de línea tomado del catálogo vigente en cada render (nunca del
+  // guardado en localStorage), para reflejar promociones que cambien o
+  // expiren mientras el producto sigue en el carrito. El cobro real siempre
+  // lo recalcula el backend.
+  const totalPrice = state.items.reduce(
+    (acc, i) => acc + precioDe(i.producto).precioFinal * i.cantidad,
+    0,
+  );
 
   return (
     <CartContext.Provider

@@ -2,21 +2,9 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { api } from '../../lib/api';
+import { auditApi, type RegistroAuditoria } from '../../api/audit';
+import type { Paginado } from '../../api/common';
 import { useApiQuery } from '../../hooks/useApiQuery';
-
-interface AuditEntry {
-  id: string;
-  accion: string;
-  entidad: string;
-  entidadId: string;
-  descripcion: string;
-  userId?: string;
-  userName?: string;
-  createdAt: string;
-}
-
-interface Paginado { data: AuditEntry[]; meta: { total: number; page: number; totalPages: number } }
 
 const ACCION_CONFIG: Record<string, { label: string; color: string }> = {
   CREAR:       { label: 'Crear',       color: '#22C55E' },
@@ -29,21 +17,16 @@ const ACCION_CONFIG: Record<string, { label: string; color: string }> = {
 const ACCIONES = ['', 'CREAR', 'EDITAR', 'ELIMINAR', 'ESTADO', 'RECALCULAR'];
 
 export default function AdminAuditoria() {
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [entries, setEntries] = useState<RegistroAuditoria[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 1 });
   const [page, setPage] = useState(1);
   const [accion, setAccion] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
-  const auditQuery = useApiQuery<Paginado>(
+  const auditQuery = useApiQuery<Paginado<RegistroAuditoria>>(
     async (signal) => {
-      const params: Record<string, string> = { page: String(page), limit: '30' };
-      if (accion) params.accion = accion;
-      if (fechaDesde) params.fechaDesde = fechaDesde;
-      if (fechaHasta) params.fechaHasta = fechaHasta;
-      const { data } = await api.get<Paginado>('/audit', { params, signal });
-      return data;
+      return auditApi.listar({ page, limit: 30, accion, fechaDesde, fechaHasta }, signal);
     },
     [page, accion, fechaDesde, fechaHasta],
   );

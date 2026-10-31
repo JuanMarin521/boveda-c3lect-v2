@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
-import { api } from '../../lib/api';
+import { gastosApi, type Gasto } from '../../api/gastos';
 import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
-interface Gasto {
-  id: string; fecha: string; concepto: string; monto: number;
-  responsable: string | null; estado: string | null;
-}
 
 const EMPTY_FORM = {
   fecha: new Date().toISOString().split('T')[0],
@@ -25,8 +21,7 @@ export default function AdminGastos() {
   const [eliminando, setEliminando] = useState<string | null>(null);
 
   const gastosQuery = useApiQuery<Gasto[]>(async (signal) => {
-    const { data } = await api.get<Gasto[]>('/gastos', { signal });
-    return data;
+    return gastosApi.listar(signal);
   }, []);
   useRefetchOnFocus(gastosQuery.refetch);
   const gastos = gastosQuery.data ?? [];
@@ -39,7 +34,7 @@ export default function AdminGastos() {
     setFormError('');
     setGuardando(true);
     try {
-      await api.post('/gastos', {
+      await gastosApi.crear({
         fecha: form.fecha, concepto: form.concepto,
         monto: Number(form.monto),
         responsable: form.responsable || undefined,
@@ -61,7 +56,7 @@ export default function AdminGastos() {
   const handleEditSave = async (id: string) => {
     setGuardando(true);
     try {
-      await api.put(`/gastos/${id}`, { ...editForm, monto: Number(editForm.monto) });
+      await gastosApi.actualizar(id, { ...editForm, monto: Number(editForm.monto) });
       setEditId(null);
       gastosQuery.refetch();
     } finally { setGuardando(false); }
@@ -70,7 +65,7 @@ export default function AdminGastos() {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este gasto?')) return;
     setEliminando(id);
-    try { await api.delete(`/gastos/${id}`); gastosQuery.refetch(); }
+    try { await gastosApi.eliminar(id); gastosQuery.refetch(); }
     finally { setEliminando(null); }
   };
 

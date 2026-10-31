@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Pencil, Plus, X } from 'lucide-react';
-import { api } from '../../lib/api';
+import { comprasApi, type Compra } from '../../api/compras';
+import type { Paginado } from '../../api/common';
+import { inventarioApi, type ItemInventario } from '../../api/inventario';
+import { marcasApi } from '../../api/marcas';
+import { metricsApi, type Financiero } from '../../api/metrics';
 import { formatPrecio as COP, formatFecha as fmtFecha } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useMarcaModeloToggle, NUEVA_MARCA, NUEVO_MODELO } from '../../hooks/useMarcaModeloToggle';
@@ -8,13 +12,6 @@ import { useRefetchOnFocus } from '../../hooks/useRefetchOnFocus';
 
 const CATEGORIAS = ['Reloj', 'Perfume', 'Accesorio'];
 
-interface Compra {
-  id: string; fecha: string; marca: string; modelo: string; cantidad: number;
-  costoUnitario: number; costoTotal: number; categoria: string;
-}
-interface Paginado { data: Compra[]; meta: { total: number; page: number; limit: number; totalPages: number } }
-interface Resumen { totalCompras: number; comprasPorCategoria: Record<string, number> }
-interface InvItem { marca: string | null; modelo: string }
 
 const EMPTY_FORM = {
   fecha: new Date().toISOString().split('T')[0],
@@ -143,14 +140,13 @@ export default function AdminCompras() {
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editError, setEditError] = useState('');
 
-  const comprasQuery = useApiQuery<Paginado>(
+  const comprasQuery = useApiQuery<Paginado<Compra>>(
     async (signal) => {
       const params: Record<string, string> = { page: String(page), limit: '20' };
       if (filtroCategoria) params.categoria = filtroCategoria;
       if (desde) params.desde = desde;
       if (hasta) params.hasta = hasta;
-      const { data } = await api.get<Paginado>('/metrics/purchases', { params, signal });
-      return data;
+      return metricsApi.compras(params, signal);
     },
     [page, filtroCategoria, desde, hasta],
   );
@@ -172,9 +168,8 @@ export default function AdminCompras() {
   // que puede no existir para el nuevo filtro.
   useEffect(() => { setPage(1); }, [filtroCategoria, desde, hasta]);
 
-  const resumenQuery = useApiQuery<Resumen>(async (signal) => {
-    const { data } = await api.get<Resumen>('/metrics/financial', { signal });
-    return data;
+  const resumenQuery = useApiQuery<Financiero>(async (signal) => {
+    return metricsApi.financiero(signal);
   }, []);
   const resumen = resumenQuery.data ?? null;
 
@@ -184,14 +179,12 @@ export default function AdminCompras() {
   }, [comprasQuery.refetch, resumenQuery.refetch]));
 
   const marcasQuery = useApiQuery<string[]>(async (signal) => {
-    const { data } = await api.get<string[]>('/marcas', { signal });
-    return data;
+    return marcasApi.listar(signal);
   }, []);
   const marcas = marcasQuery.data ?? [];
 
-  const inventarioQuery = useApiQuery<InvItem[]>(async (signal) => {
-    const { data } = await api.get<InvItem[]>('/inventario', { signal });
-    return data;
+  const inventarioQuery = useApiQuery<ItemInventario[]>(async (signal) => {
+    return inventarioApi.listar(signal);
   }, []);
   const inventarioItems = inventarioQuery.data ?? [];
 
@@ -218,7 +211,7 @@ export default function AdminCompras() {
     setFormError('');
     setGuardando(true);
     try {
-      await api.post('/compras', {
+      await comprasApi.crear({
         fecha: form.fecha, marca: form.marca, modelo: form.modelo,
         cantidad: Number(form.cantidad),
         costoUnitario: Number(form.costoUnitario),
@@ -250,10 +243,11 @@ export default function AdminCompras() {
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editId) return;
     setGuardando(true);
     setEditError('');
     try {
-      await api.put(`/compras/${editId}`, {
+      await comprasApi.actualizar(editId, {
         fecha:         editForm.fecha,
         marca:         editForm.marca,
         modelo:        editForm.modelo,

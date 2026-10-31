@@ -2,45 +2,16 @@ import { Link, useParams } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { api } from '../../lib/api';
+import { usersApi, type ClienteDetalle } from '../../api/users';
+import { ESTADO_PEDIDO } from '../estado-pedido';
 import { formatPrecio as COP } from '../../lib/format';
 import { useApiQuery } from '../../hooks/useApiQuery';
 
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  PENDIENTE:  { label: 'Pendiente',  color: '#EAB308' },
-  CONFIRMADO: { label: 'Confirmado', color: '#3B82F6' },
-  EN_CAMINO:  { label: 'En camino',  color: '#F97316' },
-  ENTREGADO:  { label: 'Entregado',  color: '#22C55E' },
-  CANCELADO:  { label: 'Cancelado',  color: '#EF4444' },
-};
-
-interface ClienteDetalle {
-  id: string;
-  nombre: string;
-  email: string;
-  telefono?: string;
-  ciudad?: string;
-  departamento?: string;
-  direccion?: string;
-  rol: string;
-  createdAt: string;
-  totalGastado: number;
-  orders: {
-    id: string;
-    orderNumber: string;
-    status: string;
-    total: number;
-    createdAt: string;
-    items: { nombre: string; cantidad: number }[];
-  }[];
-}
-
 export default function AdminClienteDetalle() {
   const { id } = useParams<{ id: string }>();
   const clienteQuery = useApiQuery<ClienteDetalle>(async (signal) => {
-    const { data } = await api.get<ClienteDetalle>(`/users/${id}`, { signal });
-    return data;
+    return usersApi.obtener(id!, signal);
   }, [id]);
   const cliente = clienteQuery.data ?? null;
   const cargando = clienteQuery.loading;
@@ -129,7 +100,7 @@ export default function AdminClienteDetalle() {
               <p className="px-5 py-8 text-sm text-white/30 text-center">Sin pedidos</p>
             )}
             {cliente.orders.map((o) => {
-              const st = STATUS_CONFIG[o.status] ?? { label: o.status, color: '#fff' };
+              const st = ESTADO_PEDIDO[o.status] ?? { label: o.status, color: '#fff' };
               return (
                 <Link
                   key={o.id}
