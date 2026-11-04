@@ -31,7 +31,7 @@ El catálogo se divide en dos líneas: **Máquinas y Joyas** (relojería) y **Fi
 
 - Catálogo con filtros por categoría, marca, género y rango de precio
 - Ficha de producto con especificaciones técnicas completas de relojería (movimiento, caja, correa, cristal, resistencia al agua, reserva de marcha) y pirámide olfativa para perfumería (notas de salida, corazón y fondo)
-- Stock en vivo consultado a la API — el carrito no permite pedir más de lo disponible
+- Stock en vivo desde la base de datos — el carrito no permite pedir más de lo disponible
 - Checkout para invitados y para usuarios registrados
 - Pago en línea vía MercadoPago
 - Interfaz responsive con animaciones de Motion
@@ -52,22 +52,27 @@ El catálogo se divide en dos líneas: **Máquinas y Joyas** (relojería) y **Fi
 | Iconos | Lucide React |
 | HTTP | Axios |
 | Datos | Supabase + [C3LECT API](https://github.com/cetremore26/c3lect-api) |
-| Deploy | GitHub Pages |
+| Deploy | Cloudflare Pages |
 
 ---
 
 ## Arquitectura
 
 ```
-Bóveda (React SPA)
+Bóveda (React SPA · Cloudflare Pages · c3lect.com)
       │
-      ├── Supabase ──────────► almacenamiento de imágenes de producto
+      ├── Supabase ──────────► catálogo público (vista catalogo_publico: productos, stock y precio)
       │
-      └── C3LECT API ────────► catálogo · stock · pedidos · pagos
+      └── C3LECT API ────────► login · cuenta · pedidos · pagos · panel admin
               │
-              ├── PostgreSQL (Prisma)
-              └── MercadoPago
+              ├── PostgreSQL en Supabase (Prisma)
+              ├── MercadoPago
+              └── Resend (correos)
 ```
+
+La tienda lee el catálogo directo de la vista `catalogo_publico` de Supabase, así no depende de que la API esté despierta. El rol público (`anon`) solo puede leer esa vista, nunca las tablas.
+
+Todo lo demás pasa por `src/app/api/`: un archivo por módulo del backend, y el único lugar que habla con la API. `scripts/check-architecture.mjs` (corre en `pnpm typecheck`) hace cumplir esa regla.
 
 ---
 
@@ -87,6 +92,19 @@ pnpm build               # build de producción
 | `VITE_SUPABASE_URL` | URL del proyecto Supabase |
 | `VITE_SUPABASE_ANON_KEY` | Clave pública de Supabase |
 | `VITE_API_URL` | URL base de la C3LECT API |
+| `VITE_META_PIXEL_ID` | ID del píxel de Meta (opcional) |
+
+---
+
+## Despliegue
+
+| Pieza | Dónde | Cómo |
+|---|---|---|
+| Frontend | Cloudflare Pages · [c3lect.com](https://c3lect.com/) | Cada push a `main` se compila con pnpm y se publica solo |
+| API | Render | Cada push a `main` del repo de la API se publica solo |
+| Base de datos | Supabase (PostgreSQL) | Migraciones con Prisma desde el repo de la API |
+
+Las cabeceras de seguridad (CSP, X-Frame-Options…) están en `public/_headers` y las reglas de la SPA en `public/_redirects`.
 
 ---
 
