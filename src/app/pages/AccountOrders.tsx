@@ -10,13 +10,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, Package } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, Star } from "lucide-react";
 import { useProductos } from "../context/ProductosContext";
 import { ordersApi, type EstadoPedido, type Pedido } from "../api/orders";
 import type { PaginaMeta } from "../api/common";
 import { formatPrecio, formatFecha } from "../lib/format";
 import { AvisoError } from "../components/AvisoError";
 import { Button } from "../components/ds/Button";
+import { usePendientesDeResena } from "../hooks/useResenas";
 
 // Presentación propia de la tienda (el panel admin usa colores en vez de dorado).
 const ESTADO: Record<EstadoPedido, { label: string; dorado: boolean }> = {
@@ -31,6 +32,7 @@ const LIMIT = 10;
 
 export default function AccountOrders() {
   const { productos } = useProductos();
+  const pendientesDeResena = usePendientesDeResena(true);
 
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [meta, setMeta] = useState<PaginaMeta | null>(null);
@@ -97,54 +99,62 @@ export default function AccountOrders() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-6 py-8"
+                className="py-8"
               >
-                <div className="w-16 h-20 md:w-24 md:h-[124px] shrink-0 bg-[#141414] overflow-hidden">
-                  {pedido.items[0] && imagenPorProducto.get(pedido.items[0].productId) && (
-                    <img
-                      src={import.meta.env.BASE_URL + imagenPorProducto.get(pedido.items[0].productId)}
-                      alt={pedido.items[0].nombre}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] uppercase text-white/35 mb-1" style={{ letterSpacing: "0.24em" }}>
-                    {pedido.orderNumber} · {formatFecha(pedido.createdAt)}
-                  </p>
-                  <h3
-                    className="text-xl md:text-3xl mb-1 text-white truncate"
-                    style={{ fontFamily: "var(--font-serif)", fontWeight: 300 }}
-                  >
-                    {pedido.items[0]?.nombre}
-                    {pedido.items.length > 1 && (
-                      <span className="text-white/40 text-base md:text-lg ml-2">
-                        + {pedido.items.length - 1} más
-                      </span>
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-20 md:w-24 md:h-[124px] shrink-0 bg-[#141414] overflow-hidden">
+                    {pedido.items[0] && imagenPorProducto.get(pedido.items[0].productId) && (
+                      <img
+                        src={import.meta.env.BASE_URL + imagenPorProducto.get(pedido.items[0].productId)}
+                        alt={pedido.items[0].nombre}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
                     )}
-                  </h3>
-                  <p className="text-white/50 text-sm">
-                    {pedido.items.reduce((n, i) => n + i.cantidad, 0)} artículo(s)
-                  </p>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] uppercase text-white/35 mb-1" style={{ letterSpacing: "0.24em" }}>
+                      {pedido.orderNumber} · {formatFecha(pedido.createdAt)}
+                    </p>
+                    <h3
+                      className="text-xl md:text-3xl mb-1 text-white truncate"
+                      style={{ fontFamily: "var(--font-serif)", fontWeight: 300 }}
+                    >
+                      {pedido.items[0]?.nombre}
+                      {pedido.items.length > 1 && (
+                        <span className="text-white/40 text-base md:text-lg ml-2">
+                          + {pedido.items.length - 1} más
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-white/50 text-sm">
+                      {pedido.items.reduce((n, i) => n + i.cantidad, 0)} artículo(s)
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 text-right flex flex-col items-end gap-3">
+                    <p style={{ fontFamily: "var(--font-serif)", fontSize: 24, color: "#C9A84C" }}>
+                      {formatPrecio(pedido.total)}
+                    </p>
+                    <span
+                      className="text-[10px] uppercase px-3 py-1 border whitespace-nowrap"
+                      style={{
+                        letterSpacing: "0.2em",
+                        color: ESTADO[pedido.status].dorado ? "#C9A84C" : "rgba(255,255,255,0.5)",
+                        borderColor: ESTADO[pedido.status].dorado ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.15)",
+                      }}
+                    >
+                      {ESTADO[pedido.status].label}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="shrink-0 text-right flex flex-col items-end gap-3">
-                  <p style={{ fontFamily: "var(--font-serif)", fontSize: 24, color: "#C9A84C" }}>
-                    {formatPrecio(pedido.total)}
-                  </p>
-                  <span
-                    className="text-[10px] uppercase px-3 py-1 border whitespace-nowrap"
-                    style={{
-                      letterSpacing: "0.2em",
-                      color: ESTADO[pedido.status].dorado ? "#C9A84C" : "rgba(255,255,255,0.5)",
-                      borderColor: ESTADO[pedido.status].dorado ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.15)",
-                    }}
-                  >
-                    {ESTADO[pedido.status].label}
-                  </span>
-                </div>
+                {pedido.status === "ENTREGADO" && (
+                  <PorResenar
+                    items={pedido.items.filter((it) => pendientesDeResena.ids.has(it.productId))}
+                  />
+                )}
               </motion.div>
             ))}
           </div>
@@ -172,6 +182,29 @@ export default function AccountOrders() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// Invitación a reseñar lo recibido que aún no tiene reseña del cliente.
+function PorResenar({ items }: { items: { productId: string; nombre: string }[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-6 pt-5 border-t border-white/5 flex flex-wrap items-center gap-x-6 gap-y-2">
+      <p className="text-[10px] uppercase text-white/35" style={{ letterSpacing: "0.24em" }}>
+        ¿Qué te pareció?
+      </p>
+      {items.map((it) => (
+        <Link
+          key={it.productId}
+          to={`/product/${it.productId}?resenar=1`}
+          className="inline-flex items-center gap-2 text-[11px] uppercase text-[#C9A84C] hover:text-white transition-colors"
+          style={{ letterSpacing: "0.2em" }}
+        >
+          <Star size={12} aria-hidden="true" />
+          Calificar {it.nombre}
+        </Link>
+      ))}
     </div>
   );
 }

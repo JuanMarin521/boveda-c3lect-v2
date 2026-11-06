@@ -7,9 +7,10 @@
 // ============================================================
 
 import { useEffect } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
+import { rutaDeAcceso } from "../lib/volver";
 
 const NAV_ITEMS = [
   { to: "/cuenta", label: "Pedidos", end: true },
@@ -20,10 +21,13 @@ const NAV_ITEMS = [
 export default function AccountLayout() {
   const { user, autenticado, cargando, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!cargando && !autenticado) navigate("/login");
-  }, [cargando, autenticado, navigate]);
+    if (!cargando && !autenticado) {
+      navigate(rutaDeAcceso(location.pathname + location.search), { replace: true });
+    }
+  }, [cargando, autenticado, navigate, location.pathname, location.search]);
 
   if (cargando || !autenticado) return null;
 

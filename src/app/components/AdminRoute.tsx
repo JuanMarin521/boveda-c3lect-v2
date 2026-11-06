@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { rutaDeAcceso } from '../lib/volver';
 
 export default function AdminRoute({ children }: { children: ReactNode }) {
   const { autenticado, user, cargando } = useAuth();
+  const location = useLocation();
 
   if (cargando) {
     return (
@@ -13,7 +15,7 @@ export default function AdminRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!autenticado) return <Navigate to="/login" replace />;
+  if (!autenticado) return <Navigate to={rutaDeAcceso(location.pathname + location.search)} replace />;
 
   if (user?.rol !== 'ADMIN') return <Navigate to="/catalog" replace />;
 

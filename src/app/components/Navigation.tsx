@@ -12,6 +12,7 @@ import { useProductos } from "../context/ProductosContext";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { CartBadge } from "./ds/CartBadge";
+import { rutaDeAcceso } from "../lib/volver";
 
 const NAV_HEIGHT = 64;
 
@@ -28,6 +29,7 @@ export default function Navigation() {
   const { totalItems, toggleCart } = useCart();
   const { user, autenticado, logout } = useAuth();
   const esAdmin = user?.rol === 'ADMIN';
+  const rutaLogin = rutaDeAcceso(location.pathname + location.search);
 
   useEffect(() => {
     setIsOpen(false);
@@ -120,6 +122,7 @@ export default function Navigation() {
 
   const links = [
     { to: "/catalog", label: "Catálogo" },
+    { to: "/opiniones", label: "Opiniones" },
     { to: "/about", label: "Manifiesto" },
     { to: "/contact", label: "Contacto" },
   ];
@@ -215,7 +218,7 @@ export default function Navigation() {
               </div>
             ) : (
               <Link
-                to="/login"
+                to={rutaLogin}
                 aria-label="Iniciar sesión"
                 className="p-1 text-white transition-colors hover:text-[#C9A84C]"
               >
@@ -393,7 +396,7 @@ export default function Navigation() {
                   </>
                 ) : (
                   <Link
-                    to="/login"
+                    to={rutaLogin}
                     className="text-lg tracking-wide uppercase transition-colors hover:text-[#C9A84C]"
                     style={{ fontFamily: "var(--font-serif)", color: "#FFFFFF" }}
                   >

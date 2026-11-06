@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { rutaDeAcceso } from '../lib/volver';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -18,7 +19,7 @@ function clearSessionAndRedirect() {
   sessionStorage.removeItem('refreshToken');
   sessionStorage.removeItem('authUser');
   if (window.location.pathname !== '/login') {
-    window.location.href = '/login';
+    window.location.href = rutaDeAcceso(window.location.pathname + window.location.search);
   }
 }
 
