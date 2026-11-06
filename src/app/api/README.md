@@ -13,5 +13,6 @@ Reglas (las verifica `scripts/check-architecture.mjs`, que corre en `pnpm typech
 - Aquí no hay reglas del negocio ni presentación (etiquetas, colores): solo el
   contrato HTTP.
 
-El catálogo de la tienda no pasa por aquí: se lee de la vista
-`catalogo_publico` de Supabase (ver `data/products.ts`).
+El catálogo y las reseñas publicadas no pasan por aquí: se leen de las vistas
+`catalogo_publico` y `resenas_publicas` de Supabase (ver `data/`). Escribir o
+moderar una reseña sí pasa por la API (`resenas.ts`).

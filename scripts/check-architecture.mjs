@@ -23,6 +23,10 @@ const archivos = walk(root).map((full) => {
   return { path: toPosix(relative(root, full)), content, imports };
 });
 
+// Contratos públicos de Supabase (vistas de c3lect-api). La clave anon no
+// tiene acceso a ninguna tabla, solo a estas vistas.
+const VISTAS_PUBLICAS = new Set(['catalogo_publico', 'resenas_publicas']);
+
 const reglas = [
   {
     nombre: 'El cliente HTTP (api/client) solo se usa dentro de src/app/api/',
@@ -33,14 +37,14 @@ const reglas = [
     falla: (f) => f.path !== 'api/client.ts' && f.imports.includes('axios'),
   },
   {
-    nombre: 'El cliente de Supabase solo se usa en data/ (lectura del catálogo público)',
+    nombre: 'El cliente de Supabase solo se usa en data/ (lectura de las vistas públicas)',
     falla: (f) => !f.path.startsWith('data/') && f.imports.includes('supabase'),
   },
   {
-    nombre: 'Supabase solo lee la vista catalogo_publico, nunca tablas',
+    nombre: `Supabase solo lee las vistas públicas (${[...VISTAS_PUBLICAS].join(', ')}), nunca tablas`,
     falla: (f) =>
       [...f.content.matchAll(/\.from\(\s*['"]([^'"]+)['"]/g)].some(
-        (m) => m[1] !== 'catalogo_publico',
+        (m) => !VISTAS_PUBLICAS.has(m[1]),
       ),
   },
 ];

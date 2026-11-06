@@ -19,6 +19,10 @@ import { Badge } from "../components/ds/Badge";
 import { PrecioTag } from "../components/Precio";
 import { SpecRow } from "../components/ds/SpecRow";
 import { Button } from "../components/ds/Button";
+import { useResenasDeProducto } from "../hooks/useResenas";
+import { Estrellas } from "../components/resenas/Estrellas";
+import { SeccionResenas, ID_SECCION_RESENAS } from "../components/resenas/SeccionResenas";
+import { etiquetaCantidad } from "../lib/resenas";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +34,7 @@ export default function ProductDetail() {
   const [añadido, setAñadido] = useState(false);
   const [avisado, setAvisado] = useState(false);
   const { addItem, items } = useCart();
+  const resenas = useResenasDeProducto(producto?.id);
 
   useEffect(() => {
     setImagenSeleccionada(0);
@@ -242,6 +247,19 @@ export default function ProductDetail() {
               {producto.display}
             </h1>
 
+            {resenas.resumen.total > 0 && (
+              <button
+                onClick={() => document.getElementById(ID_SECCION_RESENAS)?.scrollIntoView({ behavior: "smooth" })}
+                className="-mt-4 mb-8 self-start inline-flex items-center gap-3 text-[10px] uppercase text-white/45 hover:text-[#C9A84C] transition-colors"
+                style={{ letterSpacing: "0.2em" }}
+              >
+                <Estrellas valor={resenas.resumen.promedio} />
+                {resenas.resumen.promedio.toLocaleString("es-CO", { minimumFractionDigits: 1 })}
+                {" · "}
+                {etiquetaCantidad(resenas.resumen.total)}
+              </button>
+            )}
+
             <div
               className={`py-7 mb-8 ${stockBajo && producto.disponible ? "border px-6" : "border-t border-b border-white/12"}`}
               style={stockBajo && producto.disponible ? { borderColor: "rgba(201,168,76,0.35)" } : undefined}
@@ -363,6 +381,15 @@ export default function ProductDetail() {
           </motion.div>
         </div>
       </div>
+
+      <SeccionResenas
+        productId={producto.id}
+        resenas={resenas.resenas}
+        resumen={resenas.resumen}
+        cargando={resenas.loading}
+        error={resenas.error}
+        recargar={resenas.refetch}
+      />
 
       {/* ZOOM */}
       <AnimatePresence>

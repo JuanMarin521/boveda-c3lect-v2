@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { trackCompleteRegistration, setMetaUserData } from '../lib/metaPixel';
 import { Field } from '../components/ds/Field';
 import { FormError } from '../components/ds/FormError';
 import { Button } from '../components/ds/Button';
+import { PARAM_VOLVER, destinoSeguro, rutaDeAcceso } from '../lib/volver';
 
 interface Fuerza {
   nivel: 0 | 1 | 2 | 3;
@@ -28,6 +29,8 @@ function calcFuerza(p: string): Fuerza {
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const destino = destinoSeguro(searchParams.get(PARAM_VOLVER));
 
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
@@ -62,7 +65,7 @@ export default function Register() {
       });
       trackCompleteRegistration();
 
-      navigate('/catalog');
+      navigate(destino, { replace: true });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? 'Error al crear la cuenta');
@@ -175,7 +178,7 @@ export default function Register() {
 
         <p className="mt-8 text-center text-sm text-white/50">
           ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="text-[#C9A84C] hover:underline">
+          <Link to={rutaDeAcceso(destino)} className="text-[#C9A84C] hover:underline">
             Iniciar sesión
           </Link>
         </p>

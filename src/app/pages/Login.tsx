@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Field } from '../components/ds/Field';
 import { FormError } from '../components/ds/FormError';
 import { Button } from '../components/ds/Button';
+import { PARAM_VOLVER, destinoSeguro, rutaDeAcceso } from '../lib/volver';
 
 type Modo = 'password' | 'otp-request' | 'otp-verify';
 
 export default function Login() {
   const { login, requestOtp, loginConOtp } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const destino = destinoSeguro(searchParams.get(PARAM_VOLVER));
 
   const [modo, setModo] = useState<Modo>('password');
   const [email, setEmail] = useState('');
@@ -26,7 +29,7 @@ export default function Login() {
     setEnviando(true);
     try {
       await login(email, password);
-      navigate('/catalog');
+      navigate(destino, { replace: true });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? 'Error al iniciar sesión');
@@ -56,9 +59,9 @@ export default function Login() {
     try {
       const result = await loginConOtp(email, otpCode);
       if (result?.requiresRegistration) {
-        navigate('/register');
+        navigate(rutaDeAcceso(destino, '/register'), { replace: true });
       } else {
-        navigate('/catalog');
+        navigate(destino, { replace: true });
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -209,7 +212,7 @@ export default function Login() {
 
         <p className="mt-6 text-center text-sm text-white/50">
           ¿No tienes cuenta?{' '}
-          <Link to="/register" className="text-[#C9A84C] hover:underline">
+          <Link to={rutaDeAcceso(destino, '/register')} className="text-[#C9A84C] hover:underline">
             Crear cuenta
           </Link>
         </p>

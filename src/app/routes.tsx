@@ -37,6 +37,7 @@ const AdminInventario = lazy(() => import("./admin/pages/AdminInventario"));
 const AdminPrecios = lazy(() => import("./admin/pages/AdminPrecios"));
 const AdminPromociones = lazy(() => import("./admin/pages/AdminPromociones"));
 const AdminPromocionForm = lazy(() => import("./admin/pages/AdminPromocionForm"));
+const AdminResenas = lazy(() => import("./admin/pages/AdminResenas"));
 
 export const router = createBrowserRouter(
   [
@@ -50,6 +51,7 @@ export const router = createBrowserRouter(
         { path: "catalog/:category", lazy: lazyPage(() => import("./pages/Catalog")) },
         { path: "search", lazy: lazyPage(() => import("./pages/SearchResults")) },
         { path: "product/:id", lazy: lazyPage(() => import("./pages/ProductDetail")) },
+        { path: "opiniones", lazy: lazyPage(() => import("./pages/Opiniones")) },
         { path: "about", lazy: lazyPage(() => import("./pages/About")) },
         { path: "contact", lazy: lazyPage(() => import("./pages/Contact")) },
         { path: "login", lazy: lazyPage(() => import("./pages/Login")) },
@@ -96,6 +98,7 @@ export const router = createBrowserRouter(
             { path: "promociones", Component: AdminPromociones },
             { path: "promociones/nuevo", Component: AdminPromocionForm },
             { path: "promociones/:id", Component: AdminPromocionForm },
+            { path: "resenas", Component: AdminResenas },
           ],
         },
       ],

@@ -30,6 +30,9 @@ export default function Footer() {
               <Link to="/catalog" className="text-sm hover:text-[#C9A84C] transition-colors">
                 Catálogo
               </Link>
+              <Link to="/opiniones" className="text-sm hover:text-[#C9A84C] transition-colors">
+                Opiniones
+              </Link>
               <Link to="/about" className="text-sm hover:text-[#C9A84C] transition-colors">
                 Manifiesto
               </Link>
