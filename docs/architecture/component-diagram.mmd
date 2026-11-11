@@ -1,0 +1,35 @@
+flowchart LR
+    buyer["Comprador<br/>browser / mobile"]
+
+    subgraph spa["Bóveda C3LECT · React SPA"]
+        shell["Shell y rutas<br/>public / cuenta / checkout / admin"]
+        catalog["Catálogo y reseñas<br/>ProductosProvider · data/"]
+        session["Sesión y autorización<br/>AuthContext · AdminRoute"]
+        cart["Carrito y checkout<br/>CartContext · lib/checkout"]
+        http["Cliente HTTP modular<br/>api/client.ts + api/*.ts"]
+    end
+
+    supabase["Supabase<br/>vistas públicas<br/>catalogo_publico · resenas_publicas"]
+    api["C3LECT API<br/>auth · account · orders · payments<br/>admin · reviews"]
+    data["Persistencia de negocio<br/>PostgreSQL / backend externo"]
+    mp["Mercado Pago"]
+    wa["WhatsApp"]
+
+    buyer --> shell
+    shell --> catalog
+    shell --> session
+    shell --> cart
+    session --> http
+    cart --> http
+    catalog --> supabase
+    http --> api
+    api --> data
+    api --> mp
+    cart --> wa
+
+    classDef ui fill:#141414,stroke:#C9A84C,color:#FFFFFF,stroke-width:1px;
+    classDef ext fill:#101820,stroke:#62D9E8,color:#FFFFFF,stroke-width:1px;
+    classDef data fill:#1A1420,stroke:#A893FF,color:#FFFFFF,stroke-width:1px;
+    class shell,catalog,session,cart,http ui;
+    class buyer,mp,wa ext;
+    class supabase,api,data data;

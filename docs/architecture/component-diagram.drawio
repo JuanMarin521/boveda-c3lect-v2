@@ -1,0 +1,64 @@
+<mxfile host="app.diagrams.net" modified="2026-11-11T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="c3lect-component" name="Componentes lógicos">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="boundary-spa" value="Bóveda C3LECT · React SPA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F1115;strokeColor=#C9A84C;strokeWidth=2;dashed=1;verticalAlign=top;align=left;spacingTop=12;spacingLeft=14;fontColor=#C9A84C;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="300" y="120" width="610" height="500" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary-data" value="Datos e integraciones" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F1115;strokeColor=#8E7AD9;strokeWidth=2;dashed=1;verticalAlign=top;align=left;spacingTop=12;spacingLeft=14;fontColor=#B7A7FF;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="990" y="120" width="430" height="500" as="geometry" />
+        </mxCell>
+
+        <mxCell id="buyer" value="Comprador&#xa;browser / mobile" style="shape=mxgraph.basic.laptop;html=1;whiteSpace=wrap;fillColor=#111820;strokeColor=#62D9E8;strokeWidth=2;fontColor=#FFFFFF;fontSize=14;verticalLabelPosition=bottom;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="305" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="spa-shell" value="Shell y rutas&#xa;public · cuenta · checkout · admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#181818;strokeColor=#C9A84C;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="335" y="180" width="240" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="catalog" value="Catálogo y reseñas públicas&#xa;ProductosProvider · data/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#181818;strokeColor=#C9A84C;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="635" y="180" width="240" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="session" value="Sesión y autorización&#xa;AuthContext · AdminRoute" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#181818;strokeColor=#C9A84C;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="335" y="315" width="240" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="cart" value="Carrito y checkout&#xa;CartContext · lib/checkout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#181818;strokeColor=#C9A84C;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="635" y="315" width="240" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="http" value="Cliente HTTP modular&#xa;api/client.ts + api/*.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#181818;strokeColor=#C9A84C;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="485" y="470" width="240" height="72" as="geometry" />
+        </mxCell>
+
+        <mxCell id="supabase" value="Supabase&#xa;catalogo_publico&#xa;resenas_publicas" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#211A2D;strokeColor=#A893FF;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="180" width="170" height="96" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="C3LECT API&#xa;auth · account · orders&#xa;payments · admin · reviews" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#211A2D;strokeColor=#A893FF;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="315" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="data" value="Persistencia de negocio&#xa;PostgreSQL / backend externo" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#211A2D;strokeColor=#A893FF;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="470" width="170" height="96" as="geometry" />
+        </mxCell>
+        <mxCell id="mp" value="Mercado Pago" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#111820;strokeColor=#62D9E8;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="170" width="150" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="wa" value="WhatsApp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#111820;strokeColor=#62D9E8;fontColor=#FFFFFF;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="340" width="170" height="62" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-buyer-shell" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#62D9E8;endArrow=block;endFill=1;" edge="1" parent="1" source="buyer" target="spa-shell"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-shell-catalog" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C9A84C;endArrow=block;endFill=1;" edge="1" parent="1" source="spa-shell" target="catalog"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-shell-session" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C9A84C;endArrow=block;endFill=1;" edge="1" parent="1" source="spa-shell" target="session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-shell-cart" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C9A84C;endArrow=block;endFill=1;" edge="1" parent="1" source="spa-shell" target="cart"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-session-http" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C9A84C;endArrow=block;endFill=1;" edge="1" parent="1" source="session" target="http"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-cart-http" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C9A84C;endArrow=block;endFill=1;" edge="1" parent="1" source="cart" target="http"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-catalog-supabase" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#A893FF;endArrow=block;endFill=1;" edge="1" parent="1" source="catalog" target="supabase"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-http-api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#A893FF;endArrow=block;endFill=1;" edge="1" parent="1" source="http" target="api"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-api-data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#A893FF;endArrow=block;endFill=1;" edge="1" parent="1" source="api" target="data"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-api-mp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#62D9E8;endArrow=block;endFill=1;" edge="1" parent="1" source="api" target="mp"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-cart-wa" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#62D9E8;endArrow=block;endFill=1;" edge="1" parent="1" source="cart" target="wa"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
